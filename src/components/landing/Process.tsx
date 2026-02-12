@@ -1,67 +1,108 @@
 "use client";
 
-import { Search, Wrench, TrendingUp } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useReducedMotion } from "framer-motion";
 import SectionHeader from "@/components/ui/SectionHeader";
-import AnimateIn from "@/components/ui/AnimateIn";
+import ProcessStepSelector, { steps } from "./ProcessStepSelector";
+import ProcessVisualPanel from "./ProcessVisualPanel";
 
-const steps = [
-  {
-    number: "01",
-    icon: Search,
-    title: "Discover",
-    description:
-      "We map your workflows and identify high-impact automation opportunities.",
-  },
-  {
-    number: "02",
-    icon: Wrench,
-    title: "Build",
-    description:
-      "We design and deploy AI agents tailored to your operations.",
-  },
-  {
-    number: "03",
-    icon: TrendingUp,
-    title: "Scale",
-    description:
-      "We train your team and optimize systems for measurable ROI.",
-  },
-];
+const TICK_MS = 70;
+const TOTAL_TICKS = 100; // 100 ticks × 70ms = 7s
 
 export default function Process() {
+  const [activeStep, setActiveStep] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const reducedMotion = useReducedMotion();
+
+  const tickRef = useRef(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearTimer = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  const advance = useCallback(() => {
+    setActiveStep((prev) => (prev + 1) % steps.length);
+    tickRef.current = 0;
+    setProgress(0);
+  }, []);
+
+  const startTimer = useCallback(() => {
+    clearTimer();
+    intervalRef.current = setInterval(() => {
+      tickRef.current += 1;
+      const pct = (tickRef.current / TOTAL_TICKS) * 100;
+      setProgress(pct);
+      if (tickRef.current >= TOTAL_TICKS) {
+        advance();
+      }
+    }, TICK_MS);
+  }, [clearTimer, advance]);
+
+  // Start/stop based on paused state
+  useEffect(() => {
+    if (paused || reducedMotion) {
+      clearTimer();
+    } else {
+      startTimer();
+    }
+    return clearTimer;
+  }, [paused, reducedMotion, startTimer, clearTimer]);
+
+  const handleSelectStep = useCallback(
+    (index: number) => {
+      setActiveStep(index);
+      tickRef.current = 0;
+      setProgress(0);
+      // Restart timer if not paused
+      if (!paused && !reducedMotion) {
+        startTimer();
+      }
+    },
+    [paused, reducedMotion, startTimer]
+  );
+
+  const handleHover = useCallback((hovering: boolean) => {
+    setPaused(hovering);
+  }, []);
+
+  const handleFocus = useCallback((focused: boolean) => {
+    setPaused(focused);
+  }, []);
+
   return (
-    <section className="bg-white py-28">
+    <section className="bg-off-white py-28">
       <div className="mx-auto max-w-[1200px] px-6">
         <SectionHeader
           title="How It Works"
-          subtitle="A proven process to go from idea to production-ready AI in weeks, not months."
+          subtitle="We learn your business inside and out, then build the AI workflows and tooling that eliminate bottlenecks — not just agents, but complete systems."
         />
 
-        <div className="relative grid gap-16 lg:grid-cols-3 lg:gap-8">
-          {/* Connector line (desktop only) */}
-          <div className="pointer-events-none absolute top-8 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] hidden lg:block">
-            <div className="h-px w-full bg-gradient-to-r from-gray-200 via-primary/20 to-gray-200" />
+        {/* Live region for screen readers */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          Step {activeStep + 1} of {steps.length}: {steps[activeStep].title}
+        </div>
+
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start">
+          {/* Left: Step selector (~38% = 5 cols of 12) */}
+          <div className="lg:col-span-5">
+            <ProcessStepSelector
+              activeStep={activeStep}
+              progress={progress}
+              onSelectStep={handleSelectStep}
+              onHover={handleHover}
+              onFocus={handleFocus}
+            />
           </div>
 
-          {steps.map((step, i) => (
-            <AnimateIn key={step.title} delay={i * 0.15}>
-              <div className="relative text-center">
-                {/* Step circle */}
-                <div className="relative z-10 mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-bg to-white border border-primary/10 shadow-sm">
-                  <step.icon className="h-7 w-7 text-primary" />
-                </div>
-                <span className="mb-3 inline-block rounded-full bg-primary-bg px-3 py-0.5 text-xs font-bold uppercase tracking-widest text-primary">
-                  Step {step.number}
-                </span>
-                <h3 className="text-xl font-bold text-near-black">
-                  {step.title}
-                </h3>
-                <p className="mt-2 leading-relaxed text-gray-500">
-                  {step.description}
-                </p>
-              </div>
-            </AnimateIn>
-          ))}
+          {/* Right: Visual panel (~62% = 7 cols of 12) */}
+          <div className="lg:col-span-7">
+            <ProcessVisualPanel activeStep={activeStep} />
+          </div>
         </div>
       </div>
     </section>

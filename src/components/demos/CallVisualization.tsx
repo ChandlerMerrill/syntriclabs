@@ -25,7 +25,7 @@ export default function CallVisualization({
 }: CallVisualizationProps) {
   const [status, setStatus] = useState<CallStatus>("idle");
   const [lines, setLines] = useState<{ role: string; text: string }[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const transcriptContainerRef = useRef<HTMLDivElement>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
@@ -68,7 +68,9 @@ export default function CallVisualization({
   }, [isRunning, transcript, onStart]);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (transcriptContainerRef.current) {
+      transcriptContainerRef.current.scrollTop = transcriptContainerRef.current.scrollHeight;
+    }
   }, [lines]);
 
   if (status === "idle" && !isRunning) return null;
@@ -176,7 +178,7 @@ export default function CallVisualization({
 
       {/* Transcript */}
       {lines.length > 0 && (
-        <div className="max-h-[300px] space-y-2 overflow-y-auto rounded-lg bg-off-white p-3">
+        <div ref={transcriptContainerRef} className="max-h-[300px] space-y-2 overflow-y-auto rounded-lg bg-off-white p-3">
           {lines.map((line, i) => (
             <motion.div
               key={i}
@@ -194,7 +196,6 @@ export default function CallVisualization({
               <span className="text-near-black">{line.text}</span>
             </motion.div>
           ))}
-          <div ref={scrollRef} />
         </div>
       )}
     </div>

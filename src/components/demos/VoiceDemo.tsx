@@ -26,7 +26,7 @@ export default function VoiceDemo() {
   const noop = useCallback(() => {}, []);
 
   return (
-    <div id="voice-demo" className="scroll-mt-24">
+    <div>
       <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-violet-600">

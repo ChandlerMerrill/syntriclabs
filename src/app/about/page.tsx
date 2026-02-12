@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Mission from "@/components/about/Mission";
 import Values from "@/components/about/Values";
 import AnimateIn from "@/components/ui/AnimateIn";
-
+import Image from "next/image";
 export const metadata: Metadata = {
   title: "About",
   description:
@@ -18,25 +18,58 @@ export default function AboutPage() {
       {/* Founder Bio */}
       <AnimateIn>
         <section>
-          <h2 className="mb-6 text-3xl font-bold tracking-tight text-near-black sm:text-4xl">
+          <h2 className="mb-10 text-3xl font-bold tracking-tight text-near-black sm:text-4xl">
             The Founder
           </h2>
-          <div className="flex flex-col gap-8 sm:flex-row sm:items-start">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-primary-bg text-3xl font-bold text-primary">
-              SL
+
+          <div className="flex flex-col gap-10 sm:flex-row sm:items-start">
+            {/* Founder Image */}
+            <div className="relative h-44 w-44 shrink-0 overflow-hidden rounded-2xl sm:h-48 sm:w-48">
+              <Image
+                src="/images/chandler.jpg" // replace with your actual image path
+                alt="Chandler Merrill"
+                fill
+                className="object-cover"
+                priority
+              />
             </div>
+
+            {/* Founder Bio */}
             <div className="max-w-2xl">
               <h3 className="text-xl font-semibold text-near-black">
-                Founder, Syntric Labs
+                Chandler Merrill — Founder, Syntric Labs
               </h3>
-              <p className="mt-3 text-gray-700 leading-relaxed">
-                With a background in software engineering and a passion for
-                applied AI, the founder of Syntric Labs saw a clear gap: most
-                businesses know AI can help them, but few have the technical
-                expertise to make it happen. Syntric Labs was built to bridge
-                that gap — delivering production-ready AI systems that work
-                from day one, with clear ROI and hands-on support.
-              </p>
+
+              <div className="mt-4 space-y-4 text-gray-700 leading-relaxed">
+                <p>
+                  Chandler Merrill studied biomedical physics, originally
+                  intending to pursue medicine with the goal of improving
+                  people’s lives in a tangible way. During that time, he
+                  discovered a deep interest in software and systems — and the
+                  realization that technology could create impact at scale.
+                </p>
+
+                <p>
+                  He later led systems and technology inside a growing startup,
+                  where he designed internal tools, automated workflows, and
+                  built infrastructure to support operations and customer
+                  experience. Through that work, he saw how difficult it is for
+                  most businesses to implement AI and automation effectively.
+                </p>
+
+                <p>
+                  He founded Syntric Labs to help small and mid-sized companies
+                  design and deploy practical AI systems that integrate into
+                  their existing workflows.
+                </p>
+
+                <p>
+                  Outside of work, Chandler spends his time climbing, camping,
+                  and exploring the mountains — drawn to the same
+                  problem-solving and resilience that shape his approach to
+                  building technology.
+                </p>
+              </div>
             </div>
           </div>
         </section>

@@ -25,10 +25,6 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 /* Subtle selection color */
 ::selection {
   background: rgba(37, 99, 235, 0.15);
