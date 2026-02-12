@@ -7,11 +7,11 @@ export default function RelevanceAIWidget() {
   if (!shareId) return null;
 
   return (
-    <Script
-      src="https://app.relevanceai.com/embed/chat-bubble.js"
+    <script
+      defer
       data-relevanceai-share-id={shareId}
-      data-share-styles={process.env.NEXT_PUBLIC_RELEVANCE_AI_SHARE_STYLES || ""}
-      strategy="lazyOnload"
-    />
+      src="https://app.relevanceai.com/embed/chat-bubble.js"
+      data-share-styles="starting_message_prompts=Tell+me+about+the+services+Syntric+offers.&starting_message_prompts=Help+me+book+a+consultation.&starting_message_prompts=Tell+me+about+your+workshops.&hide_tool_steps=true&hide_file_uploads=false&hide_conversation_list=false&bubble_style=icon&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=true&hide_description=true"
+    ></script>
   );
 }
