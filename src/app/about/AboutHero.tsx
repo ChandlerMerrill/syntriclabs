@@ -4,20 +4,12 @@ import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 import InteractiveHeroBackground from "@/components/ui/InteractiveHeroBackground";
 import AnimatedBlob from "@/components/ui/AnimatedBlob";
-import { aboutPrimary, aboutSecondary } from "@/lib/blob-paths";
 
 const heroBlobs = (
   <>
-    <AnimatedBlob
-      config={aboutPrimary}
-      variant="primary"
-      className="absolute -top-1/4 left-1/4 h-[500px] w-[500px] rounded-full blur-[100px]"
-    />
-    <AnimatedBlob
-      config={aboutSecondary}
-      variant="secondary"
-      className="absolute -bottom-1/4 right-1/4 h-[400px] w-[400px] rounded-full blur-[100px]"
-    />
+    <AnimatedBlob size={500} blur={100} startVisible initialPosition={{ left: 30, top: 25 }} />
+    <AnimatedBlob size={400} blur={100} initialDelay={3} initialPosition={{ left: 70, top: 60 }} />
+    <AnimatedBlob size={200} blur={80} initialDelay={6} />
   </>
 );
 

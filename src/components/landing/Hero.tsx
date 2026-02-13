@@ -5,29 +5,13 @@ import Button from "@/components/ui/Button";
 import InteractiveHeroBackground from "@/components/ui/InteractiveHeroBackground";
 import AnimatedBlob from "@/components/ui/AnimatedBlob";
 import { ArrowRight, Zap, Workflow, Plug, GraduationCap } from "lucide-react";
-import {
-  landingPrimary,
-  landingSecondary,
-  landingAccent,
-} from "@/lib/blob-paths";
 
 const blobs = (
   <>
-    <AnimatedBlob
-      config={landingPrimary}
-      variant="primary"
-      className="absolute -top-1/4 left-1/4 h-[700px] w-[700px] rounded-full blur-[100px]"
-    />
-    <AnimatedBlob
-      config={landingSecondary}
-      variant="secondary"
-      className="absolute -bottom-1/4 right-1/4 h-[600px] w-[600px] rounded-full blur-[100px]"
-    />
-    <AnimatedBlob
-      config={landingAccent}
-      variant="accent"
-      className="absolute top-1/3 right-1/6 h-[150px] w-[150px] rounded-full blur-[80px]"
-    />
+    <AnimatedBlob size={700} blur={100} startVisible initialPosition={{ left: 30, top: 25 }} />
+    <AnimatedBlob size={600} blur={100} initialDelay={3} initialPosition={{ left: 70, top: 65 }} />
+    <AnimatedBlob size={400} blur={100} initialDelay={6} />
+    <AnimatedBlob size={200} blur={80} initialDelay={9} />
   </>
 );
 

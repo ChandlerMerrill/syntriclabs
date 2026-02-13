@@ -137,7 +137,10 @@ export default function ChatShowcase() {
 
       {/* Try it live callout */}
       <AnimateIn delay={0.2}>
-        <div className="mt-8 flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/50 px-6 py-5">
+        <div
+          className="mt-8 flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/50 px-6 py-5"
+          style={{ animation: "pulse-blue-glow 1.4s ease-in-out infinite alternate" }}
+        >
           <div>
             <p className="font-bold text-near-black">Want to try it yourself?</p>
             <p className="mt-1 text-sm text-gray-500">

@@ -5,39 +5,13 @@ import AnimateIn from "@/components/ui/AnimateIn";
 import InteractiveHeroBackground from "@/components/ui/InteractiveHeroBackground";
 import AnimatedBlob from "@/components/ui/AnimatedBlob";
 import ContactForm from "@/components/contact/ContactForm";
-import {
-  contactPrimary,
-  contactSecondary,
-  contactAccentRight,
-  contactAccentSmall,
-} from "@/lib/blob-paths";
 
 const heroBlobs = (
   <>
-    <AnimatedBlob
-      config={contactPrimary}
-      variant="primary"
-      intensity={2.5}
-      className="absolute -top-1/4 left-1/6 h-[500px] w-[400px] rounded-full blur-[150px]"
-    />
-    <AnimatedBlob
-      config={contactSecondary}
-      variant="secondary"
-      intensity={2.5}
-      className="absolute -bottom-1/4 right-1/6 h-[500px] w-[350px] rounded-full blur-[50px]"
-    />
-    <AnimatedBlob
-      config={contactAccentRight}
-      variant="accent"
-      intensity={5}
-      className="absolute top-1/3 right-0 h-[300px] w-[300px] rounded-full blur-[100px]"
-    />
-    <AnimatedBlob
-      config={contactAccentSmall}
-      variant="accent"
-      intensity={3}
-      className="absolute -top-1/6 right-1/3 h-[250px] w-[250px] rounded-full blur-[50px]"
-    />
+    <AnimatedBlob size={400} blur={100} intensity={1.35} startVisible initialPosition={{ left: 20, top: 25 }} />
+    <AnimatedBlob size={350} blur={100} intensity={1.35} initialDelay={3} initialPosition={{ left: 75, top: 65 }} />
+    <AnimatedBlob size={300} blur={100} intensity={1.35} initialDelay={6} />
+    <AnimatedBlob size={250} blur={90} intensity={1.35} initialDelay={9} />
   </>
 );
 

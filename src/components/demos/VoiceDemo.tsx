@@ -63,7 +63,10 @@ export default function VoiceDemo() {
 
       {/* ── Live demo banner ── */}
       <AnimateIn delay={0.05}>
-        <div className="mb-6 flex items-center gap-4 rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 via-white to-violet-50 px-6 py-4">
+        <div
+          className="mb-6 flex items-center gap-4 rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 via-white to-violet-50 px-6 py-4"
+          style={{ animation: "pulse-violet-glow 1.4s ease-in-out infinite alternate" }}
+        >
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100">
             <PhoneCall className="h-5 w-5 text-violet-600" />
           </div>
@@ -132,7 +135,10 @@ export default function VoiceDemo() {
         {/* ── Real Callback Form ── */}
         <div className="order-1 lg:order-2 lg:col-span-2">
           <AnimateIn delay={0.1}>
-            <div className="rounded-2xl border-2 border-violet-200 bg-white p-6 shadow-lg shadow-violet-100/50">
+            <div
+              className="rounded-2xl border-2 border-violet-200 bg-white p-6"
+              style={{ animation: "pulse-violet-glow-elevated 1.4s ease-in-out infinite alternate" }}
+            >
               {/* Accent bar */}
               <div className="mb-5 flex items-center justify-between">
                 <div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Users, Compass, ArrowRight, Sparkles, Clock } from "lucide-react";
+import { Users, Compass, ArrowRight, Sparkles } from "lucide-react";
 import AnimateIn from "@/components/ui/AnimateIn";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -10,20 +10,12 @@ import InteractiveHeroBackground from "@/components/ui/InteractiveHeroBackground
 import AnimatedBlob from "@/components/ui/AnimatedBlob";
 import ChatShowcase from "@/components/demos/ChatShowcase";
 import VoiceDemo from "@/components/demos/VoiceDemo";
-import { servicesPrimary, servicesSecondary } from "@/lib/blob-paths";
 
 const heroBlobs = (
   <>
-    <AnimatedBlob
-      config={servicesPrimary}
-      variant="primary"
-      className="absolute -top-1/4 left-1/3 h-[500px] w-[500px] rounded-full blur-[100px]"
-    />
-    <AnimatedBlob
-      config={servicesSecondary}
-      variant="secondary"
-      className="absolute -bottom-1/4 right-1/3 h-[400px] w-[400px] rounded-full blur-[100px]"
-    />
+    <AnimatedBlob size={500} blur={100} startVisible initialPosition={{ left: 35, top: 30 }} />
+    <AnimatedBlob size={400} blur={100} initialDelay={3} initialPosition={{ left: 65, top: 60 }} />
+    <AnimatedBlob size={250} blur={80} initialDelay={6} />
   </>
 );
 
@@ -158,7 +150,10 @@ export default function ServicesContent() {
                       <Compass className="h-7 w-7 text-amber-600" />
                     </div>
                     <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/60">
-                      <Clock className="h-3.5 w-3.5" />
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                      </span>
                       Free for a limited time
                     </div>
                   </div>
@@ -197,7 +192,7 @@ export default function ServicesContent() {
           <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-white/[0.04] blur-3xl" />
           <div className="absolute -bottom-32 -left-32 h-[500px] w-[500px] rounded-full bg-primary-lighter/10 blur-3xl" />
           <div
-            className="absolute inset-0 opacity-[0.06]"
+            className="absolute inset-0 opacity-[0.12]"
             style={{
               backgroundImage:
                 "linear-gradient(to right, rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.4) 1px, transparent 1px)",
@@ -209,6 +204,16 @@ export default function ServicesContent() {
 
         <AnimateIn>
           <div className="relative mx-auto max-w-[1200px] px-6 text-center">
+            <div
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-4 py-1.5 text-sm font-semibold text-white backdrop-blur-sm"
+              style={{ animation: "pulse-white-glow 1.4s ease-in-out infinite alternate" }}
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
+              </span>
+              Taking on new clients
+            </div>
             <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
               Ready to automate?
             </h2>

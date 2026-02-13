@@ -38,3 +38,45 @@ body {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* CTA glow pulses — CSS keyframes stay synced via the browser's global clock */
+@keyframes pulse-blue-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 22px 4px rgba(59, 130, 246, 0.18); }
+}
+@keyframes pulse-violet-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 0 22px 4px rgba(139, 92, 246, 0.22); }
+}
+@keyframes pulse-violet-glow-elevated {
+  0%   { box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.1), 0 0 0 0 rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.1), 0 0 22px 4px rgba(139, 92, 246, 0.22); }
+}
+@keyframes pulse-white-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  100% { box-shadow: 0 0 18px 4px rgba(255, 255, 255, 0.2); }
+}
+
+/* Metallic shimmer — one slow sweep then a long pause before repeating */
+@keyframes shimmer-sweep {
+  0%   { background-position: 200% center; }
+  25%  { background-position: -200% center; }
+  100% { background-position: -200% center; }
+}
+.shimmer-text {
+  background: linear-gradient(
+    110deg,
+    #2563eb 0%,
+    #7c3aed 25%,
+    #c4b5fd 45%,
+    #e0e7ff 50%,
+    #c4b5fd 55%,
+    #7c3aed 75%,
+    #2563eb 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-sweep 8s ease-in-out infinite;
+}
