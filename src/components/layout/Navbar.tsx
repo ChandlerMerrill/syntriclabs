@@ -10,7 +10,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
   { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+  // { href: "/contact", label: "Contact" },
 ];
 
 export default function Navbar() {
@@ -39,11 +39,11 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center">
           <Image
-            src="/images/syntric-logo-nob.png"
+            src="/images/syntric-logo-nob5.png"
             alt="Syntric Labs"
             width={1000}
             height={340}
-            className="h-12 w-auto"
+            className="h-10 w-auto"
             priority
           />
         </Link>

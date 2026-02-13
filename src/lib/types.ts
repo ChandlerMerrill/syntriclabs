@@ -3,6 +3,8 @@ export interface CRMContact {
   name: string;
   email: string;
   phone: string;
+  company?: string;
+  source?: string;
   createdAt: string;
 }
 
@@ -12,6 +14,9 @@ export interface CRMTicket {
   type: string;
   description: string;
   status: "open" | "in_progress" | "resolved";
+  priority?: string;
+  assignedTo?: string;
+  source?: string;
   createdAt: string;
 }
 
@@ -21,6 +26,8 @@ export interface CRMAppointment {
   date: string;
   time: string;
   purpose: string;
+  attendee?: string;
+  source?: string;
   createdAt: string;
 }
 

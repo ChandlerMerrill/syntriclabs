@@ -20,7 +20,7 @@ export const steps: StepData[] = [
     title: "Understand Your Business",
     subtitle: "Deep-dive discovery audit",
     description:
-      "We learn how your company operates — your team structure, customer journey, tools, and pain points. Then we pinpoint the bottlenecks where automation and AI tooling will have the biggest impact.",
+      "We learn how your company operates — your team structure, customer journey, tools, and pain points. Then we start where automation and advanced tooling will have the biggest impact.",
     accent: "blue",
   },
   {
@@ -38,7 +38,7 @@ export const steps: StepData[] = [
     title: "Optimize & Scale",
     subtitle: "Continuous improvement loop",
     description:
-      "We train your team, monitor performance, and iterate on your systems. As your business grows, your AI workflows scale with it — delivering measurable ROI from week one.",
+      "We train your team, monitor performance, and iterate on your systems. As your business grows, your workflows scale with it — delivering measurable ROI.",
     accent: "emerald",
   },
 ];
@@ -109,7 +109,7 @@ export default function ProcessStepSelector({
         stepsRef.current[next]?.focus();
       }
     },
-    [activeStep, onSelectStep]
+    [activeStep, onSelectStep],
   );
 
   const activeColors = accentColors[steps[activeStep].accent];
@@ -133,7 +133,9 @@ export default function ProcessStepSelector({
           return (
             <button
               key={step.number}
-              ref={(el) => { stepsRef.current[i] = el; }}
+              ref={(el) => {
+                stepsRef.current[i] = el;
+              }}
               role="tab"
               aria-selected={isActive}
               aria-controls={`process-panel-${i}`}
@@ -151,7 +153,11 @@ export default function ProcessStepSelector({
                 <motion.div
                   layoutId="processAccent"
                   className={`absolute left-0 top-3 bottom-3 w-1 rounded-full ${colors.bar}`}
-                  transition={reducedMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 28 }}
+                  transition={
+                    reducedMotion
+                      ? { duration: 0 }
+                      : { type: "spring", stiffness: 300, damping: 28 }
+                  }
                 />
               )}
 
@@ -179,7 +185,9 @@ export default function ProcessStepSelector({
                 <AnimatePresence initial={false}>
                   {isActive && (
                     <motion.div
-                      initial={reducedMotion ? false : { height: 0, opacity: 0 }}
+                      initial={
+                        reducedMotion ? false : { height: 0, opacity: 0 }
+                      }
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.35, ease: "easeInOut" }}

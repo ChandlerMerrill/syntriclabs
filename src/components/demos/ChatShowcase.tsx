@@ -17,9 +17,9 @@ const staticMessages = [
 ];
 
 const staticCRM = {
-  contact: { id: "c1", name: "Sarah Chen", email: "sarah@acmecorp.com", phone: "", createdAt: "" },
-  ticket: { id: "t1", contactId: "c1", type: "Support Automation", description: "200 tickets/day — billing & order status inquiries. Scope AI chat agent solution.", status: "open" as const, createdAt: "" },
-  appointment: { id: "a1", contactId: "c1", date: "Thursday", time: "2:00 PM", purpose: "Consultation — AI chat agent for customer support", createdAt: "" },
+  contact: { id: "c1", name: "Sarah Chen", email: "sarah@acmecorp.com", phone: "", company: "Acme Corp", source: "AI Chat Agent", createdAt: "" },
+  ticket: { id: "t1", contactId: "c1", type: "Support Automation", description: "200 tickets/day — billing & order status inquiries. Scope AI chat agent solution.", status: "open" as const, priority: "high", assignedTo: "Sales Team", source: "AI Chat Agent", createdAt: "" },
+  appointment: { id: "a1", contactId: "c1", date: "Thursday", time: "2:00 PM", purpose: "Consultation — AI chat agent for customer support", attendee: "Sarah Chen", source: "AI Chat Agent", createdAt: "" },
 };
 
 const capabilities = [
@@ -105,12 +105,30 @@ export default function ChatShowcase() {
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100">
                   <Database className="h-3.5 w-3.5 text-gray-500" />
                 </div>
-                <span className="text-sm font-bold text-near-black">CRM Dashboard</span>
+                <span className="text-sm font-bold text-near-black">Your CRM Dashboard</span>
+                <span className="ml-auto rounded-full bg-green-50 px-2.5 py-0.5 text-[11px] font-bold text-green-600">
+                  3 new
+                </span>
               </div>
-              <div className="space-y-3 p-4">
-                <CRMContactCard contact={staticCRM.contact} />
-                <CRMTicketCard ticket={staticCRM.ticket} />
-                <CRMAppointmentCard appointment={staticCRM.appointment} />
+              <div className="space-y-4 p-4">
+                <div>
+                  <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                    Recent Contacts
+                  </p>
+                  <CRMContactCard contact={staticCRM.contact} />
+                </div>
+                <div>
+                  <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                    Open Tickets
+                  </p>
+                  <CRMTicketCard ticket={staticCRM.ticket} />
+                </div>
+                <div>
+                  <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                    Upcoming
+                  </p>
+                  <CRMAppointmentCard appointment={staticCRM.appointment} />
+                </div>
               </div>
             </div>
           </AnimateIn>

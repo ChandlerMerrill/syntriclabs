@@ -27,7 +27,7 @@ const services = [
     title: "Workshops & Consulting",
     description:
       "Hands-on sessions to identify automation opportunities and build your AI roadmap.",
-    href: "/contact",
+    href: "/services#workshops",
     color: "amber" as const,
   },
 ];
@@ -75,7 +75,9 @@ export default function ServicesOverview() {
                     className={`relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200/60 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${colors.border} ${colors.glow}`}
                   >
                     {/* Colored accent line at top */}
-                    <div className={`absolute top-0 left-0 right-0 h-px ${colors.accent} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} />
+                    <div
+                      className={`absolute top-0 left-0 right-0 h-px ${colors.accent} opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
+                    />
 
                     <div
                       className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl transition-colors duration-300 ${colors.iconBg}`}

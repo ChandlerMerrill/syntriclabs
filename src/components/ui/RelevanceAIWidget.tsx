@@ -1,6 +1,6 @@
 "use client";
 
-import Script from "next/script";
+// import Script from "next/script";
 
 export default function RelevanceAIWidget() {
   const shareId = process.env.NEXT_PUBLIC_RELEVANCE_AI_SHARE_ID;

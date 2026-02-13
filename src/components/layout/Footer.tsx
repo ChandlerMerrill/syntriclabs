@@ -16,11 +16,11 @@ export default function Footer() {
           <div>
             <Link href="/" className="flex items-center">
               <Image
-                src="/images/syntric-logo-nob.png"
+                src="/images/syntric-logo-nob5.png"
                 alt="Syntric Labs"
                 width={1000}
                 height={340}
-                className="h-15 w-auto"
+                className="h-12 w-auto"
               />
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-gray-500">
