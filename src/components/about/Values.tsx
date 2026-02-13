@@ -77,7 +77,7 @@ export default function Values() {
             >
               {/* Top accent line */}
               <div
-                className={`absolute inset-x-0 top-0 h-0.5 ${value.accentColor} opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
+                className={`absolute inset-x-0 top-0 h-0.5 ${value.accentColor} opacity-30 transition-opacity duration-300 group-hover:opacity-100`}
               />
 
               {/* Icon */}

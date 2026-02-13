@@ -75,8 +75,15 @@ export default function Process() {
   }, []);
 
   return (
-    <section className="bg-off-white py-28">
-      <div className="mx-auto max-w-[1200px] px-6">
+    <section className="relative bg-off-white py-28">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.30]"
+        style={{
+          backgroundImage: "radial-gradient(circle, #94A3B8 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
+      />
+      <div className="relative mx-auto max-w-[1200px] px-6">
         <SectionHeader
           title="How It Works"
           subtitle="We learn your business inside and out, then build the AI workflows and tooling that eliminate bottlenecks — not just agents, but complete systems."

@@ -17,22 +17,43 @@ export default function AboutPage() {
       <AboutHero />
 
       {/* Mission */}
-      <section className="bg-white py-28">
-        <div className="mx-auto max-w-[1200px] px-6">
+      <section className="relative bg-white py-28">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage: "radial-gradient(circle, #D0D5DD 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="relative mx-auto max-w-[1200px] px-6">
           <Mission />
         </div>
       </section>
 
       {/* Values */}
-      <section className="bg-[#f8fafc] py-28">
-        <div className="mx-auto max-w-[1200px] px-6">
+      <section className="relative bg-off-white py-28">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.30]"
+          style={{
+            backgroundImage: "radial-gradient(circle, #94A3B8 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="relative mx-auto max-w-[1200px] px-6">
           <Values />
         </div>
       </section>
 
       {/* Founder Bio */}
-      <section className="bg-white py-28">
-        <div className="mx-auto max-w-[1200px] px-6">
+      <section className="relative bg-white py-28">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage: "radial-gradient(circle, #D0D5DD 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="relative mx-auto max-w-[1200px] px-6">
           <AnimateIn>
             <h2 className="mb-10 text-center text-3xl font-bold tracking-tight text-near-black sm:text-4xl">
               The Founder

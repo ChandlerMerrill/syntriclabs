@@ -40,7 +40,7 @@ export default function ChatShowcase() {
           <h3 className="text-2xl font-extrabold text-near-black">
             Intelligent Conversations That Convert
           </h3>
-          <p className="mt-2 max-w-2xl leading-relaxed text-gray-500">
+          <p className="mt-2 max-w-2xl leading-relaxed text-gray-600">
             Our AI chat agents handle customer inquiries, capture leads, create tickets, and book appointments — all without human intervention.
           </p>
         </AnimateIn>
@@ -162,7 +162,7 @@ export default function ChatShowcase() {
                 <cap.icon className="h-5 w-5 text-blue-600" />
               </div>
               <h4 className="text-sm font-bold text-near-black">{cap.title}</h4>
-              <p className="mt-1 text-sm leading-relaxed text-gray-500">{cap.description}</p>
+              <p className="mt-1 text-sm leading-relaxed text-gray-600">{cap.description}</p>
             </div>
           </AnimateIn>
         ))}

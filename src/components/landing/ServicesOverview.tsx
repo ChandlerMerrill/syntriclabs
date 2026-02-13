@@ -58,8 +58,15 @@ const colorMap = {
 
 export default function ServicesOverview() {
   return (
-    <section className="bg-white py-28">
-      <div className="mx-auto max-w-[1200px] px-6">
+    <section className="relative bg-white py-28">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage: "radial-gradient(circle, #D0D5DD 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
+      />
+      <div className="relative mx-auto max-w-[1200px] px-6">
         <SectionHeader
           title="What We Build"
           subtitle="From intelligent chat agents to voice-powered workflows, we deliver AI systems that work from day one."
@@ -76,7 +83,7 @@ export default function ServicesOverview() {
                   >
                     {/* Colored accent line at top */}
                     <div
-                      className={`absolute top-0 left-0 right-0 h-px ${colors.accent} opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
+                      className={`absolute top-0 left-0 right-0 h-px ${colors.accent} opacity-30 transition-opacity duration-300 group-hover:opacity-100`}
                     />
 
                     <div
@@ -88,7 +95,7 @@ export default function ServicesOverview() {
                     <h3 className="text-xl font-bold text-near-black">
                       {service.title}
                     </h3>
-                    <p className="mt-3 flex-1 leading-relaxed text-gray-500">
+                    <p className="mt-3 flex-1 leading-relaxed text-gray-600">
                       {service.description}
                     </p>
 

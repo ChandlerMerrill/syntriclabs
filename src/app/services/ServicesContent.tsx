@@ -75,22 +75,43 @@ export default function ServicesContent() {
       </InteractiveHeroBackground>
 
       {/* ── Chat Showcase ── */}
-      <section className="bg-white py-28">
-        <div className="mx-auto max-w-[1200px] px-6">
+      <section className="relative bg-white py-28">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage: "radial-gradient(circle, #D0D5DD 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="relative mx-auto max-w-[1200px] px-6">
           <ChatShowcase />
         </div>
       </section>
 
       {/* ── Voice Demo ── */}
-      <section id="voice-demo" className="scroll-mt-24 bg-off-white py-28">
-        <div className="mx-auto max-w-[1200px] px-6">
+      <section id="voice-demo" className="relative scroll-mt-24 bg-off-white py-28">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.30]"
+          style={{
+            backgroundImage: "radial-gradient(circle, #94A3B8 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="relative mx-auto max-w-[1200px] px-6">
           <VoiceDemo />
         </div>
       </section>
 
       {/* ── Beyond Agents ── */}
-      <section id="workshops" className="bg-white py-28">
-        <div className="mx-auto max-w-[1200px] px-6">
+      <section id="workshops" className="relative bg-white py-28">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage: "radial-gradient(circle, #D0D5DD 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="relative mx-auto max-w-[1200px] px-6">
           <SectionHeader
             title="Beyond Agents"
             subtitle="We also help teams build AI capabilities through hands-on training and strategy."
@@ -103,7 +124,7 @@ export default function ServicesContent() {
                   hover={false}
                   className="relative flex h-full flex-col overflow-hidden p-7 transition-all duration-300 group-hover:-translate-y-1.5 group-hover:border-purple-200 group-hover:shadow-xl group-hover:shadow-purple-100/50"
                 >
-                  <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-purple-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-purple-500 opacity-30 transition-opacity duration-300 group-hover:opacity-100" />
 
                   <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-50 transition-colors duration-300 group-hover:bg-purple-100">
                     <Users className="h-7 w-7 text-purple-600" />
@@ -112,7 +133,7 @@ export default function ServicesContent() {
                   <h3 className="text-xl font-bold text-near-black">
                     Workshops
                   </h3>
-                  <p className="mt-3 flex-1 leading-relaxed text-gray-500">
+                  <p className="mt-3 flex-1 leading-relaxed text-gray-600">
                     Join one of our upcoming group workshops to learn about AI
                     adoption, prompt engineering, and automation
                     workflows&nbsp;&mdash; or request a private workshop
@@ -136,7 +157,7 @@ export default function ServicesContent() {
                   hover={false}
                   className="relative flex h-full flex-col overflow-hidden p-7 transition-all duration-300 group-hover:-translate-y-1.5 group-hover:border-amber-200 group-hover:shadow-xl group-hover:shadow-amber-100/50"
                 >
-                  <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-amber-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-amber-500 opacity-30 transition-opacity duration-300 group-hover:opacity-100" />
 
                   <div className="mb-6 flex items-start justify-between">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 transition-colors duration-300 group-hover:bg-amber-100">
@@ -151,7 +172,7 @@ export default function ServicesContent() {
                   <h3 className="text-xl font-bold text-near-black">
                     Consulting
                   </h3>
-                  <p className="mt-3 flex-1 leading-relaxed text-gray-500">
+                  <p className="mt-3 flex-1 leading-relaxed text-gray-600">
                     Book a free 30-minute strategy session to identify your
                     highest-ROI automation opportunities and build a clear
                     implementation roadmap. Whether you&apos;re just exploring

@@ -53,7 +53,7 @@ export default function VoiceDemo() {
           <h3 className="text-2xl font-extrabold text-near-black">
             Phone Calls That Handle Themselves
           </h3>
-          <p className="mt-2 max-w-2xl leading-relaxed text-gray-500">
+          <p className="mt-2 max-w-2xl leading-relaxed text-gray-600">
             Our AI voice agent answers calls, qualifies leads, books
             appointments, and updates your CRM — all in a natural, human-like
             conversation.

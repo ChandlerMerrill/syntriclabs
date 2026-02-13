@@ -196,7 +196,7 @@ export default function ProcessStepSelector({
                       <p className="mt-1 text-xs font-medium text-gray-400">
                         {step.subtitle}
                       </p>
-                      <p className="mt-2 text-sm leading-relaxed text-gray-500">
+                      <p className="mt-2 text-sm leading-relaxed text-gray-600">
                         {step.description}
                       </p>
 
@@ -282,7 +282,7 @@ export default function ProcessStepSelector({
             <p className="mt-1 text-sm text-gray-400">
               {steps[activeStep].subtitle}
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-gray-500">
+            <p className="mt-2 text-sm leading-relaxed text-gray-600">
               {steps[activeStep].description}
             </p>
           </motion.div>
