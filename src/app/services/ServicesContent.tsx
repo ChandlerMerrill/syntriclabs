@@ -63,9 +63,9 @@ export default function ServicesContent() {
       {/* ── Chat Showcase ── */}
       <section className="relative bg-white py-28">
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          className="pointer-events-none absolute inset-0 opacity-[0.50]"
           style={{
-            backgroundImage: "radial-gradient(circle, #D0D5DD 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(circle, #B0B8C4 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />
@@ -77,9 +77,9 @@ export default function ServicesContent() {
       {/* ── Voice Demo ── */}
       <section id="voice-demo" className="relative scroll-mt-24 bg-off-white py-28">
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.30]"
+          className="pointer-events-none absolute inset-0 opacity-[0.45]"
           style={{
-            backgroundImage: "radial-gradient(circle, #94A3B8 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(circle, #7488A0 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />
@@ -91,9 +91,9 @@ export default function ServicesContent() {
       {/* ── Beyond Agents ── */}
       <section id="workshops" className="relative bg-white py-28">
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          className="pointer-events-none absolute inset-0 opacity-[0.50]"
           style={{
-            backgroundImage: "radial-gradient(circle, #D0D5DD 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(circle, #B0B8C4 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />

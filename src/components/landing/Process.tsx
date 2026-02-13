@@ -77,9 +77,9 @@ export default function Process() {
   return (
     <section className="relative bg-off-white py-28">
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.30]"
+        className="pointer-events-none absolute inset-0 opacity-[0.45]"
         style={{
-          backgroundImage: "radial-gradient(circle, #94A3B8 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(circle, #7488A0 1px, transparent 1px)",
           backgroundSize: "24px 24px",
         }}
       />

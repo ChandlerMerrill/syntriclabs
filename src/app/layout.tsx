@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import RelevanceAIWidget from "@/components/ui/RelevanceAIWidget";
+import CursorGlow from "@/components/ui/CursorGlow";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -76,7 +77,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Navbar />
-        <main className="min-h-screen pt-[72px]">{children}</main>
+        <main className="min-h-screen pt-[72px]">
+          <CursorGlow />
+          {children}
+        </main>
         <Footer />
         <RelevanceAIWidget />
       </body>

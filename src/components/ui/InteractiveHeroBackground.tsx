@@ -31,11 +31,6 @@ export default function InteractiveHeroBackground({
     return normalizedX * 2 * smoothHovering.get();
   });
 
-  const cursorGlowBg = useTransform(() => {
-    const opacity = 0.35 * smoothHovering.get();
-    return `radial-gradient(250px circle at ${rawX.get()}px ${rawY.get()}px, rgba(37,99,235,${opacity}), transparent 40%)`;
-  });
-
   const highlightMask = useTransform(() => {
     const maskOpacity = smoothHovering.get();
     return `radial-gradient(400px circle at ${rawX.get()}px ${rawY.get()}px, rgba(0,0,0,${maskOpacity}), transparent 70%)`;
@@ -80,12 +75,6 @@ export default function InteractiveHeroBackground({
           }}
         />
       </motion.div>
-
-      {/* Cursor glow — outside tilt container */}
-      <motion.div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: cursorGlowBg }}
-      />
 
       {/* Bottom fade */}
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white to-transparent" />
