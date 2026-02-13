@@ -54,7 +54,7 @@ const jsonLd = {
     "Syntric Labs builds practical AI automation systems, agents, and workflows for businesses.",
   contactPoint: {
     "@type": "ContactPoint",
-    email: "hello@syntriclabs.com",
+    email: "chandler@syntriclabs.com",
     contactType: "sales",
   },
 };

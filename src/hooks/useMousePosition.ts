@@ -11,6 +11,8 @@ interface UseMousePositionReturn {
   ref: React.RefObject<HTMLElement | null>;
   x: MotionValue<number>;
   y: MotionValue<number>;
+  rawX: MotionValue<number>;
+  rawY: MotionValue<number>;
   smoothHovering: MotionValue<number>;
 }
 
@@ -25,8 +27,8 @@ export function useMousePosition(): UseMousePositionReturn {
   const x = useSpring(rawX, springConfig);
   const y = useSpring(rawY, springConfig);
   const smoothHovering = useSpring(rawHovering, {
-    stiffness: 200,
-    damping: 30,
+    stiffness: 400,
+    damping: 35,
   });
 
   useEffect(() => {
@@ -58,5 +60,5 @@ export function useMousePosition(): UseMousePositionReturn {
     };
   }, [rawX, rawY, rawHovering]);
 
-  return { ref, x, y, smoothHovering };
+  return { ref, x, y, rawX, rawY, smoothHovering };
 }

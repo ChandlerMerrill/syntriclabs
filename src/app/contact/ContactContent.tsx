@@ -1,48 +1,42 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Mail } from "lucide-react";
 import AnimateIn from "@/components/ui/AnimateIn";
 import InteractiveHeroBackground from "@/components/ui/InteractiveHeroBackground";
+import AnimatedBlob from "@/components/ui/AnimatedBlob";
 import ContactForm from "@/components/contact/ContactForm";
+import {
+  contactPrimary,
+  contactSecondary,
+  contactAccentRight,
+  contactAccentSmall,
+} from "@/lib/blob-paths";
 
 const heroBlobs = (
   <>
-    <motion.div
-      className="absolute -top-1/4 left-1/6 h-[400px] w-[400px] rounded-full bg-gradient-to-br from-primary/25 via-primary-lighter/30 to-transparent blur-[100px]"
-      animate={{
-        x: [0, 15, -10, 0],
-        y: [0, -10, 8, 0],
-        scale: [1, 1.02, 0.98, 1],
-      }}
-      transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+    <AnimatedBlob
+      config={contactPrimary}
+      variant="primary"
+      intensity={2.5}
+      className="absolute -top-1/4 left-1/6 h-[500px] w-[400px] rounded-full blur-[150px]"
     />
-    <motion.div
-      className="absolute -bottom-1/4 right-1/6 h-[350px] w-[350px] rounded-full bg-gradient-to-tl from-violet-400/20 via-primary/20 to-transparent blur-[100px]"
-      animate={{
-        x: [0, -12, 10, 0],
-        y: [0, 10, -8, 0],
-        scale: [1, 0.98, 1.02, 1],
-      }}
-      transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+    <AnimatedBlob
+      config={contactSecondary}
+      variant="secondary"
+      intensity={2.5}
+      className="absolute -bottom-1/4 right-1/6 h-[500px] w-[350px] rounded-full blur-[50px]"
     />
-    <motion.div
-      className="absolute top-1/3 right-0 h-[300px] w-[300px] rounded-full bg-gradient-to-bl from-blue-400/20 via-primary/15 to-transparent blur-[100px]"
-      animate={{
-        x: [0, -20, 8, 0],
-        y: [0, -8, 15, 0],
-        scale: [1, 1.04, 0.97, 1],
-      }}
-      transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+    <AnimatedBlob
+      config={contactAccentRight}
+      variant="accent"
+      intensity={5}
+      className="absolute top-1/3 right-0 h-[300px] w-[300px] rounded-full blur-[100px]"
     />
-    <motion.div
-      className="absolute -top-1/6 right-1/3 h-[250px] w-[250px] rounded-full bg-gradient-to-br from-sky-300/20 via-blue-400/15 to-transparent blur-[90px]"
-      animate={{
-        x: [0, 10, -14, 0],
-        y: [0, 12, -6, 0],
-        scale: [1, 0.97, 1.03, 1],
-      }}
-      transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+    <AnimatedBlob
+      config={contactAccentSmall}
+      variant="accent"
+      intensity={3}
+      className="absolute -top-1/6 right-1/3 h-[250px] w-[250px] rounded-full blur-[50px]"
     />
   </>
 );
@@ -79,7 +73,7 @@ export default function ContactContent() {
                   href="mailto:hello@syntriclabs.com"
                   className="font-medium text-primary hover:underline"
                 >
-                  hello@syntriclabs.com
+                  chandler@syntriclabs.com
                 </a>
               </span>
             </div>

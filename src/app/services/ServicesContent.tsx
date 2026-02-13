@@ -7,28 +7,22 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import SectionHeader from "@/components/ui/SectionHeader";
 import InteractiveHeroBackground from "@/components/ui/InteractiveHeroBackground";
+import AnimatedBlob from "@/components/ui/AnimatedBlob";
 import ChatShowcase from "@/components/demos/ChatShowcase";
 import VoiceDemo from "@/components/demos/VoiceDemo";
+import { servicesPrimary, servicesSecondary } from "@/lib/blob-paths";
 
 const heroBlobs = (
   <>
-    <motion.div
-      className="absolute -top-1/4 left-1/3 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-primary/30 via-primary-lighter/35 to-transparent blur-[100px]"
-      animate={{
-        x: [0, 20, -15, 0],
-        y: [0, -15, 10, 0],
-        scale: [1, 1.03, 0.98, 1],
-      }}
-      transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+    <AnimatedBlob
+      config={servicesPrimary}
+      variant="primary"
+      className="absolute -top-1/4 left-1/3 h-[500px] w-[500px] rounded-full blur-[100px]"
     />
-    <motion.div
-      className="absolute -bottom-1/4 right-1/3 h-[400px] w-[400px] rounded-full bg-gradient-to-tl from-violet-400/[0.22] via-primary/[0.22] to-transparent blur-[100px]"
-      animate={{
-        x: [0, -18, 12, 0],
-        y: [0, 12, -10, 0],
-        scale: [1, 0.98, 1.03, 1],
-      }}
-      transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+    <AnimatedBlob
+      config={servicesSecondary}
+      variant="secondary"
+      className="absolute -bottom-1/4 right-1/3 h-[400px] w-[400px] rounded-full blur-[100px]"
     />
   </>
 );

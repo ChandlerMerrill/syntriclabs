@@ -3,38 +3,30 @@
 import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
 import InteractiveHeroBackground from "@/components/ui/InteractiveHeroBackground";
+import AnimatedBlob from "@/components/ui/AnimatedBlob";
 import { ArrowRight, Zap, Workflow, Plug, GraduationCap } from "lucide-react";
+import {
+  landingPrimary,
+  landingSecondary,
+  landingAccent,
+} from "@/lib/blob-paths";
 
 const blobs = (
   <>
-    {/* Primary aurora blob */}
-    <motion.div
-      className="absolute -top-1/4 left-1/4 h-[700px] w-[700px] rounded-full bg-gradient-to-br from-primary/35 via-primary-lighter/40 to-transparent blur-[100px]"
-      animate={{
-        x: [0, 30, -20, 0],
-        y: [0, -20, 15, 0],
-        scale: [1, 1.05, 0.97, 1],
-      }}
-      transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+    <AnimatedBlob
+      config={landingPrimary}
+      variant="primary"
+      className="absolute -top-1/4 left-1/4 h-[700px] w-[700px] rounded-full blur-[100px]"
     />
-    {/* Secondary aurora blob */}
-    <motion.div
-      className="absolute -bottom-1/4 right-1/4 h-[600px] w-[600px] rounded-full bg-gradient-to-tl from-violet-400/[0.28] via-primary/[0.28] to-transparent blur-[100px]"
-      animate={{
-        x: [0, -25, 20, 0],
-        y: [0, 20, -15, 0],
-        scale: [1, 0.97, 1.04, 1],
-      }}
-      transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+    <AnimatedBlob
+      config={landingSecondary}
+      variant="secondary"
+      className="absolute -bottom-1/4 right-1/4 h-[600px] w-[600px] rounded-full blur-[100px]"
     />
-    {/* Accent orb */}
-    <motion.div
-      className="absolute top-1/3 right-1/6 h-[150px] w-[150px] rounded-full bg-gradient-to-br from-sky-300/[0.28] to-transparent blur-[80px]"
-      animate={{
-        x: [0, 15, -10, 0],
-        y: [0, -10, 20, 0],
-      }}
-      transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+    <AnimatedBlob
+      config={landingAccent}
+      variant="accent"
+      className="absolute top-1/3 right-1/6 h-[150px] w-[150px] rounded-full blur-[80px]"
     />
   </>
 );

@@ -13,7 +13,7 @@ export default function InteractiveHeroBackground({
   children,
   blobs,
 }: InteractiveHeroBackgroundProps) {
-  const { ref, x, y, smoothHovering } = useMousePosition();
+  const { ref, x, y, rawX, rawY, smoothHovering } = useMousePosition();
 
   const rotateX = useTransform(() => {
     const el = ref.current;
@@ -33,12 +33,12 @@ export default function InteractiveHeroBackground({
 
   const cursorGlowBg = useTransform(() => {
     const opacity = 0.35 * smoothHovering.get();
-    return `radial-gradient(250px circle at ${x.get()}px ${y.get()}px, rgba(37,99,235,${opacity}), transparent 40%)`;
+    return `radial-gradient(250px circle at ${rawX.get()}px ${rawY.get()}px, rgba(37,99,235,${opacity}), transparent 40%)`;
   });
 
   const highlightMask = useTransform(() => {
     const maskOpacity = smoothHovering.get();
-    return `radial-gradient(400px circle at ${x.get()}px ${y.get()}px, rgba(0,0,0,${maskOpacity}), transparent 70%)`;
+    return `radial-gradient(400px circle at ${rawX.get()}px ${rawY.get()}px, rgba(0,0,0,${maskOpacity}), transparent 70%)`;
   });
 
   return (
