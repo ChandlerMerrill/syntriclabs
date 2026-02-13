@@ -9,9 +9,11 @@ import ContactForm from "@/components/contact/ContactForm";
 const heroBlobs = (
   <>
     <AnimatedBlob size={400} blur={100} intensity={1.35} startVisible initialPosition={{ left: 20, top: 25 }} />
-    <AnimatedBlob size={350} blur={100} intensity={1.35} initialDelay={3} initialPosition={{ left: 75, top: 65 }} />
-    <AnimatedBlob size={300} blur={100} intensity={1.35} initialDelay={6} />
-    <AnimatedBlob size={250} blur={90} intensity={1.35} initialDelay={9} />
+    <AnimatedBlob size={350} blur={100} intensity={1.35} initialDelay={2} initialPosition={{ left: 75, top: 65 }} />
+    <AnimatedBlob size={300} blur={100} intensity={1.35} initialDelay={4} />
+    <AnimatedBlob size={250} blur={90} intensity={1.35} initialDelay={6} />
+    <AnimatedBlob size={350} blur={100} intensity={1.35} initialDelay={8} initialPosition={{ left: 50, top: 40 }} />
+    <AnimatedBlob size={280} blur={90} intensity={1.35} initialDelay={10} initialPosition={{ left: 35, top: 75 }} />
   </>
 );
 

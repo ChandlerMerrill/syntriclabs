@@ -78,5 +78,5 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: shimmer-sweep 8s ease-in-out infinite;
+  animation: shimmer-sweep 4s ease-in-out infinite;
 }
