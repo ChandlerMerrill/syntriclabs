@@ -16,70 +16,83 @@ export default function AboutPage() {
     <>
       <AboutHero />
 
-      <div className="mx-auto max-w-[1200px] px-6 py-24">
-        <Mission />
-        <Values />
+      {/* Mission */}
+      <section className="bg-white py-28">
+        <div className="mx-auto max-w-[1200px] px-6">
+          <Mission />
+        </div>
+      </section>
 
-        {/* Founder Bio */}
-        <AnimateIn>
-          <section>
-            <h2 className="mb-10 text-3xl font-bold tracking-tight text-near-black sm:text-4xl">
+      {/* Values */}
+      <section className="bg-[#f8fafc] py-28">
+        <div className="mx-auto max-w-[1200px] px-6">
+          <Values />
+        </div>
+      </section>
+
+      {/* Founder Bio */}
+      <section className="bg-white py-28">
+        <div className="mx-auto max-w-[1200px] px-6">
+          <AnimateIn>
+            <h2 className="mb-10 text-center text-3xl font-bold tracking-tight text-near-black sm:text-4xl">
               The Founder
             </h2>
 
-            <div className="flex flex-col gap-10 sm:flex-row sm:items-start">
-              {/* Founder Image */}
-              <div className="relative h-44 w-44 shrink-0 overflow-hidden rounded-2xl sm:h-48 sm:w-48">
-                <Image
-                  src="/images/chandler.jpg"
-                  alt="Chandler Merrill"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
+            <div className="mx-auto max-w-4xl">
+              <div className="flex flex-col gap-10 sm:flex-row sm:items-start">
+                {/* Founder Image */}
+                <div className="relative h-44 w-44 shrink-0 overflow-hidden rounded-2xl sm:h-48 sm:w-48">
+                  <Image
+                    src="/images/chandler.jpg"
+                    alt="Chandler Merrill"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                </div>
 
-              {/* Founder Bio */}
-              <div className="max-w-2xl">
-                <h3 className="text-xl font-semibold text-near-black">
-                  Chandler Merrill — Founder, Syntric Labs
-                </h3>
+                {/* Founder Bio */}
+                <div className="max-w-2xl">
+                  <h3 className="text-xl font-semibold text-near-black">
+                    Chandler Merrill — Founder, Syntric Labs
+                  </h3>
 
-                <div className="mt-4 space-y-4 leading-relaxed text-gray-700">
-                  <p>
-                    Chandler Merrill studied biomedical physics, originally
-                    intending to pursue medicine with the goal of improving
-                    people&apos;s lives in a tangible way. During that time, he
-                    discovered a deep interest in software and systems — and the
-                    realization that technology could create impact at scale.
-                  </p>
+                  <div className="mt-4 space-y-4 leading-relaxed text-gray-700">
+                    <p>
+                      Chandler Merrill studied biomedical physics, originally
+                      intending to pursue medicine with the goal of improving
+                      people&apos;s lives in a tangible way. During that time, he
+                      discovered a deep interest in software and systems — and the
+                      realization that technology could create impact at scale.
+                    </p>
 
-                  <p>
-                    He later led systems and technology inside a growing startup,
-                    where he designed internal tools, automated workflows, and
-                    built infrastructure to support operations and customer
-                    experience. Through that work, he saw how difficult it is for
-                    most businesses to implement AI and automation effectively.
-                  </p>
+                    <p>
+                      He later led systems and technology inside a growing startup,
+                      where he designed internal tools, automated workflows, and
+                      built infrastructure to support operations and customer
+                      experience. Through that work, he saw how difficult it is for
+                      most businesses to implement AI and automation effectively.
+                    </p>
 
-                  <p>
-                    He founded Syntric Labs to help small and mid-sized companies
-                    design and deploy practical AI systems that integrate into
-                    their existing workflows.
-                  </p>
+                    <p>
+                      He founded Syntric Labs to help small and mid-sized companies
+                      design and deploy practical AI systems that integrate into
+                      their existing workflows.
+                    </p>
 
-                  <p>
-                    Outside of work, Chandler spends his time climbing, camping,
-                    and exploring the mountains — drawn to the same
-                    problem-solving and resilience that shape his approach to
-                    building technology.
-                  </p>
+                    <p>
+                      Outside of work, Chandler spends his time climbing, camping,
+                      and exploring the mountains — drawn to the same
+                      problem-solving and resilience that shape his approach to
+                      building technology.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </section>
-        </AnimateIn>
-      </div>
+          </AnimateIn>
+        </div>
+      </section>
     </>
   );
 }
