@@ -21,7 +21,7 @@ export default function AboutPage() {
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.50]"
           style={{
-            backgroundImage: "radial-gradient(circle, #B0B8C4 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(circle, #9EA6B0 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />
@@ -35,7 +35,7 @@ export default function AboutPage() {
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.45]"
           style={{
-            backgroundImage: "radial-gradient(circle, #7488A0 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(circle, #687A90 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />
@@ -49,7 +49,7 @@ export default function AboutPage() {
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.50]"
           style={{
-            backgroundImage: "radial-gradient(circle, #B0B8C4 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(circle, #9EA6B0 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />

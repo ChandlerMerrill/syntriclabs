@@ -121,7 +121,7 @@ export default function AnimatedBlob({
       if (isFirst && !startVisible && initialDelay > 0) {
         await sleep(initialDelay);
       } else if (!isFirst) {
-        await sleep(randomInRange(0.5, 1.0));
+        await sleep(randomInRange(0.38, 0.8));
       }
 
       if (cancelled) return;
@@ -132,7 +132,7 @@ export default function AnimatedBlob({
           opacity.jump(1);
         } else {
           const fadeIn = animate(opacity, 1, {
-            duration: 0.8,
+            duration: 0.65,
             ease: "easeInOut",
           });
           cleanups.push(fadeIn);
@@ -144,7 +144,7 @@ export default function AnimatedBlob({
 
       // 4. Drift
       if (!prefersReducedMotion) {
-        const driftDuration = randomInRange(5, 8);
+        const driftDuration = randomInRange(4, 6.5);
         const driftX = animate(x, randomInRange(-30, 30), {
           duration: driftDuration,
           ease: "easeInOut",
@@ -160,7 +160,7 @@ export default function AnimatedBlob({
         cleanups.push(driftX, driftY, driftScale);
         await Promise.all([driftX, driftY, driftScale]);
       } else {
-        await sleep(randomInRange(4, 6.5));
+        await sleep(randomInRange(3.2, 5.2));
       }
 
       if (cancelled) return;
@@ -170,7 +170,7 @@ export default function AnimatedBlob({
         opacity.jump(0);
       } else {
         const fadeOut = animate(opacity, 0, {
-          duration: 0.8,
+          duration: 0.65,
           ease: "easeInOut",
         });
         cleanups.push(fadeOut);

@@ -10,7 +10,7 @@ const services = [
     icon: MessageSquare,
     title: "AI Chat Agents",
     description:
-      "Automate customer interactions, capture leads, and create tickets in real time.",
+      "Capture leads, resolve support issues, create tickets, update your CRM — and that's just the start.",
     href: "/services",
     color: "blue" as const,
   },
@@ -18,7 +18,7 @@ const services = [
     icon: Phone,
     title: "AI Voice Agents",
     description:
-      "Handle inbound calls and callbacks with human-like AI that logs every interaction.",
+      "Handle inbound and outbound calls with human-like AI that books, qualifies, follows up, and more.",
     href: "/services#voice-demo",
     color: "violet" as const,
   },
@@ -62,7 +62,7 @@ export default function ServicesOverview() {
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.50]"
         style={{
-          backgroundImage: "radial-gradient(circle, #B0B8C4 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(circle, #9EA6B0 1px, transparent 1px)",
           backgroundSize: "24px 24px",
         }}
       />
