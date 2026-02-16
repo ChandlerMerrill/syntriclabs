@@ -263,7 +263,8 @@ export default function ContactForm() {
               rows={5}
               value={form.message}
               onChange={handleChange}
-              placeholder="Tell us about your project or what you're looking to automate..."
+              minLength={10}
+              placeholder="Tell us a bit about what you're looking for — a project, a question, a consultation, etc."
               className={`${inputStyles} resize-none`}
             />
           </div>
