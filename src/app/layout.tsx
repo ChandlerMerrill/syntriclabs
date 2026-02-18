@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Syntric Labs | AI Solutions That Deliver ROI",
+    default: "Syntric Labs | AI Automation & Solutions",
     template: "%s | Syntric Labs",
   },
   description:

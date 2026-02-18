@@ -4,6 +4,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, ArrowRight } from "lucide-react";
 
+const contactMethods = [
+  { label: "Email", value: "Email" },
+  { label: "Phone", value: "Phone" },
+  { label: "Text Message", value: "SMS" },
+];
+
 const serviceOptions = [
   "Automation/Ai Implementation",
   "Workshop / Training",
@@ -29,6 +35,7 @@ export default function ContactForm() {
     email: "",
     phone: "",
     company: "",
+    preferredContact: "",
     service: "",
     message: "",
   });
@@ -179,27 +186,51 @@ export default function ContactForm() {
             </div>
           </div>
 
-          <div>
-            <label
-              htmlFor="service"
-              className="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500"
-            >
-              Service interested in
-            </label>
-            <select
-              id="service"
-              name="service"
-              value={form.service}
-              onChange={handleChange}
-              className={inputStyles}
-            >
-              <option value="">Select a service...</option>
-              {serviceOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="service"
+                className="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500"
+              >
+                Service interested in
+              </label>
+              <select
+                id="service"
+                name="service"
+                value={form.service}
+                onChange={handleChange}
+                className={inputStyles}
+              >
+                <option value="">Select a service...</option>
+                {serviceOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="preferredContact"
+                className="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500"
+              >
+                How should we contact you?
+              </label>
+              <select
+                id="preferredContact"
+                name="preferredContact"
+                value={form.preferredContact}
+                onChange={handleChange}
+                className={inputStyles}
+              >
+                <option value="">Select a method...</option>
+                {contactMethods.map((method) => (
+                  <option key={method.value} value={method.value}>
+                    {method.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <fieldset>

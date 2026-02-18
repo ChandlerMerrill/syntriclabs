@@ -88,6 +88,9 @@ export default function CallbackForm({ onSubmit }: CallbackFormProps) {
           Name
         </label>
         <input
+          id="callback-name"
+          name="name"
+          autoComplete="name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -102,6 +105,9 @@ export default function CallbackForm({ onSubmit }: CallbackFormProps) {
           Phone Number
         </label>
         <input
+          id="callback-phone"
+          name="phone"
+          autoComplete="tel"
           type="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
