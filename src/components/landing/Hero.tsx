@@ -37,7 +37,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-            className="text-4xl font-extrabold leading-[1.08] tracking-tight text-near-black sm:text-5xl md:text-6xl lg:text-[4.25rem]"
+            className="text-4xl font-extrabold leading-[1.06] tracking-tight text-near-black sm:text-5xl md:text-6xl lg:text-[4.5rem]"
           >
             Win back your time.
             <br />
@@ -52,11 +52,10 @@ export default function Hero() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-            className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-gray-500 sm:text-xl sm:leading-relaxed"
+            className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-gray-500 sm:text-[1.2rem] sm:leading-relaxed"
           >
-            We build practical AI automation systems — agents, workflows, and
-            integrations — that plug directly into your business and drive
-            measurable results.
+            Custom AI agents, workflow automation, and hands-on consulting
+            for teams that want results — not a pitch deck.
           </motion.p>
 
           <motion.div
@@ -85,12 +84,12 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.55, ease: "easeOut" }}
-            className="mx-auto mt-16 flex max-w-lg flex-col items-center justify-center gap-4 sm:mt-20 sm:flex-row sm:gap-6"
+            className="mx-auto mt-16 flex max-w-2xl flex-col items-center justify-center gap-3 sm:mt-20 sm:flex-row sm:gap-4"
           >
             {[
-              { icon: Workflow, label: "Workflow Automation" },
-              { icon: Plug, label: "Seamless Integrations" },
-              { icon: GraduationCap, label: "Tech Education" },
+              { icon: Workflow, label: "Workflow Automation", color: "blue" },
+              { icon: Plug, label: "Seamless Integrations", color: "violet" },
+              { icon: GraduationCap, label: "Tech Education", color: "amber" },
             ].map((item, i) => (
               <motion.div
                 key={item.label}
@@ -101,10 +100,16 @@ export default function Hero() {
                   delay: 0.65 + i * 0.1,
                   ease: "easeOut",
                 }}
-                className="flex items-center gap-3 rounded-full border border-gray-100 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm"
+                className="flex items-center gap-3 rounded-xl border border-gray-200/60 bg-white/90 px-5 py-3 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
               >
-                <item.icon className="h-7 w-7 text-primary" />
-                <span className="text-base font-medium text-gray-600">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                  item.color === "blue" ? "bg-blue-50" : item.color === "violet" ? "bg-violet-50" : "bg-amber-50"
+                }`}>
+                  <item.icon className={`h-4 w-4 ${
+                    item.color === "blue" ? "text-blue-600" : item.color === "violet" ? "text-violet-600" : "text-amber-600"
+                  }`} />
+                </div>
+                <span className="text-sm font-semibold text-gray-700">
                   {item.label}
                 </span>
               </motion.div>

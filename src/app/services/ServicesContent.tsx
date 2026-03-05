@@ -53,8 +53,8 @@ export default function ServicesContent() {
               transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
               className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-gray-500"
             >
-              Explore our AI agents and services. Watch live demos, see how they
-              integrate with your tools, and discover what&apos;s possible.
+              Live demos of the agents we build. Try a voice call, walk through
+              a chat conversation, and see how it all connects to your CRM.
             </motion.p>
           </div>
         </div>
@@ -99,6 +99,7 @@ export default function ServicesContent() {
         />
         <div className="relative mx-auto max-w-[1200px] px-6">
           <SectionHeader
+            label="Training & Strategy"
             title="Beyond Agents"
             subtitle="We also help teams build AI capabilities through hands-on training and strategy."
           />
@@ -120,13 +121,9 @@ export default function ServicesContent() {
                     Workshops
                   </h3>
                   <p className="mt-3 flex-1 leading-relaxed text-gray-600">
-                    Join one of our upcoming group workshops to learn about AI
-                    adoption, prompt engineering, and automation
-                    workflows&nbsp;&mdash; or request a private workshop
-                    tailored to your team&apos;s goals. We&apos;ll help your
-                    team understand what&apos;s possible with AI and how to
-                    implement it themselves. Fill out the contact form to learn
-                    more about upcoming sessions and pricing.
+                    Half-day or full-day sessions covering AI adoption, prompt
+                    engineering, and automation workflows. Available as group
+                    sessions or private workshops tailored to your team.
                   </p>
                   <div className="mt-6">
                     <Button href="/contact" size="md" variant="outline">
@@ -162,11 +159,9 @@ export default function ServicesContent() {
                     Consulting
                   </h3>
                   <p className="mt-3 flex-1 leading-relaxed text-gray-600">
-                    Book a free 30-minute strategy session to identify your
-                    highest-ROI automation opportunities and build a clear
-                    implementation roadmap. Whether you&apos;re just exploring
-                    AI or ready to scale, we&apos;ll help you cut through the
-                    noise and focus on what actually moves the needle.
+                    Free 30-minute strategy session. We&apos;ll identify your
+                    highest-ROI automation opportunities and map out a concrete
+                    implementation plan.
                   </p>
                   <div className="mt-6">
                     <a
@@ -218,8 +213,8 @@ export default function ServicesContent() {
               Ready to automate?
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-lg leading-relaxed text-white/60">
-              Let&apos;s talk about how AI can save your team time and drive
-              real results.
+              Free 30-minute strategy session — we&apos;ll map out exactly
+              where AI fits in your operations.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <a

@@ -10,7 +10,10 @@ const footerLinks = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-gray-200/40 bg-[#fafbff]">
+    <footer className="relative border-t border-gray-200/40 bg-[#fafbff]">
+      {/* Top gradient line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+
       <div className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="flex flex-col items-center justify-between gap-8 sm:flex-row sm:items-start">
           <div>
@@ -24,8 +27,8 @@ export default function Footer() {
               />
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-gray-500">
-              AI solutions that deliver measurable ROI. We build practical
-              automation for real business operations.
+              AI agents, workflow automation, and consulting for teams that
+              want results — not a pitch deck.
             </p>
           </div>
 
@@ -53,13 +56,12 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-gray-200/40 pt-10 text-center">
-          <p className="text-xl font-extrabold uppercase tracking-[0.25em] text-near-black sm:text-2xl">
+        <div className="mt-14 border-t border-gray-200/40 pt-10 text-center">
+          <p className="text-xl font-extrabold uppercase tracking-[0.3em] text-near-black sm:text-2xl">
             We <span className="italic">align.</span>{" "}
             <span className="shimmer-text">You <span className="italic">accelerate.</span></span>
           </p>
-          <div className="mx-auto mt-4 h-px w-16 bg-gradient-to-r from-primary to-violet-500" />
-          <p className="mt-5 text-sm text-gray-400">
+          <p className="mt-6 text-sm text-gray-400">
             &copy; {new Date().getFullYear()} Syntric Labs. All rights reserved.
           </p>
         </div>

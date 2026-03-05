@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail } from "lucide-react";
+import { Mail, MessageSquare, Search, Rocket } from "lucide-react";
 import AnimateIn from "@/components/ui/AnimateIn";
 import InteractiveHeroBackground from "@/components/ui/InteractiveHeroBackground";
 import AnimatedBlob from "@/components/ui/AnimatedBlob";
@@ -17,23 +17,41 @@ const heroBlobs = (
   </>
 );
 
+const nextSteps = [
+  {
+    icon: MessageSquare,
+    title: "We respond within 24 hours",
+    description: "With an honest take on whether we can help.",
+  },
+  {
+    icon: Search,
+    title: "30-minute discovery call",
+    description: "We learn your workflows, pain points, and goals.",
+  },
+  {
+    icon: Rocket,
+    title: "Proposal within a week",
+    description: "A concrete plan with scope, timeline, and pricing.",
+  },
+];
+
 export default function ContactContent() {
   return (
     <InteractiveHeroBackground blobs={heroBlobs}>
       <div className="mx-auto max-w-2xl px-6 py-24">
         <AnimateIn>
-          <p className="text-sm font-semibold uppercase tracking-widest text-primary">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Get in touch
           </p>
-          <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-near-black sm:text-5xl">
-            Let&apos;s build something{" "}
+          <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-near-black sm:text-5xl">
+            Tell us what&apos;s{" "}
             <span className="bg-gradient-to-r from-primary to-violet-500 bg-clip-text text-transparent">
-              together
+              slowing you down
             </span>
           </h1>
-          <p className="mt-4 text-lg text-gray-500">
-            Tell us about your project or the challenge you&apos;re facing.
-            We&apos;ll get back to you within 24 hours.
+          <p className="mt-5 text-lg leading-relaxed text-gray-500">
+            Describe the problem or the project. We&apos;ll respond within
+            24 hours with an honest take on whether we can help.
           </p>
         </AnimateIn>
 
@@ -46,12 +64,43 @@ export default function ContactContent() {
               <span className="text-sm text-gray-400">
                 Or email us directly at{" "}
                 <a
-                  href="mailto:hello@syntriclabs.com"
+                  href="mailto:chandler@syntriclabs.com"
                   className="font-medium text-primary hover:underline"
                 >
                   chandler@syntriclabs.com
                 </a>
               </span>
+            </div>
+          </div>
+        </AnimateIn>
+
+        {/* What happens next */}
+        <AnimateIn delay={0.2}>
+          <div className="mt-10 rounded-2xl border border-gray-200/60 bg-white/80 p-8 backdrop-blur-sm">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">
+              What happens next
+            </p>
+            <div className="mt-6 space-y-6">
+              {nextSteps.map((step, i) => (
+                <div key={step.title} className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/5 ring-1 ring-primary/10">
+                      <step.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    {i < nextSteps.length - 1 && (
+                      <div className="mt-2 h-full w-px bg-gradient-to-b from-primary/15 to-transparent" />
+                    )}
+                  </div>
+                  <div className="pb-1">
+                    <p className="font-semibold text-near-black">
+                      {step.title}
+                    </p>
+                    <p className="mt-0.5 text-sm text-gray-500">
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </AnimateIn>

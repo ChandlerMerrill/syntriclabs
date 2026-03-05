@@ -45,14 +45,14 @@ export default function CTABanner() {
               Taking on new clients
             </motion.div>
 
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl lg:leading-[1.15]">
+            <h2 className="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl lg:leading-[1.12]">
               Ready to automate
               <br />
               what matters?
             </h2>
-            <p className="mx-auto mt-5 max-w-lg text-lg leading-relaxed text-white/60">
-              Let&apos;s talk about how AI can save your team time and drive real
-              results.
+            <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-white/70">
+              Book a free 30-minute call. We&apos;ll show you where AI fits in
+              your operations — and where it doesn&apos;t.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button
@@ -68,7 +68,7 @@ export default function CTABanner() {
                 href="/services"
                 variant="secondary"
                 size="lg"
-                className="!bg-transparent !text-white !border-white/25 hover:!bg-white/10 !shadow-none"
+                className="!bg-transparent !text-white/70 !border-white/20 hover:!bg-white/10 hover:!text-white !shadow-none"
               >
                 See our demos
               </Button>

@@ -85,8 +85,9 @@ export default function Process() {
       />
       <div className="relative mx-auto max-w-[1200px] px-6">
         <SectionHeader
+          label="Our Process"
           title="How It Works"
-          subtitle="We learn your business inside and out, then build the AI workflows and tooling that eliminate bottlenecks — not just agents, but complete systems."
+          subtitle="We learn how you operate, find the bottlenecks, and build AI systems that eliminate them — not just agents, but complete workflows."
         />
 
         {/* Live region for screen readers */}

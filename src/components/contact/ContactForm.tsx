@@ -11,7 +11,7 @@ const contactMethods = [
 ];
 
 const serviceOptions = [
-  "Automation/Ai Implementation",
+  "Automation / AI Implementation",
   "Workshop / Training",
   "Consulting / Strategy",
   "Other",
@@ -309,7 +309,7 @@ export default function ContactForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="group flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-light hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 disabled:shadow-none"
+            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-sm font-semibold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-light hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0"
           >
             {submitting ? "Sending..." : "Send message"}
             {!submitting && (

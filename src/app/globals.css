@@ -63,6 +63,17 @@ body {
   25%  { background-position: -200% center; }
   100% { background-position: -200% center; }
 }
+/* Subtle section fade transitions */
+.section-fade-top::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(37, 99, 235, 0.08), transparent);
+}
+
 .shimmer-text {
   background: linear-gradient(
     110deg,

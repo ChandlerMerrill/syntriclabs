@@ -58,11 +58,14 @@ export default function Values() {
   return (
     <div>
       <AnimateIn>
-        <div className="mx-auto mb-12 max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-near-black sm:text-4xl">
+        <div className="mx-auto mb-16 max-w-3xl text-center">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            Our Values
+          </p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-near-black sm:text-4xl lg:text-[2.75rem]">
             What We Stand For
           </h2>
-          <p className="mt-4 text-[17px] leading-relaxed text-gray-700 sm:text-lg">
+          <p className="mt-5 text-lg leading-relaxed text-gray-500">
             We modernize operations by building alongside your team — combining
             solid systems design with automation and AI where it makes sense.
           </p>
