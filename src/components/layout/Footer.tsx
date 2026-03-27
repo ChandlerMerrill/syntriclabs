@@ -17,14 +17,17 @@ export default function Footer() {
       <div className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="flex flex-col items-center justify-between gap-8 sm:flex-row sm:items-start">
           <div>
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center gap-1.5">
               <Image
-                src="/images/syntric-logo-nob5.png"
+                src="/images/updated-logo.png"
                 alt="Syntric Labs"
-                width={1000}
-                height={340}
-                className="h-12 w-auto"
+                width={358}
+                height={554}
+                className="h-[72px] w-auto -my-4"
               />
+              <span className="font-[family-name:var(--font-rajdhani)] text-[22px] font-bold tracking-tight text-near-black">
+                Syntric
+              </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-gray-500">
               AI agents, workflow automation, and consulting for teams that

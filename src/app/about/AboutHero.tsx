@@ -36,7 +36,7 @@ export default function AboutHero() {
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
             className="text-4xl font-extrabold leading-[1.1] tracking-tight text-near-black sm:text-5xl lg:text-[3.5rem]"
           >
-            Built to Help You Grow
+            Small Team. Sharp Focus.
           </motion.h1>
 
           <motion.p
@@ -45,8 +45,8 @@ export default function AboutHero() {
             transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
             className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-gray-500"
           >
-            We&apos;re a small team with a clear focus — building practical AI
-            systems that integrate into your business and deliver real results.
+            We embed with your team, learn how you operate, and build AI systems
+            that actually fit — no bloated proposals, no six-month timelines.
           </motion.p>
         </div>
       </div>

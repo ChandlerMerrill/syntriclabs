@@ -64,7 +64,7 @@ export default function AboutPage() {
               <div className="overflow-hidden rounded-3xl border border-gray-200/60 bg-white shadow-lg shadow-gray-200/50">
                 <div className="grid sm:grid-cols-5">
                   {/* Founder Image — larger, full-height */}
-                  <div className="relative min-h-[280px] sm:col-span-2 sm:min-h-0">
+                  <div className="relative min-h-[280px] sm:col-span-2">
                     <Image
                       src="/images/chandler.jpg"
                       alt="Chandler Merrill"

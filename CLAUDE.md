@@ -46,3 +46,11 @@ All source lives under `src/` with the App Router:
 - Use CSS modules
 - Commit `.env.local` or any `.env*` files (they contain API keys)
 - Use `scrollIntoView` for auto-scrolling inside scrollable containers
+
+## Skills
+
+Skills live in `.claude/skills/` and provide structured workflows for specific tasks:
+
+- **`/screenshot`** — Capture full-page screenshots of all routes, visually review, and compare against reference templates. Use after making design changes to verify layout at desktop + mobile.
+- **`/frontend-design`** — Design thinking framework for creating or refining UI. Reads project context first, proposes aesthetic direction, then implements. Use when making significant visual changes.
+- **`/content-gen`** — Generate or refine page copy. Reads planning.md for brand voice and audience. Default to Refine mode for existing pages. Use when improving headlines, descriptions, CTAs.

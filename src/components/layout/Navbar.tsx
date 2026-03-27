@@ -37,15 +37,20 @@ export default function Navbar() {
       }`}
     >
       <nav className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center">
-          <Image
-            src="/images/syntric-logo-nob5.png"
-            alt="Syntric Labs"
-            width={1000}
-            height={340}
-            className="h-10 w-auto"
-            priority
-          />
+        <Link href="/" className="flex items-center gap-1.5">
+          <div className="flex h-10 items-center">
+            <Image
+              src="/images/updated-logo.png"
+              alt="Syntric Labs"
+              width={358}
+              height={554}
+              className="h-[60px] w-auto"
+              priority
+            />
+          </div>
+          <span className="font-[family-name:var(--font-rajdhani)] text-[22px] font-bold tracking-tight text-near-black">
+            Syntric
+          </span>
         </Link>
 
         {/* Desktop nav */}
