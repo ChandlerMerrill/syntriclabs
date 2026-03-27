@@ -9,7 +9,7 @@ const heroBlobs = (
   <>
     <AnimatedBlob size={500} blur={100} position={{ left: 30, top: 25 }} color="blue" variant={1} duration={22} burstDuration={5.5} />
     <AnimatedBlob size={400} blur={100} position={{ left: 70, top: 60 }} color="violet" variant={2} duration={26} burstDuration={6} delay={1.5} />
-    <AnimatedBlob size={200} blur={80} position={{ left: 50, top: 40 }} color="indigo" variant={3} duration={18} burstDuration={5} delay={3} hideOnMobile />
+    <AnimatedBlob size={200} blur={80} position={{ left: 50, top: 40 }} color="indigo" variant={3} duration={18} burstDuration={5} delay={3} />
   </>
 );
 

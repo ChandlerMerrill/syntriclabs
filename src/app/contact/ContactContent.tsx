@@ -10,8 +10,8 @@ const heroBlobs = (
   <>
     <AnimatedBlob size={400} blur={100} intensity={1.35} position={{ left: 20, top: 25 }} color="blue" variant={1} duration={22} burstDuration={4.5} />
     <AnimatedBlob size={350} blur={100} intensity={1.35} position={{ left: 75, top: 65 }} color="violet" variant={2} duration={26} burstDuration={5.5} delay={1} />
-    <AnimatedBlob size={300} blur={100} intensity={1.35} position={{ left: 45, top: 50 }} color="indigo" variant={3} duration={20} burstDuration={5} delay={2} hideOnMobile />
-    <AnimatedBlob size={250} blur={90} intensity={1.35} position={{ left: 60, top: 30 }} color="blue" variant={4} duration={18} burstDuration={4} delay={3} hideOnMobile />
+    <AnimatedBlob size={300} blur={100} intensity={1.35} position={{ left: 45, top: 50 }} color="indigo" variant={3} duration={20} burstDuration={5} delay={2} />
+    <AnimatedBlob size={250} blur={90} intensity={1.35} position={{ left: 60, top: 12 }} color="blue" variant={4} duration={18} burstDuration={4} delay={3} />
     <AnimatedBlob size={350} blur={100} intensity={1.35} position={{ left: 50, top: 40 }} color="violet" variant={1} duration={24} burstDuration={6} delay={1.5} hideOnMobile />
     <AnimatedBlob size={280} blur={90} intensity={1.35} position={{ left: 35, top: 75 }} color="indigo" variant={3} duration={22} burstDuration={5} delay={4} hideOnMobile />
   </>

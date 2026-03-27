@@ -10,7 +10,7 @@ const blobs = (
   <>
     <AnimatedBlob size={700} blur={100} position={{ left: 30, top: 25 }} color="blue" variant={1} duration={22} burstDuration={5} />
     <AnimatedBlob size={600} blur={100} position={{ left: 70, top: 65 }} color="indigo" variant={2} duration={26} burstDuration={6} delay={1.5} />
-    <AnimatedBlob size={400} blur={100} position={{ left: 55, top: 40 }} color="violet" variant={3} duration={20} burstDuration={5.5} delay={3} hideOnMobile />
+    <AnimatedBlob size={400} blur={100} position={{ left: 55, top: 40 }} color="violet" variant={3} duration={20} burstDuration={5.5} delay={3} />
     <AnimatedBlob size={200} blur={80} position={{ left: 20, top: 70 }} color="indigo" variant={4} duration={18} burstDuration={4.5} delay={4} hideOnMobile />
   </>
 );
