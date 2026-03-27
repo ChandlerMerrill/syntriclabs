@@ -32,6 +32,17 @@ body {
   color: inherit;
 }
 
+/* Relevance AI widget — prevent closed chat overlay from blocking scroll on mobile.
+   The embed script injects a full-viewport container that stays in the DOM after
+   closing the chat, blocking touch events. */
+#relevance-bot-launcher-container {
+  pointer-events: none;
+}
+#relevance-bot-launcher-container button,
+#relevance-bot-launcher-container iframe {
+  pointer-events: auto;
+}
+
 /* Smooth focus rings */
 *:focus-visible {
   outline: 2px solid var(--color-primary);
