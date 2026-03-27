@@ -63,6 +63,59 @@ body {
   25%  { background-position: -200% center; }
   100% { background-position: -200% center; }
 }
+/* ── Hero blob float animations (GPU-only: translate3d + scale) ── */
+@keyframes blob-float-1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%       { transform: translate3d(30px, -25px, 0) scale(1.04); }
+  50%       { transform: translate3d(-20px, 15px, 0) scale(0.97); }
+  75%       { transform: translate3d(15px, 25px, 0) scale(1.02); }
+}
+@keyframes blob-float-2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%       { transform: translate3d(-25px, 20px, 0) scale(0.96); }
+  50%       { transform: translate3d(20px, -30px, 0) scale(1.05); }
+  75%       { transform: translate3d(-10px, -15px, 0) scale(1.01); }
+}
+@keyframes blob-float-3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%       { transform: translate3d(25px, 20px, 0) scale(1.03); }
+  66%       { transform: translate3d(-15px, -25px, 0) scale(0.98); }
+}
+@keyframes blob-float-4 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  20%       { transform: translate3d(-20px, -20px, 0) scale(1.02); }
+  40%       { transform: translate3d(10px, 25px, 0) scale(0.97); }
+  60%       { transform: translate3d(25px, -10px, 0) scale(1.04); }
+  80%       { transform: translate3d(-15px, 15px, 0) scale(0.99); }
+}
+
+/* Firework-style burst: quick in, short hold, quick out, long pause */
+@keyframes blob-burst-1 {
+  0%        { opacity: 0; }
+  8%        { opacity: 1; }
+  40%       { opacity: 1; }
+  50%       { opacity: 0; }
+  100%      { opacity: 0; }
+}
+@keyframes blob-burst-2 {
+  0%        { opacity: 0; }
+  10%       { opacity: 1; }
+  45%       { opacity: 1; }
+  55%       { opacity: 0; }
+  100%      { opacity: 0; }
+}
+@keyframes blob-burst-3 {
+  0%        { opacity: 0; }
+  6%        { opacity: 1; }
+  35%       { opacity: 1; }
+  45%       { opacity: 0; }
+  100%      { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-blob { animation: none !important; opacity: 0.7 !important; }
+}
+
 /* Subtle section fade transitions */
 .section-fade-top::before {
   content: "";

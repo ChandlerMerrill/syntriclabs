@@ -13,9 +13,9 @@ import VoiceDemo from "@/components/demos/VoiceDemo";
 
 const heroBlobs = (
   <>
-    <AnimatedBlob size={500} blur={100} startVisible initialPosition={{ left: 35, top: 30 }} />
-    <AnimatedBlob size={400} blur={100} initialDelay={3} initialPosition={{ left: 65, top: 60 }} />
-    <AnimatedBlob size={250} blur={80} initialDelay={6} hideOnMobile />
+    <AnimatedBlob size={500} blur={100} position={{ left: 35, top: 30 }} color="blue" variant={1} duration={24} burstDuration={5.5} />
+    <AnimatedBlob size={400} blur={100} position={{ left: 65, top: 60 }} color="indigo" variant={2} duration={20} burstDuration={6} delay={2} />
+    <AnimatedBlob size={250} blur={80} position={{ left: 50, top: 45 }} color="violet" variant={3} duration={22} burstDuration={5} delay={3.5} hideOnMobile />
   </>
 );
 
