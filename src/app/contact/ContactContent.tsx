@@ -10,10 +10,10 @@ const heroBlobs = (
   <>
     <AnimatedBlob size={400} blur={100} intensity={1.35} startVisible initialPosition={{ left: 20, top: 25 }} />
     <AnimatedBlob size={350} blur={100} intensity={1.35} initialDelay={2} initialPosition={{ left: 75, top: 65 }} />
-    <AnimatedBlob size={300} blur={100} intensity={1.35} initialDelay={4} />
-    <AnimatedBlob size={250} blur={90} intensity={1.35} initialDelay={6} />
-    <AnimatedBlob size={350} blur={100} intensity={1.35} initialDelay={8} initialPosition={{ left: 50, top: 40 }} />
-    <AnimatedBlob size={280} blur={90} intensity={1.35} initialDelay={10} initialPosition={{ left: 35, top: 75 }} />
+    <AnimatedBlob size={300} blur={100} intensity={1.35} initialDelay={4} hideOnMobile />
+    <AnimatedBlob size={250} blur={90} intensity={1.35} initialDelay={6} hideOnMobile />
+    <AnimatedBlob size={350} blur={100} intensity={1.35} initialDelay={8} initialPosition={{ left: 50, top: 40 }} hideOnMobile />
+    <AnimatedBlob size={280} blur={90} intensity={1.35} initialDelay={10} initialPosition={{ left: 35, top: 75 }} hideOnMobile />
   </>
 );
 
@@ -38,7 +38,7 @@ const nextSteps = [
 export default function ContactContent() {
   return (
     <InteractiveHeroBackground blobs={heroBlobs}>
-      <div className="mx-auto max-w-2xl px-6 py-24">
+      <div className="mx-auto max-w-2xl px-6 pb-24 pt-28 sm:pt-32">
         <AnimateIn>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Get in touch

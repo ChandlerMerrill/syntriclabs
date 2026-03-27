@@ -9,18 +9,18 @@ const heroBlobs = (
   <>
     <AnimatedBlob size={500} blur={100} startVisible initialPosition={{ left: 30, top: 25 }} />
     <AnimatedBlob size={400} blur={100} initialDelay={3} initialPosition={{ left: 70, top: 60 }} />
-    <AnimatedBlob size={200} blur={80} initialDelay={6} />
+    <AnimatedBlob size={200} blur={80} initialDelay={6} hideOnMobile />
   </>
 );
 
 export default function AboutHero() {
   return (
     <InteractiveHeroBackground blobs={heroBlobs}>
-      <div className="mx-auto max-w-[1200px] px-6 pb-24 pt-[4.2rem] sm:pb-28 sm:pt-[4.8rem]">
+      <div className="mx-auto max-w-[1200px] px-6 pb-24 pt-28 sm:pb-28 sm:pt-32">
         <div className="mx-auto max-w-3xl text-center">
           <motion.div
-            initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-primary/15 bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm"
           >
@@ -31,8 +31,8 @@ export default function AboutHero() {
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
             className="text-4xl font-extrabold leading-[1.1] tracking-tight text-near-black sm:text-5xl lg:text-[3.5rem]"
           >

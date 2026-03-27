@@ -83,7 +83,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${rajdhani.variable} antialiased`}
       >
         <Navbar />
-        <main className="min-h-screen pt-[72px]">
+        <main className="min-h-screen">
           <CursorGlow />
           {children}
         </main>

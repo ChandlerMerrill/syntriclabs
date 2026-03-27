@@ -10,20 +10,20 @@ const blobs = (
   <>
     <AnimatedBlob size={700} blur={100} startVisible initialPosition={{ left: 30, top: 25 }} />
     <AnimatedBlob size={600} blur={100} initialDelay={3} initialPosition={{ left: 70, top: 65 }} />
-    <AnimatedBlob size={400} blur={100} initialDelay={6} />
-    <AnimatedBlob size={200} blur={80} initialDelay={9} />
+    <AnimatedBlob size={400} blur={100} initialDelay={6} hideOnMobile />
+    <AnimatedBlob size={200} blur={80} initialDelay={9} hideOnMobile />
   </>
 );
 
 export default function Hero() {
   return (
     <InteractiveHeroBackground blobs={blobs}>
-      <div className="mx-auto max-w-[1200px] px-6 pb-24 pt-32 sm:pb-32 sm:pt-40 lg:pb-40 lg:pt-48">
+      <div className="mx-auto max-w-[1200px] px-6 pb-24 pt-28 sm:pb-32 sm:pt-36 lg:pb-40 lg:pt-44">
         <div className="mx-auto max-w-4xl text-center">
           {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-primary/15 bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm"
           >
@@ -34,8 +34,8 @@ export default function Hero() {
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
             className="text-4xl font-extrabold leading-[1.06] tracking-tight text-near-black sm:text-5xl md:text-6xl lg:text-[4.5rem]"
           >

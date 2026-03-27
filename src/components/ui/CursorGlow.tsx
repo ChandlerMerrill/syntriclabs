@@ -2,8 +2,10 @@
 
 import { useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function CursorGlow() {
+  const isMobile = useIsMobile();
   const rawX = useMotionValue(0);
   const rawY = useMotionValue(0);
   const rawHovering = useMotionValue(0);
@@ -19,6 +21,8 @@ export default function CursorGlow() {
   });
 
   useEffect(() => {
+    if (isMobile) return;
+
     const main = document.querySelector("main");
     if (!main) return;
 
@@ -39,7 +43,9 @@ export default function CursorGlow() {
       main.removeEventListener("mouseenter", handleEnter);
       main.removeEventListener("mouseleave", handleLeave);
     };
-  }, [rawX, rawY, rawHovering]);
+  }, [rawX, rawY, rawHovering, isMobile]);
+
+  if (isMobile) return null;
 
   return (
     <motion.div

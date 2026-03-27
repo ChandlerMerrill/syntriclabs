@@ -28,13 +28,13 @@ export default function ProcessVisualPanel({ activeStep }: ProcessVisualPanelPro
           initial={
             reducedMotion
               ? false
-              : { opacity: 0, x: 20, filter: "blur(4px)" }
+              : { opacity: 0, x: 20 }
           }
-          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+          animate={{ opacity: 1, x: 0 }}
           exit={
             reducedMotion
               ? undefined
-              : { opacity: 0, x: -20, filter: "blur(4px)" }
+              : { opacity: 0, x: -20 }
           }
           transition={{ duration: 0.4, ease: "easeInOut" }}
         >

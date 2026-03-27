@@ -10,6 +10,7 @@ interface AnimatedBlobProps {
   initialDelay?: number;
   startVisible?: boolean;
   initialPosition?: { left: number; top: number };
+  hideOnMobile?: boolean;
 }
 
 function lerp(a: number, b: number, t: number) {
@@ -68,11 +69,13 @@ export default function AnimatedBlob({
   initialDelay = 0,
   startVisible = false,
   initialPosition,
+  hideOnMobile = false,
 }: AnimatedBlobProps) {
   const [position, setPosition] = useState({
     left: initialPosition?.left ?? randomInRange(10, 90),
     top: initialPosition?.top ?? randomInRange(10, 90),
   });
+  const [hidden, setHidden] = useState(false);
 
   const opacity = useMotionValue(startVisible ? 1 : 0);
   const x = useMotionValue(0);
@@ -85,13 +88,24 @@ export default function AnimatedBlob({
     return getGradientForPosition((leftVal as number) + driftPercent, intensity);
   });
 
+  // Hide on mobile after mount to avoid hydration mismatch
   useEffect(() => {
+    if (hideOnMobile && window.matchMedia("(max-width: 768px)").matches) {
+      setHidden(true);
+    }
+  }, [hideOnMobile]);
+
+  useEffect(() => {
+    if (hidden) return;
+
     let cancelled = false;
     const cleanups: Array<{ stop: () => void }> = [];
 
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
+
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
     const sleep = (s: number) =>
       new Promise<void>((resolve) => {
@@ -128,7 +142,7 @@ export default function AnimatedBlob({
 
       // 3. Fade in (skip if startVisible on first cycle — already visible)
       if (!(isFirst && startVisible)) {
-        if (prefersReducedMotion) {
+        if (prefersReducedMotion || isMobile) {
           opacity.jump(1);
         } else {
           const fadeIn = animate(opacity, 1, {
@@ -142,8 +156,8 @@ export default function AnimatedBlob({
 
       if (cancelled) return;
 
-      // 4. Drift
-      if (!prefersReducedMotion) {
+      // 4. Drift — skip on mobile (static hold instead)
+      if (!prefersReducedMotion && !isMobile) {
         const driftDuration = randomInRange(4, 6.5);
         const driftX = animate(x, randomInRange(-30, 30), {
           duration: driftDuration,
@@ -166,7 +180,7 @@ export default function AnimatedBlob({
       if (cancelled) return;
 
       // 5. Fade out
-      if (prefersReducedMotion) {
+      if (prefersReducedMotion || isMobile) {
         opacity.jump(0);
       } else {
         const fadeOut = animate(opacity, 0, {
@@ -199,7 +213,17 @@ export default function AnimatedBlob({
       cancelled = true;
       cleanups.forEach((c) => c.stop());
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hidden]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [effectiveBlur, setEffectiveBlur] = useState(blur);
+
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      setEffectiveBlur(Math.round(blur * 0.6));
+    }
+  }, [blur]);
+
+  if (hidden) return null;
 
   return (
     <motion.div
@@ -212,7 +236,7 @@ export default function AnimatedBlob({
         marginLeft: -size / 2,
         marginTop: -size / 2,
         borderRadius: "9999px",
-        filter: `blur(${blur}px)`,
+        filter: `blur(${effectiveBlur}px)`,
         opacity,
         x,
         y,
