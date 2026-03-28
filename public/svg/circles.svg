@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2080" height="2080" viewBox="0 0 2080 2080">
+  <g transform="matrix(-0.799, -0.602, 0.602, -0.799, 1040, 2080)">
+    <circle cx="0" cy="0" r="940" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+    <circle cx="0" cy="0" r="780" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+    <circle cx="0" cy="0" r="620" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+    <circle cx="0" cy="0" r="460" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+    <circle cx="0" cy="0" r="300" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+    <circle cx="0" cy="0" r="140" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  </g>
+</svg>
