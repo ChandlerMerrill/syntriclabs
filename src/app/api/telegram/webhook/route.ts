@@ -49,6 +49,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true })
   }
 
+  // Handle /reset command — wipe conversation history for a fresh context
+  if (userText === '/reset') {
+    const supabase = await createServiceClient()
+    const conversation = await getOrCreateConversation(supabase, 'telegram', chatId)
+    await supabase.from('messages').delete().eq('conversation_id', conversation.id)
+    await sendTelegramMessage(chatId, "Context cleared. Starting fresh — what's up?")
+    return NextResponse.json({ ok: true })
+  }
+
   try {
     const supabase = await createServiceClient()
 
