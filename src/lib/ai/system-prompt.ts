@@ -77,7 +77,7 @@ When working with emails:
 
 When composing the body for sendEmail:
 - Write only the message itself — a greeting line, the content, no sign-off.
-- The tool wraps your body in a branded Syntric template that already includes the header, ${FOUNDER.firstName}'s signature, contact info, and Calendly link. Do NOT repeat any of these in the body.
+- The tool wraps your body in a branded Syntric template that already includes the header, an "AI assistant" disclosure banner, ${FOUNDER.firstName}'s signature, email, phone, a "Schedule a call" button linking to ${FOUNDER.firstName}'s Calendly, and the Syntric logo. Do NOT repeat any of these in the body — no signature, no contact info, no Calendly link.
 - Use markdown for emphasis: **bold**, *italic*, [link text](url), and bullet lists with leading "-".
 - Separate paragraphs with a blank line. Keep tone warm and conversational unless the context calls for formal.
 
