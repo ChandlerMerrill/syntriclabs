@@ -1,9 +1,7 @@
 import { FOUNDER } from '@/lib/founder-profile'
 
 const BRAND_PURPLE = '#8B5CF6'
-const BRAND_PURPLE_DEEP = '#7C3AED'
 const BRAND_PURPLE_DARK = '#6D28D9'
-const BRAND_PURPLE_LIGHT = '#A78BFA'
 const BRAND_TINT_BG = '#FAF5FF'
 const BRAND_TINT_BORDER = '#EDE9FE'
 const TEXT_DARK = '#0F172A'
@@ -14,17 +12,7 @@ const BG_LIGHT = '#F8FAFC'
 
 const PHONE_TEL = FOUNDER.phone.replace(/[^\d+]/g, '')
 
-const MASCOT_SVG = `<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle">
-<rect x="7.5" y="0" width="1" height="1" fill="${BRAND_PURPLE_LIGHT}"/>
-<rect x="5" y="1" width="6" height="5" fill="${BRAND_PURPLE}"/>
-<rect x="7" y="3" width="1" height="1" fill="#FFFFFF"/>
-<rect x="9" y="3" width="1" height="1" fill="#FFFFFF"/>
-<rect x="6" y="6" width="4" height="4" fill="${BRAND_PURPLE_DEEP}"/>
-<rect x="4" y="7" width="2" height="1" fill="${BRAND_PURPLE_DARK}"/>
-<rect x="10" y="7" width="2" height="1" fill="${BRAND_PURPLE_DARK}"/>
-<rect x="6" y="10" width="2" height="2" fill="${BRAND_PURPLE_DEEP}"/>
-<rect x="8" y="10" width="2" height="2" fill="${BRAND_PURPLE_DEEP}"/>
-</svg>`
+const MASCOT_IMG = `<img src="https://www.syntriclabs.com/images/syntric-mascot.png" alt="" width="18" height="18" style="display:inline-block;vertical-align:middle;width:18px;height:18px;border:0;outline:none;text-decoration:none">`
 
 function escapeHtml(s: string): string {
   return s
@@ -88,7 +76,7 @@ export function renderBrandedEmail(body: string): string {
             <tr>
               <td style="vertical-align:middle;padding-right:10px">
                 <div style="width:28px;height:28px;background:#FFFFFF;border:1px solid ${BRAND_TINT_BORDER};border-radius:50%;text-align:center;line-height:28px">
-                  ${MASCOT_SVG}
+                  ${MASCOT_IMG}
                 </div>
               </td>
               <td style="vertical-align:middle;color:${BRAND_PURPLE_DARK};font-size:12px;font-weight:600;letter-spacing:0.02em">
