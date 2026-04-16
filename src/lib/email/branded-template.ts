@@ -64,12 +64,15 @@ export function renderBrandedEmail(body: string): string {
         <tr><td style="padding:24px 32px;background:${BG_LIGHT};border-top:1px solid ${BORDER_LIGHT}">
           <p style="margin:0 0 4px;color:${TEXT_DARK};font-size:14px;font-weight:600">${FOUNDER.fullName}</p>
           <p style="margin:0 0 12px;color:${TEXT_MUTED};font-size:13px">${FOUNDER.title}, ${FOUNDER.company}</p>
-          <p style="margin:0;color:${TEXT_MUTED};font-size:13px;line-height:1.7">
+          <p style="margin:0 0 20px;color:${TEXT_MUTED};font-size:13px;line-height:1.7">
             <a href="mailto:${FOUNDER.email}" style="color:${TEXT_MUTED};text-decoration:none">${FOUNDER.email}</a>
             &nbsp;·&nbsp; ${FOUNDER.phone}
             <br>
             <a href="${FOUNDER.calendlyUrl}" style="color:${BRAND_PURPLE};text-decoration:none;font-weight:500">Schedule a call →</a>
           </p>
+          <div style="text-align:center">
+            <img src="https://www.syntriclabs.com/images/Syntric-logo-pill.png" alt="Syntric" width="140" style="width:140px;height:auto;display:inline-block;border:0;outline:none;text-decoration:none">
+          </div>
         </td></tr>
       </table>
     </td></tr>
