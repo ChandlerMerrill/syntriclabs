@@ -19,5 +19,5 @@ export default async function TranscriptDetailPage({
 
   if (!transcript) notFound()
 
-  return <TranscriptDetail transcript={transcript as TranscriptWithClient} />
+  return <TranscriptDetail initialTranscript={transcript as TranscriptWithClient} />
 }

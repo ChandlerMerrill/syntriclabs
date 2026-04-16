@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import useSWR from "swr"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,42 +9,31 @@ import { Badge } from "@/components/ui/badge"
 import { Mail, Mic, CheckCircle2, XCircle, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
 import { formatRelativeTime } from "@/lib/utils"
 
+interface GmailStatus {
+  connected: boolean
+  email: string | null
+  lastSync: string | null
+}
+
 export default function SettingsPage() {
-  const [gmailStatus, setGmailStatus] = useState<{
-    connected: boolean
-    email: string | null
-    lastSync: string | null
-  } | null>(null)
-  const [gmailLoading, setGmailLoading] = useState(true)
+  const { data: gmailStatus, isLoading: gmailLoading, mutate: mutateGmail } = useSWR<GmailStatus>("/api/gmail/status")
   const [syncing, setSyncing] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
   const [backfilling, setBackfilling] = useState(false)
 
   useEffect(() => {
-    fetchGmailStatus()
     // Check for OAuth callback result
     const params = new URLSearchParams(window.location.search)
     const gmailResult = params.get("gmail")
     if (gmailResult === "connected") {
       toast.success("Gmail connected successfully!")
       window.history.replaceState({}, "", "/admin/settings")
+      mutateGmail()
     } else if (gmailResult === "error") {
       toast.error(`Gmail connection failed: ${params.get("message") || "Unknown error"}`)
       window.history.replaceState({}, "", "/admin/settings")
     }
-  }, [])
-
-  async function fetchGmailStatus() {
-    try {
-      const res = await fetch("/api/gmail/status")
-      const data = await res.json()
-      setGmailStatus(data)
-    } catch {
-      setGmailStatus({ connected: false, email: null, lastSync: null })
-    } finally {
-      setGmailLoading(false)
-    }
-  }
+  }, [mutateGmail])
 
   async function handleSync() {
     setSyncing(true)
@@ -52,7 +42,7 @@ export default function SettingsPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       toast.success(`Synced ${data.synced} emails (${data.matched} matched to clients)`)
-      fetchGmailStatus()
+      mutateGmail()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sync failed")
     } finally {
@@ -66,7 +56,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/gmail/disconnect", { method: "POST" })
       if (!res.ok) throw new Error("Failed to disconnect")
       toast.success("Gmail disconnected")
-      setGmailStatus({ connected: false, email: null, lastSync: null })
+      mutateGmail({ connected: false, email: null, lastSync: null }, { revalidate: false })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to disconnect")
     } finally {

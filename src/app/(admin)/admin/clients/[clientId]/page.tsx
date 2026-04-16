@@ -1,7 +1,14 @@
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import ClientDetail from "./ClientDetail"
-import type { ClientWithContacts, ProjectWithClient, ActivityWithContext, DocumentWithClient, EmailWithClient, TranscriptWithClient } from "@/lib/types"
+import type {
+  ClientWithContacts,
+  ProjectWithClient,
+  ActivityWithContext,
+  DocumentWithClient,
+  EmailWithClient,
+  TranscriptWithClient,
+} from "@/lib/types"
 
 export default async function ClientDetailPage({
   params,
@@ -24,12 +31,14 @@ export default async function ClientDetailPage({
 
   return (
     <ClientDetail
-      client={clientRes.data as ClientWithContacts}
-      projects={(projectsRes.data ?? []) as ProjectWithClient[]}
-      activities={(activitiesRes.data ?? []) as ActivityWithContext[]}
-      documents={(documentsRes.data ?? []) as DocumentWithClient[]}
-      emails={(emailsRes.data ?? []) as EmailWithClient[]}
-      transcripts={(transcriptsRes.data ?? []) as TranscriptWithClient[]}
+      initialData={{
+        client: clientRes.data as ClientWithContacts,
+        projects: (projectsRes.data ?? []) as ProjectWithClient[],
+        activities: (activitiesRes.data ?? []) as ActivityWithContext[],
+        documents: (documentsRes.data ?? []) as DocumentWithClient[],
+        emails: (emailsRes.data ?? []) as EmailWithClient[],
+        transcripts: (transcriptsRes.data ?? []) as TranscriptWithClient[],
+      }}
     />
   )
 }

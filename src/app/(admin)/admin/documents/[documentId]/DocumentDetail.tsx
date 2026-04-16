@@ -19,9 +19,12 @@ import {
 import { formatDate } from "@/lib/utils"
 import { DOCUMENT_STATUSES, DOCUMENT_TYPE_COLORS } from "@/lib/constants"
 import type { DocumentWithClient } from "@/lib/types"
+import { useDocument } from "@/hooks/admin/useDocument"
 
-export default function DocumentDetail({ document: doc }: { document: DocumentWithClient }) {
+export default function DocumentDetail({ initialDocument }: { initialDocument: DocumentWithClient }) {
   const router = useRouter()
+  const { data, mutate } = useDocument(initialDocument.id, { document: initialDocument })
+  const doc = data?.document ?? initialDocument
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState(doc.status)
@@ -38,6 +41,7 @@ export default function DocumentDetail({ document: doc }: { document: DocumentWi
     } else {
       setStatus(newStatus as typeof doc.status)
       toast.success(`Status updated to ${newStatus}`)
+      mutate()
       router.refresh()
     }
   }

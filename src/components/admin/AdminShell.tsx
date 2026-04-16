@@ -8,13 +8,12 @@ import ChatFAB from "./chat/ChatFAB"
 import ChatPanel from "./chat/ChatPanel"
 import GlobalSearch from "./shared/GlobalSearch"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { useBadgeCounts, type BadgeCounts } from "@/hooks/admin/useBadgeCounts"
 
 interface AdminShellProps {
   children: React.ReactNode
   userEmail: string
-  unreadCount?: number
-  unreadMessages?: number
-  newLeads?: number
+  initialBadges: BadgeCounts
 }
 
 function extractContext(pathname: string) {
@@ -28,23 +27,31 @@ function extractContext(pathname: string) {
   return ctx
 }
 
-export default function AdminShell({ children, userEmail, unreadCount = 0, unreadMessages = 0, newLeads = 0 }: AdminShellProps) {
+export default function AdminShell({ children, userEmail, initialBadges }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const pathname = usePathname()
   const chatContext = extractContext(pathname)
+  const { counts } = useBadgeCounts(initialBadges)
 
   return (
     <div className="flex h-screen bg-[#0F172A]">
-      {/* Desktop sidebar */}
-      <div className="hidden md:flex">
-        <AdminSidebar unreadCount={unreadCount} unreadMessages={unreadMessages} newLeads={newLeads} />
-      </div>
+      {/* Desktop sidebar — renders its own spacer + fixed aside */}
+      <AdminSidebar
+        unreadCount={counts.unreadSubmissions}
+        unreadMessages={counts.unreadMessages}
+        newLeads={counts.newLeads}
+      />
 
       {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-[240px] border-white/8 bg-[#0B1120] p-0">
-          <AdminSidebar unreadCount={unreadCount} unreadMessages={unreadMessages} newLeads={newLeads} />
+          <AdminSidebar
+            unreadCount={counts.unreadSubmissions}
+            unreadMessages={counts.unreadMessages}
+            newLeads={counts.newLeads}
+            mobile
+          />
         </SheetContent>
       </Sheet>
 

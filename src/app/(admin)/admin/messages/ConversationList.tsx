@@ -1,13 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { MessageSquare, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/lib/supabase/client"
 import type { Conversation } from "@/lib/types"
 
 interface ConversationListProps {
-  initialConversations: Conversation[]
+  conversations: Conversation[]
   selectedId: string | null
   onSelect: (id: string) => void
 }
@@ -37,37 +35,7 @@ function channelLabel(channel: string) {
   return "Admin Chat"
 }
 
-export default function ConversationList({ initialConversations, selectedId, onSelect }: ConversationListProps) {
-  const [conversations, setConversations] = useState(initialConversations)
-
-  // Realtime subscription for conversation updates
-  useEffect(() => {
-    const supabase = createClient()
-
-    const channel = supabase
-      .channel("conversations-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "conversations" },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            setConversations((prev) => [payload.new as Conversation, ...prev])
-          } else if (payload.eventType === "UPDATE") {
-            setConversations((prev) =>
-              prev
-                .map((c) => (c.id === (payload.new as Conversation).id ? (payload.new as Conversation) : c))
-                .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
-            )
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
-
+export default function ConversationList({ conversations, selectedId, onSelect }: ConversationListProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-white/8 px-4 py-3">

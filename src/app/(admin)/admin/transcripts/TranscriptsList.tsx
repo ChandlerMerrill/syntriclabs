@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Mic, Search, Clock, Users, Loader2, RefreshCw } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
+import { useTranscripts } from "@/hooks/admin/useTranscripts"
 import type { TranscriptWithClient } from "@/lib/types"
 
 interface TranscriptsListProps {
@@ -31,18 +32,19 @@ const statusStyles: Record<string, string> = {
 
 export default function TranscriptsList({ initialTranscripts }: TranscriptsListProps) {
   const router = useRouter()
+  const { transcripts, mutate } = useTranscripts(initialTranscripts)
   const [search, setSearch] = useState("")
   const [backfilling, setBackfilling] = useState(false)
 
   const filtered = useMemo(() => {
-    if (!search) return initialTranscripts
+    if (!search) return transcripts
     const q = search.toLowerCase()
-    return initialTranscripts.filter(t =>
+    return transcripts.filter(t =>
       t.title.toLowerCase().includes(q) ||
       t.summary?.toLowerCase().includes(q) ||
       t.topics?.some(topic => topic.toLowerCase().includes(q))
     )
-  }, [initialTranscripts, search])
+  }, [transcripts, search])
 
   async function handleBackfill() {
     setBackfilling(true)
@@ -51,6 +53,7 @@ export default function TranscriptsList({ initialTranscripts }: TranscriptsListP
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       toast.success(`Imported ${data.imported} transcripts (${data.processing} processing)`)
+      await mutate()
       router.refresh()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Backfill failed")

@@ -7,12 +7,14 @@ import EmailThreadView from "./EmailThreadView"
 import ComposeDialog from "./ComposeDialog"
 import { Mail, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useEmails } from "@/hooks/admin/useEmails"
 
 interface EmailsInboxProps {
   initialEmails: EmailWithClient[]
 }
 
 export default function EmailsInbox({ initialEmails }: EmailsInboxProps) {
+  const { emails } = useEmails(initialEmails)
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null)
   const [tab, setTab] = useState<"all" | "unlinked" | "sent">("all")
   const [composeOpen, setComposeOpen] = useState(false)
@@ -20,7 +22,7 @@ export default function EmailsInbox({ initialEmails }: EmailsInboxProps) {
   // Group emails into threads
   const threads = useMemo(() => {
     const threadMap = new Map<string, EmailWithClient[]>()
-    for (const email of initialEmails) {
+    for (const email of emails) {
       const key = email.gmail_thread_id ?? email.id
       if (!threadMap.has(key)) threadMap.set(key, [])
       threadMap.get(key)!.push(email)
@@ -42,7 +44,7 @@ export default function EmailsInbox({ initialEmails }: EmailsInboxProps) {
         fromAddress: latest.from_address,
       }
     })
-  }, [initialEmails])
+  }, [emails])
 
   const filteredThreads = useMemo(() => {
     switch (tab) {

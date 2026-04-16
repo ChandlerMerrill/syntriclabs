@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import type { TranscriptWithClient } from "@/lib/types"
+import { useTranscript } from "@/hooks/admin/useTranscript"
 
 const sentimentStyles: Record<string, string> = {
   positive: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
@@ -25,9 +26,10 @@ const sentimentStyles: Record<string, string> = {
   mixed: "bg-amber-500/10 text-amber-400 border-amber-500/20",
 }
 
-export default function TranscriptDetail({ transcript: initial }: { transcript: TranscriptWithClient }) {
+export default function TranscriptDetail({ initialTranscript }: { initialTranscript: TranscriptWithClient }) {
   const router = useRouter()
-  const [transcript, setTranscript] = useState(initial)
+  const { data, mutate } = useTranscript(initialTranscript.id, { transcript: initialTranscript })
+  const transcript = data?.transcript ?? initialTranscript
   const [reprocessing, setReprocessing] = useState(false)
   const [clients, setClients] = useState<{ id: string; company_name: string }[]>([])
   const [selectedClientId, setSelectedClientId] = useState("")
@@ -44,6 +46,7 @@ export default function TranscriptDetail({ transcript: initial }: { transcript: 
       })
       if (!res.ok) throw new Error((await res.json()).error)
       toast.success("Reprocessing started — refresh in a moment to see results")
+      mutate()
       router.refresh()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Reprocessing failed")
@@ -69,6 +72,7 @@ export default function TranscriptDetail({ transcript: initial }: { transcript: 
         .eq("id", transcript.id)
       if (error) throw error
       toast.success("Transcript linked to client")
+      mutate()
       router.refresh()
     } catch {
       toast.error("Failed to link transcript")

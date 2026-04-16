@@ -18,22 +18,8 @@ import {
 } from "@/components/ui/select"
 import { ArrowLeft, Mail, Phone, Building2, Clock, MessageSquare, UserPlus } from "lucide-react"
 import { formatDate } from "@/lib/utils"
-
-interface Submission {
-  id: string
-  name: string
-  email: string
-  phone: string | null
-  company: string | null
-  preferred_contact: string | null
-  service: string | null
-  improvements: string[]
-  message: string
-  status: string
-  notes: string | null
-  created_at: string
-  read_at: string | null
-}
+import { useSubmission } from "@/hooks/admin/useSubmission"
+import type { Submission } from "@/lib/types"
 
 const statusColors: Record<string, string> = {
   unread: "bg-yellow-500/10 text-yellow-400",
@@ -42,8 +28,10 @@ const statusColors: Record<string, string> = {
   archived: "bg-zinc-500/10 text-zinc-400",
 }
 
-export default function SubmissionDetail({ submission }: { submission: Submission }) {
+export default function SubmissionDetail({ initialSubmission }: { initialSubmission: Submission }) {
   const router = useRouter()
+  const { data, mutate } = useSubmission(initialSubmission.id, { submission: initialSubmission })
+  const submission = data?.submission ?? initialSubmission
   const [status, setStatus] = useState(submission.status)
   const [notes, setNotes] = useState(submission.notes ?? "")
   const [saving, setSaving] = useState(false)
@@ -51,7 +39,7 @@ export default function SubmissionDetail({ submission }: { submission: Submissio
   const supabase = createClient()
 
   const handleStatusChange = async (newStatus: string) => {
-    setStatus(newStatus)
+    setStatus(newStatus as typeof submission.status)
     const { error } = await supabase
       .from("submissions")
       .update({ status: newStatus })
@@ -62,6 +50,7 @@ export default function SubmissionDetail({ submission }: { submission: Submissio
       setStatus(submission.status)
     } else {
       toast.success(`Status updated to ${newStatus}`)
+      mutate()
     }
   }
 
@@ -76,6 +65,7 @@ export default function SubmissionDetail({ submission }: { submission: Submissio
       toast.error("Failed to save notes")
     } else {
       toast.success("Notes saved")
+      mutate()
     }
     setSaving(false)
   }

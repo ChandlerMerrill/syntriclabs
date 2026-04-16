@@ -20,8 +20,10 @@ export default async function ProjectDetailPage({
 
   return (
     <ProjectDetail
-      project={projectRes.data as ProjectWithClient}
-      activities={(activitiesRes.data ?? []) as ActivityWithContext[]}
+      initialData={{
+        project: projectRes.data as ProjectWithClient,
+        activities: (activitiesRes.data ?? []) as ActivityWithContext[],
+      }}
     />
   )
 }

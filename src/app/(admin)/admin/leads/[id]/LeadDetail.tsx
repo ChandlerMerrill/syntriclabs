@@ -31,17 +31,20 @@ import {
 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { LEAD_STATUS_COLORS, ESCALATION_STATUS_COLORS } from "@/lib/constants"
-import type { WidgetLeadWithEscalations, LeadStatus } from "@/lib/types"
+import type { LeadStatus } from "@/lib/types"
+import { useLead, type LeadDetailData } from "@/hooks/admin/useLead"
 
 const LEAD_STATUSES: LeadStatus[] = ['new', 'contacted', 'qualified', 'converted', 'dismissed']
 
 interface LeadDetailProps {
-  lead: WidgetLeadWithEscalations
-  messages: { role: string; content: string; created_at: string }[]
+  initialData: LeadDetailData
 }
 
-export default function LeadDetail({ lead, messages }: LeadDetailProps) {
+export default function LeadDetail({ initialData }: LeadDetailProps) {
   const router = useRouter()
+  const { data, mutate } = useLead(initialData.lead.id, initialData)
+  const d = data ?? initialData
+  const { lead, messages } = d
   const [status, setStatus] = useState<LeadStatus>(lead.status)
   const [converting, setConverting] = useState(false)
 
@@ -60,6 +63,7 @@ export default function LeadDetail({ lead, messages }: LeadDetailProps) {
       setStatus(prev)
     } else {
       toast.success(`Status updated to ${newStatus}`)
+      mutate()
     }
   }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/select"
 import { Reply, Forward, Link2, ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react"
 import { formatDate, formatRelativeTime } from "@/lib/utils"
-import type { EmailWithClient } from "@/lib/types"
+import { useEmailThread } from "@/hooks/admin/useEmailThread"
+import { useClients } from "@/hooks/admin/useClients"
 
 interface EmailThreadViewProps {
   threadId: string
@@ -18,36 +19,10 @@ interface EmailThreadViewProps {
 }
 
 export default function EmailThreadView({ threadId, onCompose }: EmailThreadViewProps) {
-  const [emails, setEmails] = useState<EmailWithClient[]>([])
-  const [loading, setLoading] = useState(true)
-  const [clients, setClients] = useState<{ id: string; company_name: string }[]>([])
+  const { emails, isLoading, mutate } = useEmailThread(threadId)
   const [linking, setLinking] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string>("")
-
-  useEffect(() => {
-    loadThread()
-  }, [threadId])
-
-  async function loadThread() {
-    setLoading(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from("emails")
-      .select("*, clients(id, company_name)")
-      .eq("gmail_thread_id", threadId)
-      .order("internal_date", { ascending: true })
-    setEmails((data ?? []) as EmailWithClient[])
-    setLoading(false)
-  }
-
-  async function loadClients() {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from("clients")
-      .select("id, company_name")
-      .order("company_name")
-    setClients(data ?? [])
-  }
+  const { clients } = useClients()
 
   async function handleLink() {
     if (!selectedClientId) return
@@ -60,7 +35,7 @@ export default function EmailThreadView({ threadId, onCompose }: EmailThreadView
         .eq("gmail_thread_id", threadId)
       if (error) throw error
       toast.success("Thread linked to client")
-      loadThread()
+      mutate()
     } catch {
       toast.error("Failed to link thread")
     } finally {
@@ -68,7 +43,7 @@ export default function EmailThreadView({ threadId, onCompose }: EmailThreadView
     }
   }
 
-  if (loading) {
+  if (isLoading && emails.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-[#94A3B8]" />
@@ -102,7 +77,6 @@ export default function EmailThreadView({ threadId, onCompose }: EmailThreadView
             <Select
               value={selectedClientId}
               onValueChange={(val) => setSelectedClientId(val ?? "")}
-              onOpenChange={(open) => { if (open && clients.length === 0) loadClients() }}
             >
               <SelectTrigger className="h-8 w-[200px] border-white/8 bg-[#0B1120] text-sm text-white">
                 <SelectValue placeholder="Select client..." />

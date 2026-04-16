@@ -19,5 +19,5 @@ export default async function DocumentDetailPage({
 
   if (!doc) notFound()
 
-  return <DocumentDetail document={doc as DocumentWithClient} />
+  return <DocumentDetail initialDocument={doc as DocumentWithClient} />
 }

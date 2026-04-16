@@ -21,25 +21,14 @@ import {
 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { DOCUMENT_TYPE_COLORS } from "@/lib/constants"
-import type { ClientWithContacts, ProjectWithClient, ActivityWithContext, DocumentWithClient, EmailWithClient, TranscriptWithClient } from "@/lib/types"
+import { useClient, type ClientDetailData } from "@/hooks/admin/useClient"
 
-export default function ClientDetail({
-  client,
-  projects,
-  activities,
-  documents,
-  emails,
-  transcripts,
-}: {
-  client: ClientWithContacts
-  projects: ProjectWithClient[]
-  activities: ActivityWithContext[]
-  documents: DocumentWithClient[]
-  emails: EmailWithClient[]
-  transcripts: TranscriptWithClient[]
-}) {
+export default function ClientDetail({ initialData }: { initialData: ClientDetailData }) {
   const router = useRouter()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const { data } = useClient(initialData.client.id, initialData)
+  const d = data ?? initialData
+  const { client, projects, activities, documents, emails, transcripts } = d
 
   const handleDelete = async () => {
     const supabase = createClient()

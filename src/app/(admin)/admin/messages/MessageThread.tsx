@@ -5,32 +5,20 @@ import { Bot, User, ChevronDown, ChevronRight, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import type { Message } from "@/lib/types"
+import { useConversationMessages } from "@/hooks/admin/useConversationMessages"
 
 interface MessageThreadProps {
   conversationId: string
 }
 
 export default function MessageThread({ conversationId }: MessageThreadProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [loading, setLoading] = useState(true)
+  const { messages, isLoading, mutate } = useConversationMessages(conversationId)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Load messages
+  // Mark-as-read + realtime subscription
   useEffect(() => {
-    setLoading(true)
     const supabase = createClient()
 
-    supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        setMessages((data as Message[]) ?? [])
-        setLoading(false)
-      })
-
-    // Mark as read
     supabase
       .from("messages")
       .update({ is_read: true })
@@ -38,7 +26,6 @@ export default function MessageThread({ conversationId }: MessageThreadProps) {
       .eq("is_read", false)
       .then(() => {})
 
-    // Realtime subscription for new messages
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
@@ -51,11 +38,14 @@ export default function MessageThread({ conversationId }: MessageThreadProps) {
         },
         (payload) => {
           const newMsg = payload.new as Message
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev
-            return [...prev, newMsg]
-          })
-          // Mark new user messages as read immediately
+          mutate(
+            (current) => {
+              const existing = current?.messages ?? []
+              if (existing.some((m) => m.id === newMsg.id)) return current
+              return { messages: [...existing, newMsg] }
+            },
+            { revalidate: false }
+          )
           if (newMsg.role === "user") {
             supabase
               .from("messages")
@@ -70,7 +60,7 @@ export default function MessageThread({ conversationId }: MessageThreadProps) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [conversationId])
+  }, [conversationId, mutate])
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -79,7 +69,7 @@ export default function MessageThread({ conversationId }: MessageThreadProps) {
     }
   }, [messages])
 
-  if (loading) {
+  if (isLoading && messages.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2563EB] border-t-transparent" />

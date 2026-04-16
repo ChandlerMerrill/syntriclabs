@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import SubmissionDetail from "./SubmissionDetail"
+import type { Submission } from "@/lib/types"
 
 export default async function SubmissionDetailPage({
   params,
@@ -30,5 +31,5 @@ export default async function SubmissionDetailPage({
     submission.read_at = new Date().toISOString()
   }
 
-  return <SubmissionDetail submission={submission} />
+  return <SubmissionDetail initialSubmission={submission as Submission} />
 }

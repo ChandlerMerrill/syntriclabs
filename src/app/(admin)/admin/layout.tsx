@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import AdminShell from "@/components/admin/AdminShell"
 import { getUnreadCount } from "@/lib/services/messages"
 import { getNewLeadsCount } from "@/lib/services/leads"
+import { AdminSWRProvider } from "@/lib/swr/provider"
 
 export default async function AdminLayout({
   children,
@@ -16,21 +17,24 @@ export default async function AdminLayout({
     redirect("/login")
   }
 
-  // Get unread submissions count for sidebar badge
-  const { count: unreadCount } = await supabase
-    .from("submissions")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "unread")
-
-  // Get unread message count for messages badge
-  const unreadMessages = await getUnreadCount(supabase)
-
-  // Get new leads count for sidebar badge
-  const newLeads = await getNewLeadsCount(supabase)
+  const [{ count: unreadSubmissions }, unreadMessages, newLeads] = await Promise.all([
+    supabase.from("submissions").select("*", { count: "exact", head: true }).eq("status", "unread"),
+    getUnreadCount(supabase),
+    getNewLeadsCount(supabase),
+  ])
 
   return (
-    <AdminShell userEmail={user.email ?? ""} unreadCount={unreadCount ?? 0} unreadMessages={unreadMessages} newLeads={newLeads}>
-      {children}
-    </AdminShell>
+    <AdminSWRProvider>
+      <AdminShell
+        userEmail={user.email ?? ""}
+        initialBadges={{
+          unreadSubmissions: unreadSubmissions ?? 0,
+          unreadMessages,
+          newLeads,
+        }}
+      >
+        {children}
+      </AdminShell>
+    </AdminSWRProvider>
   )
 }

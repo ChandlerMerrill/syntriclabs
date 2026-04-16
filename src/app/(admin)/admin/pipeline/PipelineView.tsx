@@ -1,17 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Plus, LayoutGrid, List } from "lucide-react"
 import PageHeader from "@/components/admin/shared/PageHeader"
 import PipelineKanban from "@/components/admin/pipeline/PipelineKanban"
 import PipelineList from "@/components/admin/pipeline/PipelineList"
 import DealDetailPanel from "@/components/admin/pipeline/DealDetailPanel"
-import type { DealWithClient, DocumentWithClient } from "@/lib/types"
+import { useDeals } from "@/hooks/admin/useDeals"
+import { useDealDocuments } from "@/hooks/admin/useDealDocuments"
+import type { DealWithClient } from "@/lib/types"
 
-export default function PipelineView({ deals }: { deals: DealWithClient[] }) {
+export default function PipelineView({ deals: initialDeals }: { deals: DealWithClient[] }) {
+  const { deals } = useDeals(initialDeals)
   const [view, setView] = useState<"kanban" | "list">(() => {
     if (typeof window !== "undefined") {
       return (localStorage.getItem("pipeline-view") as "kanban" | "list") ?? "kanban"
@@ -20,7 +22,7 @@ export default function PipelineView({ deals }: { deals: DealWithClient[] }) {
   })
   const [selectedDeal, setSelectedDeal] = useState<DealWithClient | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
-  const [dealDocuments, setDealDocuments] = useState<DocumentWithClient[]>([])
+  const { documents: dealDocuments } = useDealDocuments(selectedDeal?.id ?? null)
 
   const toggleView = (v: "kanban" | "list") => {
     setView(v)
@@ -28,20 +30,6 @@ export default function PipelineView({ deals }: { deals: DealWithClient[] }) {
       localStorage.setItem("pipeline-view", v)
     }
   }
-
-  useEffect(() => {
-    if (!selectedDeal) {
-      setDealDocuments([])
-      return
-    }
-    const supabase = createClient()
-    supabase
-      .from("documents")
-      .select("*, clients(id, company_name)")
-      .eq("deal_id", selectedDeal.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setDealDocuments((data ?? []) as DocumentWithClient[]))
-  }, [selectedDeal])
 
   const handleDealClick = (deal: DealWithClient) => {
     setSelectedDeal(deal)

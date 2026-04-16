@@ -94,13 +94,21 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-border pt-8">
-          <p className="font-[family-name:var(--font-rajdhani)] text-xl font-bold tracking-tight gradient-text sm:text-2xl">
-            We align. You accelerate.
-          </p>
-          <p className="mt-3 text-xs text-text-secondary">
-            &copy; {new Date().getFullYear()} Syntric Labs. All rights reserved.
-          </p>
+        <div className="mt-12 flex flex-col gap-4 border-t border-border pt-8 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="font-[family-name:var(--font-rajdhani)] text-xl font-bold tracking-tight gradient-text sm:text-2xl">
+              We align. You accelerate.
+            </p>
+            <p className="mt-3 text-xs text-text-secondary">
+              &copy; {new Date().getFullYear()} Syntric Labs. All rights reserved.
+            </p>
+          </div>
+          <Link
+            href="/admin"
+            className="text-xs text-text-secondary/60 transition-colors hover:text-text-secondary sm:self-end"
+          >
+            Admin
+          </Link>
         </div>
       </div>
     </footer>

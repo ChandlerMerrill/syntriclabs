@@ -14,7 +14,6 @@ export default async function LeadPage({
 
   if (error || !lead) notFound()
 
-  // Fetch conversation messages if conversation_id exists
   let messages: { role: string; content: string; created_at: string }[] = []
   if (lead.conversation_id) {
     const { data } = await supabase
@@ -25,5 +24,5 @@ export default async function LeadPage({
     messages = data ?? []
   }
 
-  return <LeadDetail lead={lead} messages={messages} />
+  return <LeadDetail initialData={{ lead, messages }} />
 }

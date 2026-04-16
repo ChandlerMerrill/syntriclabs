@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
-import SubmissionsList from "./SubmissionsList"
+import SubmissionsView from "./SubmissionsView"
+import type { Submission } from "@/lib/types"
 
 export default async function SubmissionsPage({
   searchParams,
@@ -7,6 +8,7 @@ export default async function SubmissionsPage({
   searchParams: Promise<{ status?: string }>
 }) {
   const { status } = await searchParams
+  const activeStatus = status || "all"
   const supabase = await createClient()
 
   let query = supabase
@@ -21,15 +23,9 @@ export default async function SubmissionsPage({
   const { data: submissions } = await query
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Submissions</h1>
-        <p className="text-sm text-[#94A3B8]">Contact form submissions from your website</p>
-      </div>
-      <SubmissionsList
-        submissions={submissions ?? []}
-        activeStatus={status || "all"}
-      />
-    </div>
+    <SubmissionsView
+      initialSubmissions={(submissions ?? []) as Submission[]}
+      activeStatus={activeStatus}
+    />
   )
 }

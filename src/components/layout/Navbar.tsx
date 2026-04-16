@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, Shield } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -17,7 +18,13 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setIsAdmin(!!user));
+  }, []);
 
   useEffect(() => {
     let lastY = 0;
@@ -86,14 +93,25 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* CTA pill — desktop */}
-        <Link
-          href="/contact"
-          className="hidden items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 backdrop-blur-md transition-all duration-200 hover:bg-primary-light hover:shadow-primary/40 md:flex btn-shimmer"
-        >
-          Get in Touch
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        {/* Desktop right cluster: Admin pill (if signed in) + CTA */}
+        <div className="hidden items-center gap-3 md:flex">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-bg-secondary/80 px-4 py-2 text-sm font-medium text-text-secondary backdrop-blur-md transition-all duration-200 hover:border-primary/40 hover:text-text-primary"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Admin
+            </Link>
+          )}
+          <Link
+            href="/contact"
+            className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 backdrop-blur-md transition-all duration-200 hover:bg-primary-light hover:shadow-primary/40 btn-shimmer"
+          >
+            Get in Touch
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
 
         {/* Mobile hamburger */}
         <button
@@ -136,6 +154,15 @@ export default function Navbar() {
                   </Link>
                 );
               })}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary/50 hover:text-text-primary"
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/contact"
                 className={`rounded-xl px-4 py-3 text-sm font-medium transition-colors ${

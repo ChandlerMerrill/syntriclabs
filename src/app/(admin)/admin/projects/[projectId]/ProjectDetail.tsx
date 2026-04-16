@@ -13,17 +13,14 @@ import ConfirmDialog from "@/components/admin/shared/ConfirmDialog"
 import ActivityFeed from "@/components/admin/activities/ActivityFeed"
 import { ArrowLeft, Edit, Trash2, ExternalLink, Calendar, DollarSign } from "lucide-react"
 import { formatDate, formatCurrency } from "@/lib/utils"
-import type { ProjectWithClient, ActivityWithContext } from "@/lib/types"
+import { useProject, type ProjectDetailData } from "@/hooks/admin/useProject"
 
-export default function ProjectDetail({
-  project,
-  activities,
-}: {
-  project: ProjectWithClient
-  activities: ActivityWithContext[]
-}) {
+export default function ProjectDetail({ initialData }: { initialData: ProjectDetailData }) {
   const router = useRouter()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const { data } = useProject(initialData.project.id, initialData)
+  const d = data ?? initialData
+  const { project, activities } = d
 
   const handleDelete = async () => {
     const supabase = createClient()
