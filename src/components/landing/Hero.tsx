@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import InteractiveHeroBackground from "@/components/ui/InteractiveHeroBackground";
 import { staggerContainer, fadeUp, clipReveal } from "@/lib/animations";
 
@@ -50,11 +50,11 @@ export default function Hero() {
             variants={fadeUp}
             className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
-            <Button href="https://calendly.com/chandlermerrill-r/30min" external size="lg">
+            <Button render={<a href="https://calendly.com/chandler-syntriclabs/30min" target="_blank" rel="noopener noreferrer" />} size="lg">
               Book a Discovery Call
               <ArrowRight className="h-4 w-4" />
             </Button>
-            <Button href="#portfolio" variant="secondary" size="lg">
+            <Button render={<a href="#portfolio" />} variant="secondary" size="lg">
               See Our Work
             </Button>
           </motion.div>

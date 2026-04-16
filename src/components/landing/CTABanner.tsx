@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import GradientDivider from "@/components/ui/GradientDivider";
 import FloatingIsland from "@/components/ui/FloatingIsland";
 import { staggerContainer, fadeUp } from "@/lib/animations";
@@ -46,7 +46,7 @@ export default function CTABanner() {
               business down.
             </motion.p>
             <motion.div variants={fadeUp} className="mt-8">
-              <Button href="https://calendly.com/chandlermerrill-r/30min" external size="lg">
+              <Button render={<a href="https://calendly.com/chandler-syntriclabs/30min" target="_blank" rel="noopener noreferrer" />} size="lg">
                 Book a Free Discovery Call
                 <ArrowRight className="h-4 w-4" />
               </Button>

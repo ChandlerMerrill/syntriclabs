@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Rajdhani } from "next/font/google";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import CursorGlow from "@/components/ui/CursorGlow";
-import RelevanceAIWidget from "@/components/ui/RelevanceAIWidget";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,12 +39,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${rajdhani.variable}`}
     >
-      <body className="grain-overlay min-h-screen">
-        <Navbar />
-        <CursorGlow />
-        <main>{children}</main>
-        <Footer />
-        <RelevanceAIWidget />
+      <body className="min-h-screen">
+        {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

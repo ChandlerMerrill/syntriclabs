@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { ArrowRight, Users, Lightbulb, Settings, Shield } from "lucide-react";
 import SectionLabel from "@/components/ui/SectionLabel";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import GradientDivider from "@/components/ui/GradientDivider";
 import { staggerContainer, staggerFast, fadeUp, popIn } from "@/lib/animations";
 
@@ -117,7 +118,7 @@ export default function Workshops() {
           whileInView="show"
           viewport={{ once: true, margin: "-60px" }}
         >
-          <Button href="/contact" variant="outline">
+          <Button render={<Link href="/contact" />} variant="outline">
             Inquire About Workshops
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>

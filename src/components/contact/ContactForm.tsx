@@ -60,14 +60,11 @@ export default function ContactForm() {
     setError("");
 
     try {
-      const res = await fetch(
-        "https://entronexus.app.n8n.cloud/webhook/syntric-contact-form",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, improvements }),
-        }
-      );
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, improvements }),
+      });
 
       if (!res.ok) throw new Error("Failed to submit");
       setSubmitted(true);
@@ -106,7 +103,7 @@ export default function ContactForm() {
                   to skip the wait, book a call directly.
                 </p>
                 <a
-                  href="https://calendly.com/chandlermerrill-r/30min"
+                  href="https://calendly.com/chandler-syntriclabs/30min"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-primary-lighter transition-colors hover:text-primary"

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { Linkedin, ArrowRight } from "lucide-react";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import GradientDivider from "@/components/ui/GradientDivider";
 import { staggerContainer, fadeUp, popIn } from "@/lib/animations";
 
@@ -97,7 +97,7 @@ export default function FounderBio() {
             the first step is a conversation.
           </motion.p>
           <motion.div variants={fadeUp} className="mt-8">
-            <Button href="https://calendly.com/chandlermerrill-r/30min" external size="lg">
+            <Button render={<a href="https://calendly.com/chandler-syntriclabs/30min" target="_blank" rel="noopener noreferrer" />} size="lg">
               Book a Discovery Call
               <ArrowRight className="h-4 w-4" />
             </Button>

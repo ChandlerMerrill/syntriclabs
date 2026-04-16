@@ -38,7 +38,7 @@ export default function ContactHero() {
 
           <motion.a
             variants={fadeUp}
-            href="https://calendly.com/chandlermerrill-r/30min"
+            href="https://calendly.com/chandler-syntriclabs/30min"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-primary-lighter transition-colors hover:text-primary"

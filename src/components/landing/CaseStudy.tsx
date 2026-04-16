@@ -11,7 +11,7 @@ import {
   Quote,
 } from "lucide-react";
 import SectionLabel from "@/components/ui/SectionLabel";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import GradientDivider from "@/components/ui/GradientDivider";
 import FloatingIsland from "@/components/ui/FloatingIsland";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -89,10 +89,8 @@ export default function CaseStudy() {
 
               <motion.div variants={fadeUp} className="mt-8">
                 <Button
-                  href="https://esotericdesignlab-platform.vercel.app/"
-                  external
+                  render={<a href="https://esotericdesignlab-platform.vercel.app/" target="_blank" rel="noopener noreferrer" />}
                   variant="secondary"
-                  size="md"
                 >
                   See the Platform Live
                   <ArrowRight className="h-3.5 w-3.5" />

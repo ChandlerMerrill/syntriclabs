@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Code, GraduationCap, ArrowRight } from "lucide-react";
 import SectionLabel from "@/components/ui/SectionLabel";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import TiltCard from "@/components/ui/TiltCard";
 import { staggerContainer, fadeUp, popIn } from "@/lib/animations";
 
@@ -97,7 +98,7 @@ export default function ServicesOverview() {
                 </ul>
 
                 <div className="mt-auto pt-8">
-                  <Button href={service.cta.href} variant="outline" size="sm">
+                  <Button render={<Link href={service.cta.href} />} variant="outline" size="sm">
                     {service.cta.label}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
