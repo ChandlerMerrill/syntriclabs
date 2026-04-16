@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { generateDocumentService } from '@/lib/services/document-generation'
 import { searchSimilar, embedInBackground, serializeEmail } from '@/lib/ai/embeddings'
 import { sendMessage, getMessage, parseMessage, getGmailAccount } from '@/lib/gmail/client'
+import { renderBrandedEmail } from '@/lib/email/branded-template'
 import type { DocumentType } from '@/lib/types'
 
 export const crmTools = {
@@ -248,11 +249,11 @@ export const crmTools = {
   }),
 
   sendEmail: tool({
-    description: 'Send an email via Gmail. Optionally reply to a thread by providing threadId and inReplyTo headers.',
+    description: 'Send an email via Gmail. Write the body in plain prose (markdown supported: **bold**, *italic*, [link](url), bullet lists with -, numbered lists). The tool wraps your body in a branded Syntric template with header, signature, and contact info — do NOT include greeting fluff like "Best regards, Chandler" or contact details, the template handles that. Just write the message itself.',
     inputSchema: zodSchema(z.object({
       to: z.string().describe('Recipient email address'),
       subject: z.string().describe('Email subject'),
-      body: z.string().describe('Email body (HTML supported)'),
+      body: z.string().describe('Email body in plain prose / markdown. Do not include signature, contact info, or sign-off — the template adds these.'),
       cc: z.string().optional().describe('CC recipients'),
       threadId: z.string().optional().describe('Gmail thread ID (for replies)'),
       inReplyTo: z.string().optional().describe('Message-ID header of the email being replied to'),
@@ -260,7 +261,8 @@ export const crmTools = {
     })),
     execute: async ({ to, subject, body, cc, threadId, inReplyTo, references }) => {
       try {
-        const result = await sendMessage({ to, cc, subject, body, threadId, inReplyTo, references })
+        const html = renderBrandedEmail(body)
+        const result = await sendMessage({ to, cc, subject, body: html, threadId, inReplyTo, references })
 
         const gmailMsg = await getMessage(result.id)
         const parsed = parseMessage(gmailMsg)

@@ -75,6 +75,12 @@ When working with emails:
 - Use sendEmail to compose and send new emails or replies
 - Emails are automatically matched to clients via contact email addresses
 
+When composing the body for sendEmail:
+- Write only the message itself — a greeting line, the content, no sign-off.
+- The tool wraps your body in a branded Syntric template that already includes the header, ${FOUNDER.firstName}'s signature, contact info, and Calendly link. Do NOT repeat any of these in the body.
+- Use markdown for emphasis: **bold**, *italic*, [link text](url), and bullet lists with leading "-".
+- Separate paragraphs with a blank line. Keep tone warm and conversational unless the context calls for formal.
+
 ## Meeting Transcripts
 When working with meeting transcripts:
 - Use searchTranscripts to find meetings by topic, client, or keywords
