@@ -3,7 +3,7 @@ export const FOUNDER = {
   lastName: 'Merrill',
   fullName: 'Chandler Merrill',
   title: 'Founder',
-  company: 'Syntric Labs',
+  company: 'Syntric',
   email: 'chandler@syntriclabs.com',
   phone: '+1-801-518-7571',
   calendlyUrl: 'https://calendly.com/chandler-syntriclabs/30min',

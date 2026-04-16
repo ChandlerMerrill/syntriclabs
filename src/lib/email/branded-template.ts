@@ -60,6 +60,11 @@ export function renderBrandedEmail(body: string): string {
         <tr><td style="padding:24px 32px;border-bottom:1px solid ${BORDER_LIGHT}">
           <p style="margin:0;font-size:18px;font-weight:600;color:${TEXT_DARK};letter-spacing:-0.01em">${FOUNDER.company}</p>
         </td></tr>
+        <tr><td style="padding:12px 32px;background:#F5F3FF;border-bottom:1px solid ${BORDER_LIGHT}">
+          <p style="margin:0;color:${BRAND_PURPLE};font-size:12px;font-weight:500;letter-spacing:0.02em">
+            Sent by ${FOUNDER.firstName}'s AI assistant on his behalf
+          </p>
+        </td></tr>
         <tr><td style="padding:32px">${bodyHtml}</td></tr>
         <tr><td style="padding:24px 32px;background:${BG_LIGHT};border-top:1px solid ${BORDER_LIGHT}">
           <p style="margin:0 0 4px;color:${TEXT_DARK};font-size:14px;font-weight:600">${FOUNDER.fullName}</p>
