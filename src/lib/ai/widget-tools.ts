@@ -5,6 +5,7 @@ import { searchSimilar } from '@/lib/ai/embeddings'
 import { Resend } from 'resend'
 import { sendTelegramMessage } from '@/lib/telegram'
 import { buildLeadNotificationHtml } from '@/lib/email/lead-notification'
+import { FOUNDER } from '@/lib/founder-profile'
 
 export function createWidgetTools(sessionId: string, conversationId: string | null) {
   return {
@@ -81,8 +82,8 @@ export function createWidgetTools(sessionId: string, conversationId: string | nu
         try {
           const resend = new Resend(process.env.RESEND_API_KEY)
           await resend.emails.send({
-            from: 'Syntric Widget <contact@syntriclabs.com>',
-            to: process.env.ADMIN_EMAIL || 'chandler@syntriclabs.com',
+            from: `Syntric Widget <${FOUNDER.brandFromEmail}>`,
+            to: process.env.ADMIN_EMAIL || FOUNDER.email,
             subject: `New widget lead: ${name}${organization ? ` (${organization})` : ''}`,
             html: buildLeadNotificationHtml({
               firstName,
@@ -128,7 +129,7 @@ export function createWidgetTools(sessionId: string, conversationId: string | nu
       })),
       execute: async () => {
         return {
-          url: 'https://calendly.com/chandler-syntriclabs/30min',
+          url: FOUNDER.calendlyUrl,
           message: 'Book a free 30-minute discovery call to discuss your project.',
         }
       },
@@ -180,8 +181,8 @@ export function createWidgetTools(sessionId: string, conversationId: string | nu
         try {
           const resend = new Resend(process.env.RESEND_API_KEY)
           await resend.emails.send({
-            from: 'Syntric Widget <contact@syntriclabs.com>',
-            to: process.env.ADMIN_EMAIL || 'chandler@syntriclabs.com',
+            from: `Syntric Widget <${FOUNDER.brandFromEmail}>`,
+            to: process.env.ADMIN_EMAIL || FOUNDER.email,
             subject: `Widget escalation: ${reason.substring(0, 60)}`,
             html: buildLeadNotificationHtml({
               firstName: lead?.first_name ?? undefined,

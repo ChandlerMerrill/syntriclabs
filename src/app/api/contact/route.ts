@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase/server'
 import { ContactNotificationEmail } from '@/lib/email/contact-notification'
+import { FOUNDER } from '@/lib/founder-profile'
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, number[]>()
@@ -66,8 +67,8 @@ export async function POST(request: NextRequest) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from: 'Syntric Contact <contact@syntriclabs.com>',
-        to: process.env.ADMIN_EMAIL || 'chandler@syntriclabs.com',
+        from: `Syntric Contact <${FOUNDER.brandFromEmail}>`,
+        to: process.env.ADMIN_EMAIL || FOUNDER.email,
         subject: `New contact: ${name.trim()} ${company ? `(${company.trim()})` : ''}`,
         react: ContactNotificationEmail({
           name: name.trim(),
