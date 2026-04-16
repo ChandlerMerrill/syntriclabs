@@ -2,7 +2,8 @@ import { tool, zodSchema } from 'ai'
 import { z } from 'zod'
 import { createServiceClient } from '@/lib/supabase/server'
 import { generateDocumentService } from '@/lib/services/document-generation'
-import { searchSimilar } from '@/lib/ai/embeddings'
+import { searchSimilar, embedInBackground, serializeEmail } from '@/lib/ai/embeddings'
+import { sendMessage, getMessage, parseMessage, getGmailAccount } from '@/lib/gmail/client'
 import type { DocumentType } from '@/lib/types'
 
 export const crmTools = {
@@ -259,14 +260,67 @@ export const crmTools = {
     })),
     execute: async ({ to, subject, body, cc, threadId, inReplyTo, references }) => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/gmail/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to, subject, body, cc, threadId, inReplyTo, references }),
-        })
-        const data = await res.json()
-        if (!res.ok) return { error: data.error || 'Failed to send email' }
-        return { success: true, messageId: data.messageId, threadId: data.threadId }
+        const result = await sendMessage({ to, cc, subject, body, threadId, inReplyTo, references })
+
+        const gmailMsg = await getMessage(result.id)
+        const parsed = parseMessage(gmailMsg)
+        const account = await getGmailAccount()
+
+        const supabase = await createServiceClient()
+        const recipientAddresses = [...parsed.to, ...parsed.cc].map(a => a.address.toLowerCase())
+        const { data: contacts } = await supabase
+          .from('client_contacts')
+          .select('id, client_id')
+          .in('email', recipientAddresses)
+
+        const match = contacts?.[0] ?? null
+
+        const { data: email } = await supabase.from('emails').upsert({
+          gmail_message_id: parsed.messageId,
+          gmail_thread_id: parsed.threadId,
+          client_id: match?.client_id ?? null,
+          from_address: account?.email_address ?? parsed.from.address,
+          from_name: parsed.from.name,
+          to_addresses: parsed.to,
+          cc_addresses: parsed.cc,
+          bcc_addresses: parsed.bcc,
+          subject: parsed.subject,
+          body_text: parsed.bodyText,
+          body_html: parsed.bodyHtml,
+          snippet: parsed.snippet,
+          label_ids: parsed.labelIds,
+          is_read: true,
+          is_starred: false,
+          is_draft: false,
+          has_attachments: parsed.hasAttachments,
+          internal_date: parsed.internalDate.toISOString(),
+          direction: 'outbound',
+          matched_contact_id: match?.id ?? null,
+          raw_headers: parsed.headers,
+        }, { onConflict: 'gmail_message_id' }).select('id').single()
+
+        if (email) {
+          embedInBackground('email', email.id, serializeEmail({
+            subject: parsed.subject,
+            from: parsed.from,
+            to: parsed.to,
+            bodyText: parsed.bodyText,
+            internalDate: parsed.internalDate,
+          }))
+        }
+
+        if (match?.client_id) {
+          await supabase.from('activities').insert({
+            client_id: match.client_id,
+            type: 'email',
+            title: `Email sent: ${subject}`,
+            description: `Sent to ${to}`,
+            metadata: { email_id: email?.id, gmail_message_id: result.id },
+            is_auto_generated: true,
+          })
+        }
+
+        return { success: true, messageId: result.id, threadId: result.threadId, emailId: email?.id }
       } catch (err) {
         return { error: err instanceof Error ? err.message : 'Failed to send email' }
       }
