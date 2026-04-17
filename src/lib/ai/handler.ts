@@ -24,12 +24,33 @@ interface HandlerOptions {
 }
 
 const WEB_SEARCH_DAILY_CAP = 30
+// Cap the per-request output reservation. Claude Sonnet 4's model-level cap
+// is 64K, but Anthropic counts max_tokens against the 30K/min input rate limit
+// at the tier-1 level — so the default reservation alone blocks every call.
+// Our responses are chat-sized; 4K is plenty.
+const MAX_OUTPUT_TOKENS = 4096
 
 function buildAuditContext(options: HandlerOptions): AIAuditContext {
   return {
     conversationId: options.conversationId ?? null,
     channel: options.channel,
   }
+}
+
+// Move the system prompt into the messages array with an Anthropic cache_control
+// breakpoint so the system text + all tool schemas before it are cached across
+// steps and across successive conversation turns (5-min TTL). This is the main
+// mitigation for the rate limit — without it, every step re-sends ~ the same
+// 15–20K tokens of tools + system prompt as fresh input.
+function withCachedSystem(system: string, messages: ModelMessage[]): ModelMessage[] {
+  const cachedSystem = {
+    role: 'system' as const,
+    content: system,
+    providerOptions: {
+      anthropic: { cacheControl: { type: 'ephemeral' as const } },
+    },
+  }
+  return [cachedSystem as ModelMessage, ...messages]
 }
 
 async function buildSystemWithCaps(options: HandlerOptions): Promise<string> {
@@ -67,10 +88,10 @@ export async function handleChatStream(options: HandlerOptions) {
   const stepLogger = makeStepLogger(ctx)
   return streamText({
     model: anthropic('claude-sonnet-4-20250514'),
-    system,
-    messages: options.messages,
+    messages: withCachedSystem(system, options.messages),
     tools: crmTools,
     stopWhen: stepCountIs(10),
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     experimental_context: ctx,
     onStepFinish: stepLogger,
     onFinish: options.onFinish,
@@ -83,10 +104,10 @@ export async function handleChatGenerate(options: Omit<HandlerOptions, 'onFinish
   const stepLogger = makeStepLogger(ctx)
   const result = await generateText({
     model: anthropic('claude-sonnet-4-20250514'),
-    system,
-    messages: options.messages,
+    messages: withCachedSystem(system, options.messages),
     tools: crmTools,
     stopWhen: stepCountIs(10),
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     experimental_context: ctx,
     onStepFinish: stepLogger,
   })

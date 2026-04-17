@@ -69,8 +69,12 @@ export async function POST(req: Request) {
       content: userText,
     })
 
-    // Load conversation history (last 20 messages)
-    const { data: history } = await getMessages(supabase, conversation.id, { limit: 20 })
+    // Load conversation history (last 12 messages). Each assistant message can
+    // include a toolCalls payload serialized into its content, so 20 turns
+    // blows past the 30K/min input rate limit fast once combined with the
+    // ~40-tool schema bundle. 12 keeps enough context for multi-turn flows
+    // without burning the rate limit budget.
+    const { data: history } = await getMessages(supabase, conversation.id, { limit: 12 })
     const aiMessages = (history ?? []).map((m) => ({
       role: m.role as 'user' | 'assistant' | 'system',
       content: m.content,
