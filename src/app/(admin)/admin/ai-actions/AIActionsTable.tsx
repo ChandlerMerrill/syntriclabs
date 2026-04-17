@@ -23,8 +23,30 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { formatRelativeTime } from "@/lib/utils"
-import { buttonLabelFor } from "@/lib/ai/undo"
 import type { AIActionRow } from "@/lib/services/ai-actions"
+
+// Inlined (vs imported from @/lib/ai/undo) to keep the `postgres` driver out
+// of the client bundle — undo.ts pulls in node-only modules.
+function buttonLabelFor(hintKind: string): string {
+  switch (hintKind) {
+    case "updateClient": return "Revert client update"
+    case "updateContact": return "Revert contact update"
+    case "updateDeal": return "Revert deal update"
+    case "updateProject": return "Revert project update"
+    case "updateLead": return "Revert lead update"
+    case "archiveClient": return "Undo archive"
+    case "archiveDeal": return "Undo archive"
+    case "dismissLead": return "Restore lead"
+    case "updateDealStage": return "Revert stage change"
+    case "updateProjectStatus": return "Revert status change"
+    case "hardDeleteClient": return "Restore client"
+    case "hardDeleteContact": return "Restore contact"
+    case "hardDeleteLead": return "Restore lead"
+    case "writeSql-update": return "Revert SQL update"
+    case "writeSql-insert": return "Delete inserted rows"
+    default: return "Undo"
+  }
+}
 
 export default function AIActionsTable({ actions }: { actions: AIActionRow[] }) {
   return (
