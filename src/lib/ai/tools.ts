@@ -13,8 +13,6 @@ import {
   getClient,
   addContact,
   updateContact as updateContactRow,
-  deleteClient,
-  deleteContact,
 } from '@/lib/services/clients'
 import {
   createLead as createLeadRow,
@@ -1444,219 +1442,336 @@ export const crmTools = {
   // ── Phase 2D: Hard deletes (two-step confirm) ──
 
   hardDeleteClient: tool({
-    description: 'PERMANENTLY delete a client and all cascaded data (contacts, deals, projects, activities, documents). Irreversible. Two-step flow: first call WITHOUT confirmToken to get a preview + token; only call again WITH confirmToken after the user affirms on their next turn. Prefer archiveClient over this.',
+    description: 'PERMANENTLY delete one or many clients (and their cascaded contacts, deals, projects, activities, documents). Irreversible. Accepts an array of UUIDs — pass one ID for a single delete, or many to clean up duplicates in a single confirmation. Two-step flow: first call WITHOUT confirmToken to get a preview + token; only call again WITH confirmToken after the user affirms on their next turn. Prefer archiveClient over this.',
     inputSchema: zodSchema(z.object({
-      id: z.string().uuid().describe('The client UUID'),
+      ids: z.array(z.string().uuid()).min(1).max(25).describe('Array of client UUIDs to delete. One ID for a single delete, many for batch cleanup.'),
       confirmToken: z.string().uuid().optional().describe('Only pass this on the second call, after the user has affirmed.'),
     })),
-    execute: withAIAudit('hardDeleteClient', { logActivity: false }, async ({ id, confirmToken }: { id: string; confirmToken?: string }, { context }) => {
+    execute: withAIAudit('hardDeleteClient', { logActivity: false }, async ({ ids, confirmToken }: { ids: string[]; confirmToken?: string }, { context }) => {
       const supabase = await createServiceClient()
       const conversationId = context.conversationId
       if (!conversationId) return { error: 'hard delete requires a conversation context' }
 
+      const uniqueIds = Array.from(new Set(ids))
+
       if (!confirmToken) {
-        // Propose: fetch + build preview
-        const { data: client } = await supabase
+        // Propose: fetch + build batch preview
+        const { data: clientRows } = await supabase
           .from('clients')
           .select('id, company_name, status')
-          .eq('id', id)
-          .single() as unknown as { data: { id: string; company_name: string; status: string } | null }
-        if (!client) return { error: 'Client not found' }
+          .in('id', uniqueIds) as unknown as { data: Array<{ id: string; company_name: string; status: string }> | null }
+        const clients = clientRows ?? []
+        if (clients.length < uniqueIds.length) {
+          const found = new Set(clients.map(c => c.id))
+          const missing = uniqueIds.filter(id => !found.has(id))
+          return { error: `Client(s) not found: ${missing.join(', ')}` }
+        }
 
         const [contactsRes, dealsRes, projectsRes, activitiesRes, documentsRes] = await Promise.all([
-          supabase.from('client_contacts').select('id', { count: 'exact', head: true }).eq('client_id', id),
-          supabase.from('deals').select('id', { count: 'exact', head: true }).eq('client_id', id),
-          supabase.from('projects').select('id', { count: 'exact', head: true }).eq('client_id', id),
-          supabase.from('activities').select('id', { count: 'exact', head: true }).eq('client_id', id),
-          supabase.from('documents').select('id', { count: 'exact', head: true }).eq('client_id', id),
-        ])
+          supabase.from('client_contacts').select('client_id').in('client_id', uniqueIds),
+          supabase.from('deals').select('client_id').in('client_id', uniqueIds),
+          supabase.from('projects').select('client_id').in('client_id', uniqueIds),
+          supabase.from('activities').select('client_id').in('client_id', uniqueIds),
+          supabase.from('documents').select('client_id').in('client_id', uniqueIds),
+        ]) as unknown as Array<{ data: Array<{ client_id: string }> | null }>
 
+        const bucket = (rows: Array<{ client_id: string }> | null) => {
+          const m = new Map<string, number>()
+          for (const r of rows ?? []) m.set(r.client_id, (m.get(r.client_id) ?? 0) + 1)
+          return m
+        }
+        const cByClient = bucket(contactsRes.data)
+        const dByClient = bucket(dealsRes.data)
+        const pByClient = bucket(projectsRes.data)
+        const aByClient = bucket(activitiesRes.data)
+        const docByClient = bucket(documentsRes.data)
+
+        const items = clients.map(c => ({
+          id: c.id,
+          displayName: c.company_name,
+          linkedContacts: cByClient.get(c.id) ?? 0,
+          linkedDeals: dByClient.get(c.id) ?? 0,
+          linkedProjects: pByClient.get(c.id) ?? 0,
+          linkedActivities: aByClient.get(c.id) ?? 0,
+          linkedDocuments: docByClient.get(c.id) ?? 0,
+        }))
+        const totals = {
+          contacts: contactsRes.data?.length ?? 0,
+          deals: dealsRes.data?.length ?? 0,
+          projects: projectsRes.data?.length ?? 0,
+          activities: activitiesRes.data?.length ?? 0,
+          documents: documentsRes.data?.length ?? 0,
+        }
         const preview = {
           kind: 'client' as const,
-          id,
-          displayName: client.company_name,
-          linkedContacts: contactsRes.count ?? 0,
-          linkedDeals: dealsRes.count ?? 0,
-          linkedProjects: projectsRes.count ?? 0,
-          linkedActivities: activitiesRes.count ?? 0,
-          linkedDocuments: documentsRes.count ?? 0,
+          count: items.length,
+          items,
+          totals,
         }
-        const { token, expiresAt } = await createPendingAction('hardDeleteClient', { id }, preview, conversationId)
+        const { token, expiresAt } = await createPendingAction('hardDeleteClient', { ids: uniqueIds }, preview, conversationId)
         return {
           pending: true as const,
           token,
           preview,
           expiresAt,
-          instruction: `Show this preview to the user. If they affirm on their next message, call hardDeleteClient again with { id: "${id}", confirmToken: "${token}" }. Do not call any other tool in this turn.`,
-          client_id: id,
+          instruction: `Show this preview to the user (count, per-row names, cascaded totals). If they affirm on their next message, call hardDeleteClient again with { ids: ${JSON.stringify(uniqueIds)}, confirmToken: "${token}" }. Do not call any other tool in this turn.`,
         }
       }
 
       // Confirm: consume token + delete
       const consume = await consumeConfirmToken(confirmToken, 'hardDeleteClient', conversationId)
       if (!consume.ok) return { error: mapConsumeError(consume.error) }
-      if (consume.args.id !== id) return { error: 'confirmToken does not match the client id being deleted' }
+      const storedIds = Array.isArray(consume.args.ids) ? (consume.args.ids as unknown[]).map(String) : []
+      if (!sameIdSet(storedIds, uniqueIds)) {
+        return { error: 'confirmToken does not match the set of client ids being deleted' }
+      }
 
-      const { data: snapshot } = await supabase
+      const { data: snapshotRows } = await supabase
         .from('clients')
         .select('*, client_contacts(*)')
-        .eq('id', id)
-        .single() as unknown as { data: Record<string, unknown> | null }
-      if (!snapshot) return { error: 'Client not found (may have been deleted already)' }
+        .in('id', uniqueIds) as unknown as { data: Array<Record<string, unknown>> | null }
+      const snapshots = snapshotRows ?? []
+      if (snapshots.length < uniqueIds.length) {
+        const found = new Set(snapshots.map(s => s.id as string))
+        const missing = uniqueIds.filter(id => !found.has(id))
+        return { error: `Client(s) no longer exist (may have been deleted already): ${missing.join(', ')}` }
+      }
 
-      const { error: delErr } = await deleteClient(supabase, id) as unknown as { error: unknown }
-      if (delErr) return { error: delErr instanceof Error ? delErr.message : 'Failed to delete client' }
+      // Chain .select('id') on delete so we can verify actually-deleted rowcount.
+      // Without .select(), supabase-js returns data: null on delete even on success,
+      // so a silent zero-row delete would be indistinguishable from success.
+      const { data: deletedRows, error: delErr } = await supabase
+        .from('clients')
+        .delete()
+        .in('id', uniqueIds)
+        .select('id') as unknown as { data: Array<{ id: string }> | null; error: unknown }
+      if (delErr) return { error: delErr instanceof Error ? delErr.message : 'Failed to delete clients' }
 
+      const deletedIdSet = new Set((deletedRows ?? []).map(r => r.id))
+      const missingDeletes = uniqueIds.filter(id => !deletedIdSet.has(id))
+      if (missingDeletes.length > 0) {
+        return { error: `Deleted ${deletedIdSet.size} of ${uniqueIds.length} rows. Missing: ${missingDeletes.join(', ')}. The token has been consumed — ask the user to re-initiate for the missing rows.` }
+      }
+
+      const deletedDisplayNames = snapshots.map(s => (s.company_name as string) ?? (s.id as string))
       return {
         deleted: true as const,
-        id,
-        displayName: (snapshot.company_name as string) ?? id,
-        summary: `Permanently deleted client ${snapshot.company_name}`,
-        reversalHint: { kind: 'hardDeleteClient', row: snapshot },
+        count: deletedIdSet.size,
+        ids: uniqueIds,
+        deletedDisplayNames,
+        summary: `Permanently deleted ${deletedIdSet.size} client${deletedIdSet.size === 1 ? '' : 's'}: ${deletedDisplayNames.join(', ')}`,
+        reversalHint: { kind: 'hardDeleteClient', rows: snapshots },
       }
     }),
   }),
 
   hardDeleteContact: tool({
-    description: 'PERMANENTLY delete a single contact. Irreversible. Two-step flow: first call WITHOUT confirmToken for preview + token, then re-call WITH confirmToken after user affirms.',
+    description: 'PERMANENTLY delete one or many contacts. Irreversible. Accepts an array of UUIDs — pass one ID for a single delete, or many to clean up duplicates in a single confirmation. Two-step flow: first call WITHOUT confirmToken for preview + token, then re-call WITH confirmToken after user affirms.',
     inputSchema: zodSchema(z.object({
-      id: z.string().uuid().describe('The contact UUID'),
+      ids: z.array(z.string().uuid()).min(1).max(25).describe('Array of contact UUIDs to delete. One ID for a single delete, many for batch cleanup.'),
       confirmToken: z.string().uuid().optional(),
     })),
-    execute: withAIAudit('hardDeleteContact', { logActivity: false }, async ({ id, confirmToken }: { id: string; confirmToken?: string }, { context }) => {
+    execute: withAIAudit('hardDeleteContact', { logActivity: false }, async ({ ids, confirmToken }: { ids: string[]; confirmToken?: string }, { context }) => {
       const supabase = await createServiceClient()
       const conversationId = context.conversationId
       if (!conversationId) return { error: 'hard delete requires a conversation context' }
 
+      const uniqueIds = Array.from(new Set(ids))
+
       if (!confirmToken) {
-        const { data: contact } = await supabase
+        const { data: contactRows } = await supabase
           .from('client_contacts')
           .select('id, name, email, client_id, clients(company_name)')
-          .eq('id', id)
-          .single() as unknown as { data: { id: string; name: string; email: string | null; client_id: string; clients: { company_name: string } | null } | null }
-        if (!contact) return { error: 'Contact not found' }
+          .in('id', uniqueIds) as unknown as { data: Array<{ id: string; name: string; email: string | null; client_id: string; clients: { company_name: string } | null }> | null }
+        const contacts = contactRows ?? []
+        if (contacts.length < uniqueIds.length) {
+          const found = new Set(contacts.map(c => c.id))
+          const missing = uniqueIds.filter(id => !found.has(id))
+          return { error: `Contact(s) not found: ${missing.join(', ')}` }
+        }
 
+        const items = contacts.map(c => ({
+          id: c.id,
+          displayName: `${c.name}${c.email ? ` <${c.email}>` : ''}`,
+          clientCompany: c.clients?.company_name ?? null,
+        }))
         const preview = {
           kind: 'contact' as const,
-          id,
-          displayName: `${contact.name}${contact.email ? ` <${contact.email}>` : ''}`,
-          clientCompany: contact.clients?.company_name ?? null,
+          count: items.length,
+          items,
         }
-        const { token, expiresAt } = await createPendingAction('hardDeleteContact', { id }, preview, conversationId)
+        const { token, expiresAt } = await createPendingAction('hardDeleteContact', { ids: uniqueIds }, preview, conversationId)
         return {
           pending: true as const,
           token,
           preview,
           expiresAt,
-          instruction: `Show this preview to the user. If they affirm, re-call hardDeleteContact with { id: "${id}", confirmToken: "${token}" }. Do not call any other tool in this turn.`,
-          client_id: contact.client_id,
+          instruction: `Show this preview to the user. If they affirm, re-call hardDeleteContact with { ids: ${JSON.stringify(uniqueIds)}, confirmToken: "${token}" }. Do not call any other tool in this turn.`,
         }
       }
 
       const consume = await consumeConfirmToken(confirmToken, 'hardDeleteContact', conversationId)
       if (!consume.ok) return { error: mapConsumeError(consume.error) }
-      if (consume.args.id !== id) return { error: 'confirmToken does not match the contact id being deleted' }
+      const storedIds = Array.isArray(consume.args.ids) ? (consume.args.ids as unknown[]).map(String) : []
+      if (!sameIdSet(storedIds, uniqueIds)) {
+        return { error: 'confirmToken does not match the set of contact ids being deleted' }
+      }
 
-      const { data: snapshot } = await supabase
+      const { data: snapshotRows } = await supabase
         .from('client_contacts')
         .select('*')
-        .eq('id', id)
-        .single() as unknown as { data: Record<string, unknown> | null }
-      if (!snapshot) return { error: 'Contact not found (may have been deleted already)' }
+        .in('id', uniqueIds) as unknown as { data: Array<Record<string, unknown>> | null }
+      const snapshots = snapshotRows ?? []
+      if (snapshots.length < uniqueIds.length) {
+        const found = new Set(snapshots.map(s => s.id as string))
+        const missing = uniqueIds.filter(id => !found.has(id))
+        return { error: `Contact(s) no longer exist (may have been deleted already): ${missing.join(', ')}` }
+      }
 
-      const { error: delErr } = await deleteContact(supabase, id) as unknown as { error: unknown }
-      if (delErr) return { error: delErr instanceof Error ? delErr.message : 'Failed to delete contact' }
+      const { data: deletedRows, error: delErr } = await supabase
+        .from('client_contacts')
+        .delete()
+        .in('id', uniqueIds)
+        .select('id') as unknown as { data: Array<{ id: string }> | null; error: unknown }
+      if (delErr) return { error: delErr instanceof Error ? delErr.message : 'Failed to delete contacts' }
 
+      const deletedIdSet = new Set((deletedRows ?? []).map(r => r.id))
+      const missingDeletes = uniqueIds.filter(id => !deletedIdSet.has(id))
+      if (missingDeletes.length > 0) {
+        return { error: `Deleted ${deletedIdSet.size} of ${uniqueIds.length} rows. Missing: ${missingDeletes.join(', ')}. The token has been consumed — ask the user to re-initiate for the missing rows.` }
+      }
+
+      const deletedDisplayNames = snapshots.map(s => (s.name as string) ?? (s.id as string))
       return {
         deleted: true as const,
-        id,
-        displayName: (snapshot.name as string) ?? id,
-        client_id: snapshot.client_id as string,
-        summary: `Permanently deleted contact ${snapshot.name}`,
-        reversalHint: { kind: 'hardDeleteContact', row: snapshot },
+        count: deletedIdSet.size,
+        ids: uniqueIds,
+        deletedDisplayNames,
+        summary: `Permanently deleted ${deletedIdSet.size} contact${deletedIdSet.size === 1 ? '' : 's'}: ${deletedDisplayNames.join(', ')}`,
+        reversalHint: { kind: 'hardDeleteContact', rows: snapshots },
       }
     }),
   }),
 
   hardDeleteLead: tool({
-    description: 'PERMANENTLY delete a widget lead. Irreversible. Two-step flow: first call WITHOUT confirmToken for preview + token, then re-call WITH confirmToken after user affirms. Prefer dismissLead over this.',
+    description: 'PERMANENTLY delete one or many widget leads. Irreversible. Accepts an array of UUIDs — pass one ID for a single delete, or many to clean up duplicates in a single confirmation. Two-step flow: first call WITHOUT confirmToken for preview + token, then re-call WITH confirmToken after user affirms. Prefer dismissLead over this.',
     inputSchema: zodSchema(z.object({
-      id: z.string().uuid().describe('The lead UUID'),
+      ids: z.array(z.string().uuid()).min(1).max(25).describe('Array of lead UUIDs to delete. One ID for a single delete, many for batch cleanup.'),
       confirmToken: z.string().uuid().optional(),
     })),
-    execute: withAIAudit('hardDeleteLead', { logActivity: false }, async ({ id, confirmToken }: { id: string; confirmToken?: string }, { context }) => {
+    execute: withAIAudit('hardDeleteLead', { logActivity: false }, async ({ ids, confirmToken }: { ids: string[]; confirmToken?: string }, { context }) => {
       const supabase = await createServiceClient()
       const conversationId = context.conversationId
       if (!conversationId) return { error: 'hard delete requires a conversation context' }
 
+      const uniqueIds = Array.from(new Set(ids))
+
       if (!confirmToken) {
-        const { data: lead } = await supabase
+        const { data: leadRows } = await supabase
           .from('widget_leads')
           .select('id, first_name, last_name, email, organization, status')
-          .eq('id', id)
-          .single() as unknown as { data: { id: string; first_name: string | null; last_name: string | null; email: string | null; organization: string | null; status: string } | null }
-        if (!lead) return { error: 'Lead not found' }
+          .in('id', uniqueIds) as unknown as { data: Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; organization: string | null; status: string }> | null }
+        const leads = leadRows ?? []
+        if (leads.length < uniqueIds.length) {
+          const found = new Set(leads.map(l => l.id))
+          const missing = uniqueIds.filter(id => !found.has(id))
+          return { error: `Lead(s) not found: ${missing.join(', ')}` }
+        }
 
-        const escRes = await supabase
+        const { data: escRows } = await supabase
           .from('widget_escalations')
-          .select('id', { count: 'exact', head: true })
-          .eq('lead_id', id)
+          .select('lead_id')
+          .in('lead_id', uniqueIds) as unknown as { data: Array<{ lead_id: string }> | null }
+        const escByLead = new Map<string, number>()
+        for (const r of escRows ?? []) escByLead.set(r.lead_id, (escByLead.get(r.lead_id) ?? 0) + 1)
 
-        const displayName =
-          [lead.first_name, lead.last_name].filter(Boolean).join(' ')
-          || lead.organization
-          || lead.email
-          || id
-
+        const items = leads.map(l => {
+          const displayName =
+            [l.first_name, l.last_name].filter(Boolean).join(' ')
+            || l.organization
+            || l.email
+            || l.id
+          return {
+            id: l.id,
+            displayName,
+            status: l.status,
+            linkedEscalations: escByLead.get(l.id) ?? 0,
+          }
+        })
         const preview = {
           kind: 'lead' as const,
-          id,
-          displayName,
-          status: lead.status,
-          linkedEscalations: escRes.count ?? 0,
+          count: items.length,
+          items,
+          totals: { escalations: escRows?.length ?? 0 },
         }
-        const { token, expiresAt } = await createPendingAction('hardDeleteLead', { id }, preview, conversationId)
+        const { token, expiresAt } = await createPendingAction('hardDeleteLead', { ids: uniqueIds }, preview, conversationId)
         return {
           pending: true as const,
           token,
           preview,
           expiresAt,
-          instruction: `Show this preview to the user. If they affirm, re-call hardDeleteLead with { id: "${id}", confirmToken: "${token}" }. Do not call any other tool in this turn.`,
+          instruction: `Show this preview to the user. If they affirm, re-call hardDeleteLead with { ids: ${JSON.stringify(uniqueIds)}, confirmToken: "${token}" }. Do not call any other tool in this turn.`,
         }
       }
 
       const consume = await consumeConfirmToken(confirmToken, 'hardDeleteLead', conversationId)
       if (!consume.ok) return { error: mapConsumeError(consume.error) }
-      if (consume.args.id !== id) return { error: 'confirmToken does not match the lead id being deleted' }
+      const storedIds = Array.isArray(consume.args.ids) ? (consume.args.ids as unknown[]).map(String) : []
+      if (!sameIdSet(storedIds, uniqueIds)) {
+        return { error: 'confirmToken does not match the set of lead ids being deleted' }
+      }
 
-      const { data: snapshot } = await supabase
+      const { data: snapshotRows } = await supabase
         .from('widget_leads')
         .select('*')
-        .eq('id', id)
-        .single() as unknown as { data: Record<string, unknown> | null }
-      if (!snapshot) return { error: 'Lead not found (may have been deleted already)' }
+        .in('id', uniqueIds) as unknown as { data: Array<Record<string, unknown>> | null }
+      const snapshots = snapshotRows ?? []
+      if (snapshots.length < uniqueIds.length) {
+        const found = new Set(snapshots.map(s => s.id as string))
+        const missing = uniqueIds.filter(id => !found.has(id))
+        return { error: `Lead(s) no longer exist (may have been deleted already): ${missing.join(', ')}` }
+      }
 
-      const { error: delErr } = await supabase.from('widget_leads').delete().eq('id', id)
-      if (delErr) return { error: delErr instanceof Error ? delErr.message : 'Failed to delete lead' }
+      const { data: deletedRows, error: delErr } = await supabase
+        .from('widget_leads')
+        .delete()
+        .in('id', uniqueIds)
+        .select('id') as unknown as { data: Array<{ id: string }> | null; error: unknown }
+      if (delErr) return { error: delErr instanceof Error ? delErr.message : 'Failed to delete leads' }
 
-      const displayName =
-        [snapshot.first_name, snapshot.last_name].filter(Boolean).join(' ')
-        || (snapshot.organization as string)
-        || (snapshot.email as string)
-        || id
+      const deletedIdSet = new Set((deletedRows ?? []).map(r => r.id))
+      const missingDeletes = uniqueIds.filter(id => !deletedIdSet.has(id))
+      if (missingDeletes.length > 0) {
+        return { error: `Deleted ${deletedIdSet.size} of ${uniqueIds.length} rows. Missing: ${missingDeletes.join(', ')}. The token has been consumed — ask the user to re-initiate for the missing rows.` }
+      }
 
+      const deletedDisplayNames = snapshots.map(s =>
+        [s.first_name, s.last_name].filter(Boolean).join(' ')
+        || (s.organization as string)
+        || (s.email as string)
+        || (s.id as string)
+      )
       return {
         deleted: true as const,
-        id,
-        displayName,
-        summary: `Permanently deleted lead ${displayName}`,
-        reversalHint: { kind: 'hardDeleteLead', row: snapshot },
+        count: deletedIdSet.size,
+        ids: uniqueIds,
+        deletedDisplayNames,
+        summary: `Permanently deleted ${deletedIdSet.size} lead${deletedIdSet.size === 1 ? '' : 's'}: ${deletedDisplayNames.join(', ')}`,
+        reversalHint: { kind: 'hardDeleteLead', rows: snapshots },
       }
     }),
   }),
 }
 
 // ── Helpers ──
+
+function sameIdSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false
+  const setA = new Set(a)
+  if (setA.size !== b.length) return false
+  for (const x of b) if (!setA.has(x)) return false
+  return true
+}
 
 function mapConsumeError(err: 'not_found' | 'expired' | 'consumed' | 'wrong_tool' | 'wrong_conversation'): string {
   switch (err) {

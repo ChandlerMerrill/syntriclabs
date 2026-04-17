@@ -90,19 +90,19 @@ export async function executeUndo(
         return await undoPatch(supabase, 'projects', hint.projectId as string, (hint.prev as UnknownRecord) ?? {})
 
       case 'hardDeleteClient': {
-        const snapshot = hint.row as UnknownRecord | undefined
-        if (!snapshot) return err('Snapshot missing — cannot restore client.')
-        return await restoreClient(supabase, snapshot)
+        const rows = Array.isArray(hint.rows) ? (hint.rows as UnknownRecord[]) : null
+        if (!rows || rows.length === 0) return err('Snapshot missing — cannot restore client(s).')
+        return await restoreMany(rows, (r) => restoreClient(supabase, r), 'client')
       }
       case 'hardDeleteContact': {
-        const snapshot = hint.row as UnknownRecord | undefined
-        if (!snapshot) return err('Snapshot missing — cannot restore contact.')
-        return await restoreRow(supabase, 'client_contacts', snapshot, 'contact')
+        const rows = Array.isArray(hint.rows) ? (hint.rows as UnknownRecord[]) : null
+        if (!rows || rows.length === 0) return err('Snapshot missing — cannot restore contact(s).')
+        return await restoreMany(rows, (r) => restoreRow(supabase, 'client_contacts', r, 'contact'), 'contact')
       }
       case 'hardDeleteLead': {
-        const snapshot = hint.row as UnknownRecord | undefined
-        if (!snapshot) return err('Snapshot missing — cannot restore lead.')
-        return await restoreRow(supabase, 'widget_leads', snapshot, 'lead')
+        const rows = Array.isArray(hint.rows) ? (hint.rows as UnknownRecord[]) : null
+        if (!rows || rows.length === 0) return err('Snapshot missing — cannot restore lead(s).')
+        return await restoreMany(rows, (r) => restoreRow(supabase, 'widget_leads', r, 'lead'), 'lead')
       }
 
       case 'writeSql-update':
@@ -137,6 +137,31 @@ async function undoPatch(
   return {
     ok: true,
     summary: `Reverted ${table} ${rowId}: restored ${Object.keys(patch).join(', ')}`,
+  }
+}
+
+// Short-circuits on the first DB failure but still reports how many rows were
+// restored before the failure, so the user knows the undo was partial.
+async function restoreMany(
+  rows: UnknownRecord[],
+  restoreOne: (row: UnknownRecord) => Promise<UndoOutcome>,
+  label: string
+): Promise<UndoOutcome> {
+  let restored = 0
+  const warnings: string[] = []
+  for (const row of rows) {
+    const res = await restoreOne(row)
+    if (!res.ok) {
+      const prefix = restored > 0 ? `Restored ${restored} of ${rows.length} ${label}(s) before failure. ` : ''
+      return err(`${prefix}${res.error}`)
+    }
+    restored += 1
+    if (res.warning) warnings.push(res.warning)
+  }
+  return {
+    ok: true,
+    summary: `Restored ${restored} ${label}${restored === 1 ? '' : 's'}.`,
+    ...(warnings.length > 0 ? { warning: warnings.join(' ') } : {}),
   }
 }
 

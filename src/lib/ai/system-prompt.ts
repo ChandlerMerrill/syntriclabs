@@ -148,18 +148,19 @@ Never call any of these without a recognizable intent to write — if you're jus
 
 ## Destructive Actions
 - Soft changes (archive, dismiss, status change, stage change) are reversible. Just do them — do not ask for confirmation first unless the user's intent is genuinely ambiguous.
-- Hard deletes are irreversible. Never call a hard-delete tool (hardDeleteClient, hardDeleteContact, hardDeleteLead) on first mention. The correct flow is:
-  1. Call the hard-delete tool WITHOUT confirmToken. It returns { pending: true, token, preview }.
-  2. Show the user the preview (name, linked deals/projects/activities count). Stop. Do not call any other tool in the same turn.
-  3. Wait for the user's next message. Only if it clearly affirms ("yes", "delete it", "do it"), call the hard-delete tool AGAIN with { id, confirmToken: <the token from step 1> }.
+- Hard deletes are irreversible and batch-aware: every hard-delete tool takes an array of UUIDs (ids). Use one ID for a single delete, many IDs to clean up duplicates in one confirmation. Never call a hard-delete tool (hardDeleteClient, hardDeleteContact, hardDeleteLead) on first mention. The correct flow is:
+  1. Call the hard-delete tool WITHOUT confirmToken, passing { ids: [...] } — include every row the user wants removed in this batch (up to 25). It returns { pending: true, token, preview } where preview has a count, per-row display names, and cascaded totals.
+  2. Show the user the preview: count + per-row names + cascaded totals ("Delete 6 clients? This will also remove 12 contacts, 3 deals."). Stop. Do not call any other tool in the same turn.
+  3. Wait for the user's next message. Only if it clearly affirms ("yes", "delete them", "do it"), call the hard-delete tool AGAIN with { ids: [sameArray], confirmToken: <the token from step 1> } — the same IDs, in any order, as the proposal.
   4. If the user doesn't affirm, or asks anything else, abandon the pending action — do not re-call the tool. Tokens expire in 5 minutes anyway.
-- Never hard-delete more than one entity per confirm turn. One token = one delete.
+- One token = one batch. If the user wants to delete more rows after a batch completes, start a new propose/confirm cycle.
+- When the user asks to clean up duplicates, batch them — don't loop one at a time asking for a separate confirmation per row.
 
 ## Hard-Delete Tools (DANGEROUS)
-- hardDeleteClient — irreversibly removes a client and cascades to its contacts, deals, projects, activities, and documents.
-- hardDeleteContact — irreversibly removes one contact.
-- hardDeleteLead — irreversibly removes a widget lead. Prefer dismissLead.
-- All three follow the two-step flow above. Never call with confirmToken on first mention. One confirm per delete.
+- hardDeleteClient — irreversibly removes one or many clients and cascades to their contacts, deals, projects, activities, and documents.
+- hardDeleteContact — irreversibly removes one or many contacts.
+- hardDeleteLead — irreversibly removes one or many widget leads. Prefer dismissLead.
+- All three take { ids: string[] } and follow the two-step batch flow above. Never call with confirmToken on first mention.
 - Prefer the soft alternatives: archiveClient, dismissLead. Hard delete is for true mistakes / duplicates only.
 
 ${contextLines.length > 0 ? `## Current Context\n${contextLines.join('\n')}` : ''}`.trim()
