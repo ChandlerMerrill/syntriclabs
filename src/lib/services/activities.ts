@@ -26,13 +26,17 @@ export async function getActivities(
   return query as unknown as { data: ActivityWithContext[] | null; error: unknown }
 }
 
-export async function createActivity(supabase: SupabaseClient, input: ActivityInput) {
+export async function createActivity(
+  supabase: SupabaseClient,
+  input: ActivityInput,
+  opts: { skipEmbedding?: boolean } = {},
+) {
   const result = await supabase
     .from('activities')
     .insert(input)
     .select()
     .single() as unknown as { data: Activity | null; error: unknown }
-  if (result.data) {
+  if (result.data && !opts.skipEmbedding) {
     embedInBackground('activity', result.data.id, serializeActivity(result.data, 'Unknown'))
   }
   return result
@@ -50,14 +54,18 @@ export async function logAutoActivity(
     metadata?: Record<string, unknown>
   }
 ) {
-  return createActivity(supabase, {
-    client_id: params.client_id,
-    deal_id: params.deal_id ?? null,
-    project_id: params.project_id ?? null,
-    type: (params.type as ActivityInput['type']) ?? 'status_change',
-    title: params.title,
-    description: params.description ?? '',
-    metadata: params.metadata ?? {},
-    is_auto_generated: true,
-  })
+  return createActivity(
+    supabase,
+    {
+      client_id: params.client_id,
+      deal_id: params.deal_id ?? null,
+      project_id: params.project_id ?? null,
+      type: (params.type as ActivityInput['type']) ?? 'status_change',
+      title: params.title,
+      description: params.description ?? '',
+      metadata: params.metadata ?? {},
+      is_auto_generated: true,
+    },
+    { skipEmbedding: true },
+  )
 }

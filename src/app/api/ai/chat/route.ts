@@ -13,15 +13,17 @@ export async function POST(req: Request) {
 
   const { messages, context } = await req.json()
 
-  const result = handleChatStream({
+  // Resolve conversation up-front so it can be threaded through to tool calls.
+  const serviceClient = await createServiceClient()
+  const conversation = await getOrCreateConversation(serviceClient, 'admin_chat', user.id)
+
+  const result = await handleChatStream({
     messages,
     context,
     channel: 'admin_chat',
+    conversationId: conversation.id,
     onFinish: async ({ text, steps }) => {
       try {
-        const serviceClient = await createServiceClient()
-        const conversation = await getOrCreateConversation(serviceClient, 'admin_chat', user.id)
-
         // Persist the latest user message
         const lastUserMsg = messages.filter((m: { role: string }) => m.role === 'user').pop()
         if (lastUserMsg) {

@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { handleChatGenerate } from '@/lib/ai/handler'
 import { getOrCreateConversation, addMessage, getMessages } from '@/lib/services/messages'
-import { logAutoActivity } from '@/lib/services/activities'
 import {
   sendLongTelegramMessage,
   sendTelegramMessage,
@@ -84,6 +83,7 @@ export async function POST(req: Request) {
     const result = await handleChatGenerate({
       messages: aiMessages,
       channel: 'telegram',
+      conversationId: conversation.id,
     })
 
     // Build tool calls for persistence
@@ -99,9 +99,12 @@ export async function POST(req: Request) {
       toolCalls: mergedToolCalls.length > 0 ? mergedToolCalls : undefined,
     })
 
-    // Check for document generation — send PDF via Telegram
+    // Check for document generation — send PDF via Telegram.
+    // Both generateDocument (typed: proposal/price_sheet/contract) and
+    // generateCustomDocument (freeform markdown brief) produce a documents row
+    // with a storage_path; deliver either.
     for (const tr of result.toolResults) {
-      if (tr.toolName === 'generateDocument' && tr.result) {
+      if ((tr.toolName === 'generateDocument' || tr.toolName === 'generateCustomDocument') && tr.result) {
         const docResult = tr.result as { document?: { id: string; title: string }; viewUrl?: string }
         if (docResult.document) {
           try {
@@ -134,24 +137,6 @@ export async function POST(req: Request) {
     if (result.text) {
       const htmlText = markdownToTelegramHTML(result.text)
       await sendLongTelegramMessage(chatId, htmlText)
-    }
-
-    // Log activity for any client-related tool calls
-    const clientIds = new Set<string>()
-    for (const tc of result.toolCalls) {
-      const args = tc.args as Record<string, unknown>
-      if (args.clientId) clientIds.add(args.clientId as string)
-      if (args.client_id) clientIds.add(args.client_id as string)
-    }
-
-    for (const clientId of clientIds) {
-      await logAutoActivity(supabase, {
-        client_id: clientId,
-        title: 'AI query via Telegram',
-        description: `Asked: "${userText.slice(0, 100)}"`,
-        type: 'note',
-        metadata: { channel: 'telegram', conversation_id: conversation.id },
-      })
     }
   } catch (e) {
     console.error('Telegram webhook error:', e)

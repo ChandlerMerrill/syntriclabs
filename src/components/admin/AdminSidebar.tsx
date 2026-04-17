@@ -18,6 +18,8 @@ import {
   Mic,
   UserPlus,
   BookOpen,
+  FlaskConical,
+  Activity,
   Pin,
   PinOff,
   ArrowLeft,
@@ -76,6 +78,11 @@ const phase5Items: NavItem[] = [
 const phase6Items: NavItem[] = [
   { label: "Leads", href: "/admin/leads", icon: UserPlus, enabled: true, badgeKey: 'leads' },
   { label: "Knowledge Base", href: "/admin/knowledgebase", icon: BookOpen, enabled: true },
+]
+
+const devItems: NavItem[] = [
+  { label: "AI Playground", href: "/admin/ai-playground", icon: FlaskConical, enabled: true },
+  { label: "AI Actions", href: "/admin/ai-actions", icon: Activity, enabled: true },
 ]
 
 const bottomItems = [
@@ -275,6 +282,10 @@ export default function AdminSidebar({
         <Separator className="my-2 bg-white/8" />
 
         {phase6Items.map((item) => renderNavItem(item))}
+
+        <Separator className="my-2 bg-white/8" />
+
+        {devItems.map((item) => renderNavItem(item))}
 
         <Separator className="my-2 bg-white/8" />
 

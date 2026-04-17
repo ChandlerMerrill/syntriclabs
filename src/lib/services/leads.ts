@@ -1,6 +1,24 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { WidgetLead, WidgetLeadWithEscalations, LeadStatus } from '@/lib/types'
 
+export interface LeadInput {
+  session_id: string
+  conversation_id?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  email?: string | null
+  phone?: string | null
+  preferred_contact?: 'phone' | 'email' | 'sms' | null
+  role?: string | null
+  organization?: string | null
+  business_type?: string | null
+  service_interest?: string | null
+  request?: string | null
+  summary?: string | null
+  status?: LeadStatus
+  metadata?: Record<string, unknown>
+}
+
 export async function getLeads(
   supabase: SupabaseClient,
   filters?: { status?: string; search?: string }
@@ -76,6 +94,23 @@ export async function convertToClient(supabase: SupabaseClient, leadId: string) 
   await updateLeadStatus(supabase, leadId, 'converted')
 
   return { data: client, error: null }
+}
+
+export async function createLead(supabase: SupabaseClient, input: LeadInput) {
+  return supabase
+    .from('widget_leads')
+    .insert(input)
+    .select()
+    .single() as unknown as { data: WidgetLead | null; error: unknown }
+}
+
+export async function updateLead(supabase: SupabaseClient, id: string, input: Partial<LeadInput>) {
+  return supabase
+    .from('widget_leads')
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single() as unknown as { data: WidgetLead | null; error: unknown }
 }
 
 export async function getNewLeadsCount(supabase: SupabaseClient) {

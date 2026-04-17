@@ -84,6 +84,9 @@ export interface Deal {
   lost_reason: string | null
   notes: string
   stage_history: StageHistoryEntry[]
+  is_archived: boolean
+  archived_at: string | null
+  archive_reason: string | null
   created_at: string
   updated_at: string
 }
@@ -117,12 +120,12 @@ export type DealInput = Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'stage_h
 export type ActivityInput = Omit<Activity, 'id' | 'created_at' | 'updated_at'>
 
 // ─── Document Types ───
-export type DocumentType = 'proposal' | 'price_sheet' | 'contract' | 'counter_proposal'
+export type DocumentType = 'proposal' | 'price_sheet' | 'contract' | 'counter_proposal' | 'custom'
 export type DocumentStatus = 'draft' | 'final' | 'sent' | 'accepted' | 'rejected'
 
 export interface Document {
   id: string
-  client_id: string
+  client_id: string | null
   deal_id: string | null
   project_id: string | null
   type: DocumentType
@@ -178,6 +181,18 @@ export interface ContractData {
   totalValue: number
   ipClause?: string
   terminationClause?: string
+}
+
+export interface CustomDocumentSection {
+  heading: string
+  body: string
+}
+
+export interface CustomDocumentData {
+  title: string
+  subtitle?: string
+  body: string
+  sections?: CustomDocumentSection[]
 }
 
 // ─── Messaging Types ───
