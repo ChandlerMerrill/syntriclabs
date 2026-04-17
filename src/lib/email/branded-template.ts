@@ -9,10 +9,11 @@ const TEXT_BODY = '#334155'
 const TEXT_MUTED = '#64748B'
 const BORDER_LIGHT = '#E2E8F0'
 const BG_LIGHT = '#F8FAFC'
+const BRAND_FONT = "'Rajdhani', 'Helvetica Neue', Arial, sans-serif"
 
 const PHONE_TEL = FOUNDER.phone.replace(/[^\d+]/g, '')
 
-const MASCOT_IMG = `<img src="https://www.syntriclabs.com/images/syntric-mascot.png" alt="" width="18" height="18" style="display:inline-block;vertical-align:middle;width:18px;height:18px;border:0;outline:none;text-decoration:none">`
+const MASCOT_IMG = `<img src="https://www.syntriclabs.com/images/syntric-mascot.png" alt="" width="25" height="25" style="display:inline-block;vertical-align:middle;width:25px;height:25px;border:0;outline:none;text-decoration:none">`
 
 function escapeHtml(s: string): string {
   return s
@@ -59,7 +60,12 @@ export function renderBrandedEmail(body: string): string {
 
   return `<!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <style>@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap');</style>
+</head>
 <body style="margin:0;padding:0;background:${BG_LIGHT};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased">
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${BG_LIGHT};padding:32px 16px">
     <tr><td align="center">
@@ -68,14 +74,23 @@ export function renderBrandedEmail(body: string): string {
         <tr><td style="height:4px;background:${BRAND_PURPLE};line-height:4px;font-size:0">&nbsp;</td></tr>
 
         <tr><td style="padding:22px 32px 18px 32px">
-          <p style="margin:0;font-size:20px;font-weight:700;color:${TEXT_DARK};letter-spacing:-0.02em">${FOUNDER.company}</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td style="vertical-align:middle;padding-right:12px">
+                <img src="https://www.syntriclabs.com/images/updated-logo.png" alt="" height="44" style="display:block;height:44px;width:auto;border:0;outline:none">
+              </td>
+              <td style="vertical-align:middle">
+                <p style="margin:0;font-size:28px;font-weight:700;color:${TEXT_DARK};letter-spacing:-0.01em;font-family:${BRAND_FONT}">${FOUNDER.company}</p>
+              </td>
+            </tr>
+          </table>
         </td></tr>
 
         <tr><td style="padding:12px 32px;background:${BRAND_TINT_BG};border-top:1px solid ${BRAND_TINT_BORDER};border-bottom:1px solid ${BRAND_TINT_BORDER}">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0">
             <tr>
               <td style="vertical-align:middle;padding-right:10px">
-                <div style="width:28px;height:28px;background:#FFFFFF;border:1px solid ${BRAND_TINT_BORDER};border-radius:50%;text-align:center;line-height:28px">
+                <div style="width:38px;height:38px;background:#FFFFFF;border:1px solid ${BRAND_TINT_BORDER};border-radius:50%;text-align:center;line-height:38px">
                   ${MASCOT_IMG}
                 </div>
               </td>

@@ -158,6 +158,7 @@ export const crmTools = {
           viewUrl: `/admin/documents/${doc.id}`,
         }
       } catch (err) {
+        console.error('generateDocument failed:', err)
         return { error: err instanceof Error ? err.message : 'Document generation failed' }
       }
     },

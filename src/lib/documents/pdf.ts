@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer-core'
+import { FOUNDER } from '@/lib/founder-profile'
 
 export async function generatePDF(html: string): Promise<Buffer> {
   let browser
@@ -30,10 +31,21 @@ export async function generatePDF(html: string): Promise<Buffer> {
   try {
     const page = await browser.newPage()
     await page.setContent(html, { waitUntil: 'networkidle0' })
+    const dateLabel = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    const footerTemplate = `
+      <div style="width:100%;text-align:center;font-size:8pt;color:#94A3B8;font-family:Inter,-apple-system,sans-serif;padding:0 0.5in">
+        ${FOUNDER.company} &middot; ${FOUNDER.fullName} &middot; ${dateLabel}
+        &nbsp;&middot;&nbsp;
+        <span class="pageNumber"></span> / <span class="totalPages"></span>
+      </div>
+    `
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '0.5in', right: '0.5in', bottom: '0.75in', left: '0.5in' },
+      displayHeaderFooter: true,
+      headerTemplate: '<div></div>',
+      footerTemplate,
     })
     return Buffer.from(pdf)
   } finally {
