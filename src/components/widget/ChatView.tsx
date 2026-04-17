@@ -194,8 +194,8 @@ export default function ChatView({
       </div>
 
       {/* Input */}
-      <div className="border-t border-slate-200/60 px-3 pb-3 pt-2">
-        <div className="widget-input-border flex items-center gap-2 rounded-xl px-3 py-2.5 transition-shadow duration-300 focus-within:shadow-md focus-within:shadow-indigo-500/[0.06]">
+      <div className="border-t border-slate-200/60 bg-white/60 px-3 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:bg-transparent sm:pb-3">
+        <div className="widget-input-border flex items-center gap-2 rounded-2xl px-3 py-3 transition-shadow duration-300 focus-within:shadow-md focus-within:shadow-indigo-500/[0.06] sm:rounded-xl sm:py-2.5">
           <textarea
             rows={1}
             value={input}
@@ -213,15 +213,15 @@ export default function ChatView({
               }
             }}
             placeholder="Type your message..."
-            className="widget-input-no-ring flex-1 resize-none bg-transparent text-sm leading-5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus-visible:outline-none"
+            className="widget-input-no-ring flex-1 resize-none bg-transparent text-base leading-5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus-visible:outline-none sm:text-sm"
             disabled={isLoading}
           />
           <button
             onClick={() => submit()}
             disabled={!input.trim() || isLoading}
-            className="shrink-0 rounded-lg p-1.5 text-[#6366F1] transition-all duration-200 hover:bg-[#6366F1]/10 hover:text-[#4F46E5] hover:scale-110 disabled:opacity-30 disabled:hover:scale-100"
+            className="shrink-0 rounded-lg p-2 text-[#6366F1] transition-all duration-200 hover:bg-[#6366F1]/10 hover:text-[#4F46E5] active:scale-95 disabled:opacity-30 disabled:hover:scale-100 sm:p-1.5 sm:hover:scale-110"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-[18px] w-[18px] sm:h-4 sm:w-4" />
           </button>
         </div>
       </div>

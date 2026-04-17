@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Plus, ArrowLeft } from "lucide-react"
 import type { UIMessage } from "ai"
+import { randomUUID } from "@/lib/utils"
 import SyntricMascot from "./SyntricMascot"
 import ChatView from "./ChatView"
 import ChatHistory from "./ChatHistory"
@@ -35,7 +36,7 @@ function getSessionId() {
   if (typeof window === "undefined") return ""
   const stored = localStorage.getItem("syntric-widget-session")
   if (stored) return stored
-  const id = crypto.randomUUID()
+  const id = randomUUID()
   localStorage.setItem("syntric-widget-session", id)
   return id
 }
@@ -215,46 +216,61 @@ export default function ChatWidget() {
         )}
       </AnimatePresence>
 
+      {/* Backdrop — mobile only */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px] sm:hidden"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Panel */}
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className={`fixed bottom-0 right-0 z-50 flex h-full w-full flex-col overflow-hidden border border-slate-200/40 bg-[#F8FAFC] shadow-2xl shadow-black/15 ring-1 ring-black/[0.03] backdrop-blur-sm transition-shadow duration-500 sm:bottom-6 sm:right-6 sm:h-[520px] sm:w-[380px] sm:rounded-2xl ${isStreaming ? "widget-streaming" : ""}`}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className={`fixed bottom-0 left-0 right-0 z-50 flex h-[88dvh] max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-[#F8FAFC] shadow-[0_-12px_40px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/10 sm:bottom-6 sm:left-auto sm:right-6 sm:h-[520px] sm:max-h-none sm:w-[380px] sm:rounded-2xl sm:border sm:border-slate-200/40 sm:shadow-2xl sm:shadow-black/15 sm:ring-black/[0.03] ${isStreaming ? "widget-streaming" : ""}`}
           >
             {/* Header */}
-            <div className="relative flex items-center justify-between bg-gradient-to-r from-[#0F172A] to-[#1A1F3A] px-4 py-3.5 sm:rounded-t-2xl">
+            <div className="relative flex items-center justify-between bg-gradient-to-r from-[#0F172A] to-[#1A1F3A] px-5 py-4 sm:px-4 sm:py-3.5">
               {view === "chat" ? (
                 <>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setView("history")}
-                      className="rounded-lg p-1.5 text-[#94A3B8] transition-colors hover:bg-white/10 hover:text-white"
+                      className="rounded-lg p-2 text-[#94A3B8] transition-colors hover:bg-white/10 hover:text-white active:bg-white/15 sm:p-1.5"
                       aria-label="Chat history"
                     >
-                      <ArrowLeft className="h-4 w-4" />
+                      <ArrowLeft className="h-[18px] w-[18px] sm:h-4 sm:w-4" />
                     </button>
-                    <span className="font-[family-name:var(--font-rajdhani)] text-sm font-semibold tracking-wide text-white">
+                    <span className="font-[family-name:var(--font-rajdhani)] text-base font-semibold tracking-wide text-white sm:text-sm">
                       Syntric Assistant
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={handleNewChat}
-                      className="rounded-lg p-1.5 text-[#94A3B8] transition-colors hover:bg-white/10 hover:text-white"
+                      className="rounded-lg p-2 text-[#94A3B8] transition-colors hover:bg-white/10 hover:text-white active:bg-white/15 sm:p-1.5"
                       aria-label="New chat"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-[18px] w-[18px] sm:h-4 sm:w-4" />
                     </button>
                     <button
                       onClick={() => setOpen(false)}
-                      className="rounded-lg p-1.5 text-[#94A3B8] transition-colors hover:bg-white/10 hover:text-white"
+                      className="rounded-lg p-2 text-[#94A3B8] transition-colors hover:bg-white/10 hover:text-white active:bg-white/15 sm:p-1.5"
                       aria-label="Close chat"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-[18px] w-[18px] sm:h-4 sm:w-4" />
                     </button>
                   </div>
                 </>
@@ -262,16 +278,16 @@ export default function ChatWidget() {
                 <>
                   <div className="flex items-center gap-2.5">
                     <SyntricMascot size={24} />
-                    <span className="font-[family-name:var(--font-rajdhani)] text-sm font-semibold tracking-wide text-white">
+                    <span className="font-[family-name:var(--font-rajdhani)] text-base font-semibold tracking-wide text-white sm:text-sm">
                       Chat History
                     </span>
                   </div>
                   <button
                     onClick={() => setOpen(false)}
-                    className="rounded-lg p-1.5 text-[#94A3B8] transition-colors hover:bg-white/10 hover:text-white"
+                    className="rounded-lg p-2 text-[#94A3B8] transition-colors hover:bg-white/10 hover:text-white active:bg-white/15 sm:p-1.5"
                     aria-label="Close chat"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-[18px] w-[18px] sm:h-4 sm:w-4" />
                   </button>
                 </>
               )}
