@@ -3,6 +3,8 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { handleChatGenerate } from '@/lib/ai/handler'
 import { getOrCreateConversation, addMessage, getMessages } from '@/lib/services/messages'
 import { getOrCreateSession } from '@/lib/managed-agent/session'
+import { anthropicClient } from '@/lib/managed-agent/client'
+import { runCustomTool } from '@/lib/managed-agent/custom-tools'
 import {
   sendLongTelegramMessage,
   sendTelegramMessage,
@@ -77,7 +79,63 @@ export async function POST(req: Request) {
 
     if (process.env.USE_MANAGED_AGENT === '1') {
       const sessionId = await getOrCreateSession(supabase, conversation.id, chatId)
-      await sendTelegramMessage(chatId, `[managed-agent wip] session ${sessionId}`)
+
+      await addMessage(supabase, conversation.id, { role: 'user', content: userText })
+
+      await sendTelegramChatAction(chatId, 'typing')
+
+      // Pattern 7: open stream BEFORE sending user.message so we don't miss the
+      // first session.status_running transition.
+      const stream = await anthropicClient.beta.sessions.events.stream(sessionId)
+      await anthropicClient.beta.sessions.events.send(sessionId, {
+        events: [{ type: 'user.message', content: [{ type: 'text', text: userText }] }],
+      })
+
+      let finalText = ''
+
+      for await (const event of stream) {
+        if (event.type === 'agent.message') {
+          for (const block of event.content) {
+            if (block.type === 'text') finalText += block.text
+          }
+        }
+
+        if (event.type === 'agent.custom_tool_use') {
+          const result = await runCustomTool(event.name, event.input, {
+            conversationId: conversation.id,
+            channel: 'telegram',
+          })
+          const isError =
+            typeof result === 'object' && result !== null && 'error' in result
+
+          await anthropicClient.beta.sessions.events.send(sessionId, {
+            events: [{
+              type: 'user.custom_tool_result',
+              custom_tool_use_id: event.id,
+              content: [{ type: 'text', text: JSON.stringify(result) }],
+              is_error: isError,
+            }],
+          })
+        }
+
+        if (event.type === 'session.status_terminated') break
+        if (event.type === 'session.status_idle') {
+          // Pattern 5: requires_action means the agent is waiting on our
+          // tool_result — stay in the loop.
+          if (event.stop_reason.type === 'requires_action') continue
+          break
+        }
+      }
+
+      // Tool-call persistence deferred to Phase 5b — stubs have no meaningful payload.
+      await addMessage(supabase, conversation.id, { role: 'assistant', content: finalText })
+
+      if (finalText) {
+        await sendLongTelegramMessage(chatId, markdownToTelegramHTML(finalText))
+      } else {
+        await sendTelegramMessage(chatId, 'No response generated.')
+      }
+
       return NextResponse.json({ ok: true })
     }
 
