@@ -1,5 +1,10 @@
 import type { z } from 'zod'
 import { agentCtxStore, type AgentCtx } from './context'
+import { register as registerSearch } from './handlers/search'
+import { register as registerEmail } from './handlers/email'
+import { register as registerDocuments } from './handlers/documents'
+import { register as registerCrmWrite } from './handlers/crm-write'
+import { register as registerHardDelete } from './handlers/hard-delete'
 
 export type Ctx = AgentCtx
 
@@ -43,3 +48,12 @@ export function registerTool<S extends z.ZodTypeAny>(
     return fn(parsed.data)
   }
 }
+
+// Side-effect-on-import registration. Safe because custom-tools.ts is only
+// imported from the Telegram webhook and registerTool is idempotent
+// (object-key assignment, not push).
+registerSearch()
+registerEmail()
+registerDocuments()
+registerCrmWrite()
+registerHardDelete()
