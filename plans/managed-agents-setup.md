@@ -163,6 +163,70 @@ Never re-run `setup-agent` once `ANTHROPIC_AGENT_ID` is set.
 
 ---
 
-## Phases 4–8
+## Phase 4a — Bridge scaffolding (session create/resume)
+
+Claude has added `src/lib/managed-agent/{client,session}.ts` and wired a feature-flagged branch into `src/app/api/telegram/webhook/route.ts`. The new branch only fires when `USE_MANAGED_AGENT=1`; otherwise the existing `handleChatGenerate` path runs untouched. `/reset` has been renamed to `/clear` (Claude Code convention) and now also strips `metadata.agent_session_id` so the next turn mints a fresh session. The work below is everything outside the repo.
+
+### 4a.1 Preflight (`.env.local`)
+
+- [ ] Confirm `.env.local` has all five vars needed for the managed-agent path:
+  - `ANTHROPIC_API_KEY`
+  - `ANTHROPIC_AGENT_ID` (from Phase 3)
+  - `ANTHROPIC_AGENT_VERSION` (from Phase 3)
+  - `ANTHROPIC_ENV_ID` (from Phase 3)
+  - `ANTHROPIC_SUPABASE_VAULT_ID` (from Phase 1)
+- [ ] Do **NOT** add `USE_MANAGED_AGENT` to `.env.local` — the flag is intentionally opt-in per shell invocation so the existing path stays live during dev.
+- [ ] Vercel propagation is deferred to Phase 8. No Vercel changes in this phase.
+
+### 4a.2 Local dev server
+
+- [ ] Start with the flag: `USE_MANAGED_AGENT=1 npm run dev`
+- [ ] Expose the webhook to Telegram — either
+  - `ngrok http 3000` and temporarily point the bot's webhook at `https://<ngrok>.ngrok-free.app/api/telegram/webhook`, **or**
+  - construct a `curl` that mimics the Telegram POST body with `x-telegram-bot-api-secret-token: $TELEGRAM_WEBHOOK_SECRET` and `message.from.id = $TELEGRAM_AUTHORIZED_USER_ID`.
+
+### 4a.3 Two-ping session-resume check
+
+- [ ] **Ping 1:** send any non-command text to the bot. Expect reply: `[managed-agent wip] session sess_xxx`.
+- [ ] **Ping 2:** send different text. Expect reply with the **same** `sess_xxx` ID — this confirms `getOrCreateSession` is reading the persisted ID rather than creating a new session each turn.
+
+### 4a.4 Supabase spot-check
+
+- [ ] Run in Supabase SQL editor (or `psql`):
+  ```sql
+  select id, metadata from conversations where external_id = '<your-chat-id>';
+  ```
+- [ ] Confirm `metadata` contains `{"agent_session_id": "sess_xxx"}` matching the ID echoed in Telegram.
+
+### 4a.5 Anthropic Console spot-check
+
+- [ ] Open console.anthropic.com → Managed Agents → `syntric-crm-telegram` → Sessions.
+- [ ] Confirm one session exists with title `telegram-<chatId>` and the `conversation_id` + `channel=telegram` metadata keys are set.
+
+### 4a.6 Regression check (flag off)
+
+- [ ] Stop the dev server, restart without the flag: `npm run dev`.
+- [ ] Ping the bot. Expect a real answer from `handleChatGenerate` (old path). This confirms the feature flag cleanly gates the new branch.
+
+### 4a.7 `/clear` behavior check
+
+- [ ] Send `/clear`. Expect `Context cleared. Starting fresh — what's up?`.
+- [ ] Re-check Supabase: `metadata` should no longer contain `agent_session_id`; `messages` rows for that conversation should be gone.
+- [ ] Restart with `USE_MANAGED_AGENT=1 npm run dev` and ping once — expect a **new** `sess_xxx` ID (different from the pre-`/clear` one).
+- [ ] Send `/reset` (old name). Expect it to fall through to the normal message-handling path — i.e. treated as regular text, not the clear command.
+
+### 4a.8 Hand back to Claude
+
+- [ ] Confirm all checks above pass. Claude has already flipped Phase 4a `[ ]` → `[x]` and will commit `feat(managed-agents): phase 4a — session create/resume scaffolding` once you give the green light.
+
+### Stop criteria (abort and debug)
+
+- Ping 1 returns an error rather than `[managed-agent wip] session sess_xxx` → check that all five env vars from 4a.1 are set in the shell running `npm run dev` (not just `.env.local` — Next.js only auto-loads that file for dev; `USE_MANAGED_AGENT` must be exported in the invocation).
+- Ping 2 returns a different `sess_xxx` than Ping 1 → the Supabase update after session creation failed; inspect server logs and confirm the service-role client has update permission on `conversations.metadata`.
+- Flag-off ping fails with a managed-agent import-time error → `client.ts` was imported eagerly somewhere it shouldn't be. The lazy `AGENT_ID()` / `AGENT_VERSION()` getters are there precisely to keep the off-path clean.
+
+---
+
+## Phases 4b–8
 
 _(Populate as each phase begins.)_

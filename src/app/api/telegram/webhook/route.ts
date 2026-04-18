@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { handleChatGenerate } from '@/lib/ai/handler'
 import { getOrCreateConversation, addMessage, getMessages } from '@/lib/services/messages'
+import { getOrCreateSession } from '@/lib/managed-agent/session'
 import {
   sendLongTelegramMessage,
   sendTelegramMessage,
@@ -48,11 +49,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true })
   }
 
-  // Handle /reset command — wipe conversation history for a fresh context
-  if (userText === '/reset') {
+  // Handle /clear command — wipe conversation history for a fresh context.
+  // Also strips any managed-agent session id from conversation metadata so the
+  // next turn under USE_MANAGED_AGENT=1 mints a fresh session.
+  if (userText === '/clear') {
     const supabase = await createServiceClient()
     const conversation = await getOrCreateConversation(supabase, 'telegram', chatId)
     await supabase.from('messages').delete().eq('conversation_id', conversation.id)
+
+    const currentMeta = (conversation.metadata ?? {}) as Record<string, unknown>
+    const { agent_session_id: _stripped, ...cleanedMeta } = currentMeta
+    void _stripped
+    await supabase
+      .from('conversations')
+      .update({ metadata: cleanedMeta })
+      .eq('id', conversation.id)
+
     await sendTelegramMessage(chatId, "Context cleared. Starting fresh — what's up?")
     return NextResponse.json({ ok: true })
   }
@@ -62,6 +74,12 @@ export async function POST(req: Request) {
 
     // Get or create conversation
     const conversation = await getOrCreateConversation(supabase, 'telegram', chatId)
+
+    if (process.env.USE_MANAGED_AGENT === '1') {
+      const sessionId = await getOrCreateSession(supabase, conversation.id, chatId)
+      await sendTelegramMessage(chatId, `[managed-agent wip] session ${sessionId}`)
+      return NextResponse.json({ ok: true })
+    }
 
     // Persist user message
     await addMessage(supabase, conversation.id, {
