@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { logAutoActivity } from '@/lib/services/activities'
+import { tryGetAgentCtx } from '@/lib/managed-agent/context'
 import type { MessageChannel } from '@/lib/types'
 
 export interface AIAuditContext {
@@ -40,9 +41,19 @@ export function withAIAudit<A, R>(
   toolName: string,
   opts: { logActivity?: boolean } = {},
   execute: (args: A, helpers: { context: AIAuditContext }) => Promise<R>
-): (args: A, execOpts: { experimental_context?: unknown }) => Promise<R> {
+): (args: A, execOpts?: { experimental_context?: unknown }) => Promise<R> {
   return async (args: A, execOpts) => {
-    const ctx = ((execOpts?.experimental_context ?? {}) as AIAuditContext) ?? {}
+    // Precedence: explicit experimental_context (legacy AI SDK path) wins over
+    // the ambient store. The dispatcher never sets experimental_context and
+    // the legacy handler never opens an agentCtxStore frame — defensive.
+    const ctxFromExperimental =
+      (execOpts?.experimental_context as AIAuditContext | undefined) ?? null
+    const ctxFromStore = tryGetAgentCtx()
+    const ctx: AIAuditContext =
+      ctxFromExperimental ??
+      (ctxFromStore
+        ? { conversationId: ctxFromStore.conversationId, channel: ctxFromStore.channel }
+        : {})
     const startedAt = Date.now()
     let result: R | undefined
     let errorMessage: string | null = null

@@ -31,7 +31,7 @@ Each conversation picks up exactly one phase (or sub-phase). Cold-start workflow
 - [x] **Phase 4a** — Bridge scaffolding (session create/resume) (~1 hr) — done 2026-04-17; `src/lib/managed-agent/{client,session}.ts` added, webhook feature-flagged on `USE_MANAGED_AGENT=1`, `/reset` renamed to `/clear` (also strips `metadata.agent_session_id`).
 - [x] **Phase 4b** — Event streaming loop + custom_tool_use dispatch (~1 hr) — done 2026-04-17; `src/lib/managed-agent/custom-tools.ts` stub + real event loop (stream-before-send, `session.status_idle` `requires_action` gate, `is_error` contract, empty-reply safety net). User + assistant messages now persisted on the managed-agent path; tool-call persistence deferred to 5b.
 - [x] **Phase 4c** — Document pickup + Telegram delivery (~30–60 min) — done 2026-04-17; `generatedDocs` capture on `generate_document` / `generate_custom_document` results, post-loop signed-URL fetch + `sendTelegramDocument` shipping before text. End-to-end deferred to Phase 5b (verified via fake-doc stub patch workflow).
-- [ ] **Phase 5a** — Custom tool dispatcher scaffolding + audit adapter (~1 hr)
+- [x] **Phase 5a** — done 2026-04-17; ctx via `AsyncLocalStorage` (`src/lib/managed-agent/context.ts`); `withAIAudit` dual-source precedence (`experimental_context` → store → empty) so legacy AI-SDK path and dispatcher path share one audit wrapper; `registerTool(name, schema, fn)` helper landed in `src/lib/managed-agent/custom-tools.ts` with an empty handlers map + updated stub-error text (`"Unknown tool: <name>"`).
 - [ ] **Phase 5b** — Port individual custom tools (~1–2 hr)
 - [ ] **Phase 6** — Delete dead code (~30 min)
 - [ ] **Phase 7** — Validation suite (7a–7g) (~1 hr)

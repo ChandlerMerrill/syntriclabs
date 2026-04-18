@@ -246,7 +246,7 @@ Claude replaced the Phase 4a `[managed-agent wip]` echo with a real event-stream
 
 ### 4b.4 Custom-tool stub sanity check
 
-- [ ] Send `generate a proposal for Shamrock Plumbing`. Expect the agent to try `generate_document`, receive the stub `{ error: "Tool 'generate_document' not yet implemented (Phase 5b pending)" }`, and respond with something like "I wasn't able to generate that right now." The turn should finish cleanly — not hang, not time out.
+- [ ] Send `generate a proposal for Shamrock Plumbing`. Expect the agent to try `generate_document`, receive `{ error: "Unknown tool: generate_document" }` (Phase 5a replaced the stub with the dispatcher shell; handlers map is empty until 5b), and respond with something like "I wasn't able to generate that right now." The turn should finish cleanly — not hang, not time out.
 - [ ] Send `what are my top open deals and also email me a summary`. Exercises the `send_email` stub path too.
 
 ### 4b.5 Persistence spot-check
@@ -345,6 +345,132 @@ Claude extended the Phase 4b loop with `generatedDocs` capture on successful `ge
 
 ---
 
-## Phases 5–8
+## Phase 5a — Custom tool dispatcher scaffolding + audit adapter
+
+Claude replaced the Phase 4b stub `runCustomTool` with an `AsyncLocalStorage`-backed dispatcher shell + a `registerTool(name, schema, fn)` helper, and refactored `withAIAudit` to resolve its ctx via a precedence chain (`execOpts.experimental_context` wins, else the ambient store, else empty). No tools are registered yet — the handlers map is populated in Phase 5b. Legacy admin-chat / widget paths (`handleChatGenerate` + AI SDK) still thread ctx via `experimental_context` and are unaffected.
+
+### 5a.1 Preflight
+
+- [ ] On branch `feat/managed-agents`.
+- [ ] Phase 4c checks pass.
+- [ ] `.env.local` has `USE_MANAGED_AGENT=1` available to toggle.
+
+### 5a.2 Build check
+
+- [ ] `npm run build` — clean. The `execOpts?:` change in `src/lib/ai/audit.ts` is backward-compatible with every legacy call site.
+
+### 5a.3 Legacy admin-chat regression (flag off)
+
+- [ ] `npm run dev` (no flag). Open `/admin/ai-chat`. Send `list my 3 recent deals.`
+- [ ] Confirm a successful, coherent answer.
+- [ ] In Supabase SQL editor:
+  ```sql
+  select tool_name, conversation_id, status
+  from ai_actions
+  order by created_at desc
+  limit 5;
+  ```
+  Expect a fresh row whose `conversation_id` matches the admin-chat conversation and whose `status='success'`. This proves the legacy `experimental_context` path still threads ctx into audit after the precedence-chain refactor.
+
+### 5a.4 Managed-agent MCP-only regression
+
+- [ ] `USE_MANAGED_AGENT=1 npm run dev` with the ngrok tunnel from §4a.2.
+- [ ] Telegram → `list the 5 most recent deals`. Expect a coherent reply; no custom tool fires.
+
+### 5a.5 Managed-agent dispatcher-shell sanity
+
+- [ ] Telegram → `generate a proposal for Shamrock Plumbing`.
+- [ ] Expect the agent to attempt `generate_document`, receive `{ error: "Unknown tool: generate_document" }` (handlers map is empty until 5b), and respond with a short apology. Turn finishes cleanly.
+
+### 5a.6 Hand back to Claude
+
+- [ ] Confirm 5a.2–5a.5 all pass. Claude has already flipped Phase 5a `[ ]` → `[x]` and committed `feat(managed-agents): phase 5a — dispatcher scaffolding and audit adapter`.
+
+### Stop criteria (abort and debug)
+
+- Admin-chat `ai_actions` row has `conversation_id=null` → precedence chain is picking up the wrong source. Verify `withAIAudit` reads `execOpts?.experimental_context` first.
+- Managed-agent request crashes instead of returning `{ error: "Unknown tool: …" }` → the `agentCtxStore.run(ctx, ...)` wrap is throwing; check the `AsyncLocalStorage` import path in `context.ts`.
+- TypeScript errors about `execOpts` being required → a caller is still relying on it being mandatory. Grep `withAIAudit(` to confirm; the change made the second arg optional.
+
+---
+
+## Phase 5b — Port 9 custom tool handlers
+
+Claude replaced the empty handlers map with the full port of 9 custom tools (5 "standard" + 3 hard-delete + `execute_crm_write` dispatching to 20 actions). Schemas are re-exported from `scripts/managed-agent/custom-tool-schemas.ts` via a new `src/lib/managed-agent/schemas.ts` barrel — single source of truth for both the Anthropic tool-registration path and the runtime dispatcher validation. Handler bodies are ported inline from `src/lib/ai/tools.ts`; every Category B handler on the managed-agent path is `withAIAudit`-wrapped for uniform `ai_actions` observability (including four tools that were previously unwrapped on the legacy path — net-positive behavior change).
+
+Audit rows for `execute_crm_write` use the per-action name (`createDeal`, `archiveClient`, etc.), not the wrapper name.
+
+### 5b.1 Preflight
+
+- [ ] Phase 5a checks pass.
+- [ ] A sandbox/test client and contact exist with a current email you control (for `send_email` / `send_document_to_client`).
+- [ ] Telegram tunnel running, `USE_MANAGED_AGENT=1`.
+
+### 5b.2 Per-tool smoke table
+
+For each row, send the trigger from Telegram, then verify the side effect + `ai_actions` row.
+
+| Handler | Trigger query | Side-effect check |
+|---|---|---|
+| `semantic_search` | "find any client info about plumbing" | response has `results[]`; content truncated at 800 chars where needed |
+| `send_email` | "send a 2-line check-in email to <test address>" | inbox receives; `emails` row inserted; embed-in-background fired |
+| `generate_document` | "generate a proposal for <test client>, $5k website, 4-week timeline" | PDF arrives in Telegram; `documents` row with `type='proposal'` |
+| `generate_custom_document` | "draft a 1-page meeting recap for <test client>: <bullets>" | PDF arrives; `documents.type='custom'` |
+| `send_document_to_client` | after a generate: "send that proposal to <contact>" | `/api/documents/send` → recipient inbox; activity row |
+| `execute_crm_write` (`createDeal`) | "create a $3k discovery deal for <test client>" | `deals` row; `ai_actions.tool_name='createDeal'` (NOT `'execute_crm_write'`) |
+| `execute_crm_write` (`updateDealStage`→won) | "mark that deal as won" | `stage_history` appends; reversal_hint captured |
+| `execute_crm_write` (`writeSql`, bounded) | "bulk-update notes on the 3 most recent deals" | pre-image snapshot ≤100 rows; safety validation rejects any DELETE attempt |
+| `hard_delete_client` (preview) | "permanently delete <test client>" | `pending_actions` row with `tool_name='hardDeleteClient'` (camelCase); client row still present |
+| `hard_delete_client` (confirm) | "yes" on next turn | client gone; `pending_actions.consumed_at` set; `reversal_hint` captured |
+| `hard_delete_client` (token reuse) | send same `confirmToken` twice | second call returns `wrong_tool` / `already consumed` |
+
+### 5b.3 Audit-naming spot-check
+
+- [ ] After running the `createDeal` trigger above:
+  ```sql
+  select tool_name, status, channel, conversation_id
+  from ai_actions
+  order by created_at desc
+  limit 3;
+  ```
+- [ ] Top row's `tool_name` must be `createDeal`, NOT `execute_crm_write`. If it says `execute_crm_write`, the inner `withAIAudit` wrap in `handlers/crm-write.ts` isn't being invoked with `parsed.action`.
+
+### 5b.4 Two-step confirm flow (camelCase invariant)
+
+- [ ] Preview-turn `pending_actions.tool_name` must be exactly `hardDeleteClient` (camelCase), matching the string `consumeConfirmToken` compares against. snake_case here will fail the confirm turn with `wrong_tool`.
+
+### 5b.5 Result-size sanity
+
+- [ ] `semantic_search` trigger with `limit=8` and long matches → response stays under ~10KB (custom-tool result ceiling is ~25KB). Any row with content > 800 chars shows ` …[truncated]` suffix.
+- [ ] `writeSql` UPDATE covering >100 rows → pre-image snapshot capped at 100.
+
+### 5b.6 Legacy regression
+
+- [ ] Stop dev, restart without `USE_MANAGED_AGENT=1`. Hit `/admin/ai-chat`: "list 3 recent deals." Confirm coherent answer + a fresh `ai_actions` row with `conversation_id` populated — proves the legacy AI-SDK path still works after the port.
+
+### 5b.7 Phase-wide smoke
+
+- [ ] Multi-step prompt: "find duplicate test clients, show me them, then delete the second one." Exercises `semantic_search` → MCP read → `hard_delete_client` two-turn flow.
+- [ ] Anthropic Console → Sessions: every `agent.custom_tool_use` event has a matching `user.custom_tool_result` with the correct `is_error` flag.
+- [ ] `/clear` → fresh session → run one tool. Cold-start path still works.
+
+### 5b.8 Build check
+
+- [ ] `npm run build` passes.
+
+### 5b.9 Hand back to Claude
+
+- [ ] Confirm 5b.2–5b.8 all pass. Claude has already flipped Phase 5b `[ ]` → `[x]` and committed `feat(managed-agents): phase 5b — port 9 custom tool handlers`.
+
+### Stop criteria (abort and debug)
+
+- `ai_actions.tool_name='execute_crm_write'` on a CRM-write call → the wrapper isn't using `parsed.action`; re-check `handlers/crm-write.ts`.
+- `hard_delete_*` confirm-turn fails with `wrong_tool` → a handler is passing snake_case to `createPendingAction` / `consumeConfirmToken`. These MUST be the camelCase literal strings (`hardDeleteClient`, `hardDeleteContact`, `hardDeleteLead`).
+- Anthropic returns a 400 "result too large" on `semantic_search` or `hard_delete_*` preview → the 800-char truncation or `client_contacts(*)` stripping from `reversal_hint` isn't taking effect.
+- Tool runs succeed but no `ai_actions` row → the handler isn't wrapped in `withAIAudit`, or the `agentCtxStore.run(ctx, …)` frame wasn't opened (check `runCustomTool`).
+
+---
+
+## Phases 6–8
 
 _(Populate as each phase begins.)_
