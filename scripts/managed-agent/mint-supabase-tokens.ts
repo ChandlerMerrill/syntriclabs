@@ -28,7 +28,7 @@ if (!PROJECT_REF) {
 const REDIRECT_PORT = 5175
 const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/callback`
 const MCP_BASE = `https://mcp.supabase.com/mcp?project_ref=${PROJECT_REF}`
-const OAUTH_METADATA_URL = `https://mcp.supabase.com/mcp/.well-known/oauth-protected-resource?project_ref=${PROJECT_REF}`
+const OAUTH_METADATA_URL = `https://mcp.supabase.com/.well-known/oauth-protected-resource/mcp?project_ref=${PROJECT_REF}`
 
 function b64url(buf: Buffer): string {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -70,14 +70,16 @@ async function main() {
   console.log(`[mint] token_endpoint=${authMeta.token_endpoint}`)
   console.log(`[mint] registration_endpoint=${authMeta.registration_endpoint}`)
 
-  // Dynamic Client Registration
+  // Dynamic Client Registration — Supabase's auth server does not advertise
+  // `none` as a token_endpoint_auth_method, so request `client_secret_post`
+  // and capture both client_id and client_secret for the token exchange.
   const dcrRes = await fetch(authMeta.registration_endpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       client_name: 'syntric-labs phase 1 smoke test',
       redirect_uris: [REDIRECT_URI],
-      token_endpoint_auth_method: 'none',
+      token_endpoint_auth_method: 'client_secret_post',
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
       application_type: 'native',
@@ -86,8 +88,11 @@ async function main() {
   if (!dcrRes.ok) {
     throw new Error(`DCR failed: ${dcrRes.status} ${await dcrRes.text()}`)
   }
-  const dcr = await dcrRes.json() as { client_id: string }
+  const dcr = await dcrRes.json() as { client_id: string; client_secret?: string }
   console.log(`[mint] client_id=${dcr.client_id}`)
+  if (!dcr.client_secret) {
+    throw new Error('DCR response missing client_secret — Supabase requires a confidential client')
+  }
 
   // PKCE
   const codeVerifier = b64url(randomBytes(32))
@@ -154,6 +159,7 @@ async function main() {
       code,
       redirect_uri: REDIRECT_URI,
       client_id: dcr.client_id,
+      client_secret: dcr.client_secret!,
       code_verifier: codeVerifier,
     }).toString(),
   })
@@ -173,6 +179,7 @@ async function main() {
   console.log(`SUPABASE_MCP_REFRESH_TOKEN=${tok.refresh_token ?? ''}`)
   console.log(`SUPABASE_MCP_EXPIRES_AT=${expiresAt}`)
   console.log(`SUPABASE_MCP_CLIENT_ID=${dcr.client_id}`)
+  console.log(`SUPABASE_MCP_CLIENT_SECRET=${dcr.client_secret}`)
   console.log(`SUPABASE_MCP_TOKEN_ENDPOINT=${authMeta.token_endpoint}`)
   console.log('═══════════════════════════════════════')
   console.log('\nNext: `npx tsx scripts/managed-agent/setup-vault.ts`')

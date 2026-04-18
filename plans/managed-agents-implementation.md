@@ -25,7 +25,7 @@ Each conversation picks up exactly one phase (or sub-phase). Cold-start workflow
 ## Phase tracker
 
 - [x] **Phase 0** — Archive current state + set up working branch (~15 min) — done 2026-04-17, `archive/v2-pre-managed-agents` and `feat/managed-agents` pushed to origin
-- [ ] **Phase 1** — Supabase MCP vault setup + smoke test (~45 min)
+- [x] **Phase 1** — done 2026-04-18; RLS verdict READABLE via direct MCP probe. Managed-agent event stream failed on Supabase error-response translation (Anthropic gateway bug — Phase 4 risk, see `plans/tool-inventory.md` §Observability). Vault `vlt_011CaAX3QC7jKibTcX44ouZS` (PAT-backed) is the working credential.
 - [ ] **Phase 2** — Tool inventory decision (~1 hr)
 - [ ] **Phase 3** — Agent creation script (~1–1.5 hr)
 - [ ] **Phase 4a** — Bridge scaffolding (session create/resume) (~1 hr)
@@ -49,6 +49,7 @@ When a phase is complete, flip its `[ ]` to `[x]` and append a short outcome not
 - **Working branch:** `feat/managed-agents` (created in Phase 0, branched from current `main`).
 - **Don't touch:** `archive/v2-pre-managed-agents` — read-only reference to pre-migration state.
 - **Env vars** added over time get listed in the Handoff section of the phase that introduces them, and also collected in the **Environment reference** section at the bottom of this file.
+- **Manual setup steps live in [`managed-agents-setup.md`](./managed-agents-setup.md).** At the end of every phase, before committing, Claude appends that phase's out-of-band manual steps (Console UI clicks, env vars to paste into Vercel, third-party dashboards to touch, one-off script runs that need a human) to the setup doc as a checklist section. The implementation plan describes the engineering work; the setup doc is the running list of things the human has to do. Keep them in sync — if a phase introduces a manual step and doesn't add it to the setup doc, the next session won't know to prompt for it.
 
 ---
 
