@@ -227,6 +227,124 @@ Claude has added `src/lib/managed-agent/{client,session}.ts` and wired a feature
 
 ---
 
-## Phases 4b–8
+## Phase 4b — Event streaming loop + custom_tool_use stub
+
+Claude replaced the Phase 4a `[managed-agent wip]` echo with a real event-stream loop in `src/app/api/telegram/webhook/route.ts` and added a stub `runCustomTool` in `src/lib/managed-agent/custom-tools.ts`. The loop is feature-flagged on `USE_MANAGED_AGENT=1`; the `handleChatGenerate` path is untouched when the flag is off. Tool-call persistence is **not** wired yet (deferred to Phase 5b — there's nothing meaningful to persist while dispatch is stubbed).
+
+### 4b.1 Preflight
+
+- [ ] Same five vars as Phase 4a.1 — no new env vars in this phase.
+- [ ] `USE_MANAGED_AGENT` stays opt-in per shell; do **not** add it to `.env.local`.
+
+### 4b.2 Local dev
+
+- [ ] `USE_MANAGED_AGENT=1 npm run dev` with the same ngrok tunnel / webhook wiring from 4a.2.
+
+### 4b.3 MCP-only turn (real answer expected)
+
+- [ ] Send `list the 5 most recent deals`. Expect a coherent reply with real rows (MCP path, no custom tools fire). First token should land in <10s; full turn under 60s.
+
+### 4b.4 Custom-tool stub sanity check
+
+- [ ] Send `generate a proposal for Shamrock Plumbing`. Expect the agent to try `generate_document`, receive the stub `{ error: "Tool 'generate_document' not yet implemented (Phase 5b pending)" }`, and respond with something like "I wasn't able to generate that right now." The turn should finish cleanly — not hang, not time out.
+- [ ] Send `what are my top open deals and also email me a summary`. Exercises the `send_email` stub path too.
+
+### 4b.5 Persistence spot-check
+
+- [ ] In Supabase SQL editor:
+  ```sql
+  select role, count(*) from messages
+  where conversation_id = '<your-conversation-uuid>'
+  group by role;
+  ```
+- [ ] Expect both `user` and `assistant` rows for every managed-agent turn (matches the `handleChatGenerate` path's admin-view parity).
+
+### 4b.6 Session persistence + /clear
+
+- [ ] Confirm `conversations.metadata.agent_session_id` stays constant across multiple back-to-back messages.
+- [ ] Send `/clear`, then a new message. Expect a **new** session ID. The Anthropic Console (agent `agent_011CaAaKRToubdNFCu7CERao` → Sessions) should list the new session.
+
+### 4b.7 Regression check (flag off)
+
+- [ ] Stop dev, restart with `npm run dev` (no flag). Ping the bot; expect a real answer from `handleChatGenerate` — no regression.
+
+### 4b.8 Build check
+
+- [ ] `npm run build` passes cleanly. No TypeScript errors; SDK types narrow correctly without casts.
+
+### 4b.9 Hand back to Claude
+
+- [ ] Confirm all checks pass. Claude has already flipped Phase 4b `[ ]` → `[x]` and committed `feat(managed-agents): phase 4b — event streaming loop with custom tool stub`.
+
+### Stop criteria (abort and debug)
+
+- MCP-only turn hangs past 60s → likely missed the stream-first ordering. Confirm `sessions.events.stream(sessionId)` is awaited **before** `sessions.events.send({ type: 'user.message' })`.
+- Custom-tool turn hangs instead of producing a stub-error apology → check the `session.status_idle` break gate: `requires_action` must `continue`, anything else must `break`.
+- No assistant row in `messages` → `addMessage(..., { role: 'assistant', content: finalText })` after the loop.
+- Empty agent reply silences the user → the `else { sendTelegramMessage(..., 'No response generated.') }` safety net should catch this.
+
+---
+
+## Phase 4c — Document pickup + Telegram delivery
+
+Claude extended the Phase 4b loop with `generatedDocs` capture on successful `generate_document` / `generate_custom_document` results, plus a post-loop shipping block that fetches `storage_path` from Supabase, signs a URL, and delivers the PDF via `sendTelegramDocument` **before** the text reply. End-to-end verification isn't reachable until Phase 5b implements real dispatch, so 4c is validated with a temporary stub patch.
+
+### 4c.1 Preflight
+
+- [ ] Grab a real document id from Supabase:
+  ```sql
+  select id, title from documents limit 1;
+  ```
+- [ ] Copy the `id` for the next step.
+
+### 4c.2 Patch the stub for a single send/receive cycle
+
+- [ ] Temporarily edit `src/lib/managed-agent/custom-tools.ts` so `generate_document` returns a fake document:
+  ```ts
+  export async function runCustomTool(
+    name: string,
+    _input: unknown,
+    _ctx: Ctx,
+  ): Promise<unknown> {
+    if (name === 'generate_document') {
+      return { document: { id: '<paste-real-doc-id>', title: 'Test' } }
+    }
+    return { error: `Tool '${name}' not yet implemented (Phase 5b pending)` }
+  }
+  ```
+
+### 4c.3 Exercise doc delivery
+
+- [ ] `USE_MANAGED_AGENT=1 npm run dev` with the tunnel running.
+- [ ] Send `draft a proposal`. Expect:
+  - PDF attachment arrives in Telegram (the document you pasted).
+  - Text reply arrives **after** the PDF (ordering confirmed by eye).
+
+### 4c.4 Non-document regression
+
+- [ ] Send `list my 5 most recent deals`. Expect a text-only reply; no Telegram `sendDocument` calls; no errors in the dev server log.
+
+### 4c.5 Revert the patch
+
+- [ ] Revert `src/lib/managed-agent/custom-tools.ts` to the committed stub (`return { error: ... }` only). Do **NOT** commit the patch.
+- [ ] `git diff src/lib/managed-agent/custom-tools.ts` should show nothing.
+
+### 4c.6 Build check
+
+- [ ] `npm run build` passes.
+
+### 4c.7 Hand back to Claude
+
+- [ ] Confirm PDF arrived, text arrived after, patch reverted. Claude has already flipped Phase 4c `[ ]` → `[x]` and committed `feat(managed-agents): phase 4c — document delivery via telegram`.
+
+### Stop criteria (abort and debug)
+
+- Text arrives before the PDF → the shipping loop must run **after** `addMessage(..., 'assistant', ...)` and **before** the final `sendLongTelegramMessage`.
+- No PDF arrives, even with a real doc id → inspect logs for `Failed to send document via Telegram`. Check (a) `storage_path` exists on the row, (b) `createSignedUrl` returns a `signedUrl`, (c) Telegram's `sendDocument` endpoint isn't rejecting the URL.
+- Docs array stays empty even though `generate_document` returned a document → verify the result shape: the capture branch requires `result.document.id` (string, non-empty).
+
+---
+
+## Phases 5–8
 
 _(Populate as each phase begins.)_
