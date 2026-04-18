@@ -92,6 +92,7 @@ export async function POST(req: Request) {
       })
 
       let finalText = ''
+      const generatedDocs: Array<{ documentId: string }> = []
 
       for await (const event of stream) {
         if (event.type === 'agent.message') {
@@ -107,6 +108,15 @@ export async function POST(req: Request) {
           })
           const isError =
             typeof result === 'object' && result !== null && 'error' in result
+
+          if (
+            !isError &&
+            (event.name === 'generate_document' || event.name === 'generate_custom_document') &&
+            typeof result === 'object' && result !== null && 'document' in result
+          ) {
+            const doc = (result as { document?: { id?: string } }).document
+            if (doc?.id) generatedDocs.push({ documentId: doc.id })
+          }
 
           await anthropicClient.beta.sessions.events.send(sessionId, {
             events: [{
@@ -129,6 +139,28 @@ export async function POST(req: Request) {
 
       // Tool-call persistence deferred to Phase 5b — stubs have no meaningful payload.
       await addMessage(supabase, conversation.id, { role: 'assistant', content: finalText })
+
+      // Ship docs before text: the agent's reply often refers to "the proposal above".
+      for (const doc of generatedDocs) {
+        try {
+          const { data: row } = await supabase
+            .from('documents')
+            .select('storage_path, title')
+            .eq('id', doc.documentId)
+            .single()
+          if (row?.storage_path) {
+            const { data: signed } = await supabase.storage
+              .from('documents')
+              .createSignedUrl(row.storage_path, 3600)
+            if (signed?.signedUrl) {
+              await sendTelegramChatAction(chatId, 'upload_document')
+              await sendTelegramDocument(chatId, signed.signedUrl, row.title ?? 'Document')
+            }
+          }
+        } catch (e) {
+          console.error('Failed to send document via Telegram:', e)
+        }
+      }
 
       if (finalText) {
         await sendLongTelegramMessage(chatId, markdownToTelegramHTML(finalText))
