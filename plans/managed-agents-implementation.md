@@ -26,7 +26,7 @@ Each conversation picks up exactly one phase (or sub-phase). Cold-start workflow
 
 - [x] **Phase 0** — Archive current state + set up working branch (~15 min) — done 2026-04-17, `archive/v2-pre-managed-agents` and `feat/managed-agents` pushed to origin
 - [x] **Phase 1** — done 2026-04-18; RLS verdict READABLE via direct MCP probe. Managed-agent event stream failed on Supabase error-response translation (Anthropic gateway bug — Phase 4 risk, see `plans/tool-inventory.md` §Observability). Vault `vlt_011CaAX3QC7jKibTcX44ouZS` (PAT-backed) is the working credential.
-- [ ] **Phase 2** — Tool inventory decision (~1 hr)
+- [x] **Phase 2** — done 2026-04-18; R-B4 = wrap writes in `execute_crm_write` (RLS READABLE forces wrap). Categorized 42 `crmTools` entries + `undo` helper: A=13, B=28 tool()s → 9 custom schemas + 1 provider tool, C=1. See `plans/tool-inventory.md`.
 - [ ] **Phase 3** — Agent creation script (~1–1.5 hr)
 - [ ] **Phase 4a** — Bridge scaffolding (session create/resume) (~1 hr)
 - [ ] **Phase 4b** — Event streaming loop + custom_tool_use dispatch (~1 hr)

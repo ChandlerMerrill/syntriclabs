@@ -78,7 +78,31 @@ Tell Claude the smoke test passed and what the RLS verdict was. Claude will:
 
 ## Phase 2 — Tool inventory decision
 
-_(Populate when Phase 2 starts.)_
+Claude walked `src/lib/ai/tools.ts` (SHA `523bb67`) and produced `plans/tool-inventory.md`. R-B4 resolved to **wrap writes** given Phase 1 RLS = READABLE.
+
+### 2.1 Phase 1 RLS verdict (historical record)
+- [x] RLS verdict: **READABLE** (captured 2026-04-18 via direct MCP `tools/call execute_sql { query: "SELECT count(*) FROM auth.users" }` with the PAT bearer. Returned `[{"c":1}]`). See §1.3 above for full context, including the managed-agent gateway bug that kept the standard smoke test from passing.
+
+### 2.2 Review the inventory (~10 min)
+- [ ] Open `plans/tool-inventory.md`. Spot-check:
+  - Category A list (13 tools): nothing touches Gmail, Puppeteer, OpenAI embeddings, or `pending_actions`.
+  - Category B list: every tool names a clear reason (external dep / confirm flow / `execute_crm_write` coverage / provider tool).
+  - R-B4 paragraph: cites RLS = READABLE, picks wrap branch.
+  - Phase 4 risk note on the Anthropic managed-agent gateway error-translation bug is preserved.
+
+### 2.3 Audit-preserving wrapper
+- [x] `execute_crm_write` wrapper approach confirmed during Phase 2 classification — single custom tool covers the 20 CRM-write `tool()` definitions and re-uses `withAIAudit` so `ai_actions` rows continue to record the original action name.
+
+### 2.4 Vercel env vars (long-term)
+- [ ] Propagate these two to Vercel (Production + Preview + Development). The `SUPABASE_MCP_*` and `SUPABASE_MCP_PAT` entries stay local-only — they're script-time only, not runtime.
+  - `SUPABASE_PROJECT_REF=utixbzraliglhjxgfzrv`
+  - `ANTHROPIC_SUPABASE_VAULT_ID=vlt_011CaAX3QC7jKibTcX44ouZS`
+
+### 2.5 Hand back to Claude
+- [ ] Confirm inventory looks right. Claude has already flipped Phase 2 `[ ]` → `[x]` and committed `chore(managed-agents): phase 2 — tool inventory and observability decision`.
+
+### Stop criteria
+- A tool in `tools.ts` resists A/B/C classification → split or clarify before proceeding. (None did; all 42 entries + `undo` are categorized.)
 
 ---
 
