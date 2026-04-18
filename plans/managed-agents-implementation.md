@@ -24,7 +24,7 @@ Each conversation picks up exactly one phase (or sub-phase). Cold-start workflow
 
 ## Phase tracker
 
-- [ ] **Phase 0** — Archive current state + set up working branch (~15 min)
+- [x] **Phase 0** — Archive current state + set up working branch (~15 min) — done 2026-04-17, `archive/v2-pre-managed-agents` and `feat/managed-agents` pushed to origin
 - [ ] **Phase 1** — Supabase MCP vault setup + smoke test (~45 min)
 - [ ] **Phase 2** — Tool inventory decision (~1 hr)
 - [ ] **Phase 3** — Agent creation script (~1–1.5 hr)
