@@ -27,7 +27,7 @@ Each conversation picks up exactly one phase (or sub-phase). Cold-start workflow
 - [x] **Phase 0** — Archive current state + set up working branch (~15 min) — done 2026-04-17, `archive/v2-pre-managed-agents` and `feat/managed-agents` pushed to origin
 - [x] **Phase 1** — done 2026-04-18; RLS verdict READABLE via direct MCP probe. Managed-agent event stream failed on Supabase error-response translation (Anthropic gateway bug — Phase 4 risk, see `plans/tool-inventory.md` §Observability). Vault `vlt_011CaAX3QC7jKibTcX44ouZS` (PAT-backed) is the working credential.
 - [x] **Phase 2** — done 2026-04-18; R-B4 = wrap writes in `execute_crm_write` (RLS READABLE forces wrap). Categorized 42 `crmTools` entries + `undo` helper: A=13, B=28 tool()s → 9 custom schemas + 1 provider tool, C=1. See `plans/tool-inventory.md`.
-- [ ] **Phase 3** — Agent creation script (~1–1.5 hr)
+- [x] **Phase 3** — done 2026-04-17; agent live. `ANTHROPIC_ENV_ID=env_01Vk6iyzeWm5v7881N33tZTE`, `ANTHROPIC_AGENT_ID=agent_011CaAaKRToubdNFCu7CERao`, `ANTHROPIC_AGENT_VERSION=1` written to `.env.local` (still needs pasting into Vercel — see `managed-agents-setup.md` §3.3). Files: `scripts/managed-agent/{custom-tool-schemas,build-agent-tools,setup-agent,update-system-prompt}.ts`. Uses Zod v4's built-in `z.toJSONSchema` (no external dep). Two API quirks discovered + worked around in `build-agent-tools.ts`: (1) Anthropic `input_schema` top level accepts only `{type, properties, required}` — `$schema` / `additionalProperties` / `oneOf` all 400 with "Extra inputs are not permitted", so `execute_crm_write` is flattened to `{action: enum(20), params: object}` and Phase 5b's Zod discriminated union handles per-action validation; (2) Zod's `.email()` / `.uuid()` / `.url()` emit regex `pattern` strings that fail Anthropic's "pattern must be a valid regex" — `pattern` is stripped recursively, `format` hint retained. Model pinned to `claude-sonnet-4-6`. Idempotency guard + `--dry-run` verified.
 - [ ] **Phase 4a** — Bridge scaffolding (session create/resume) (~1 hr)
 - [ ] **Phase 4b** — Event streaming loop + custom_tool_use dispatch (~1 hr)
 - [ ] **Phase 4c** — Document pickup + Telegram delivery (~30–60 min)
@@ -61,9 +61,9 @@ Vercel project env vars introduced by this migration:
 |---|---|---|
 | `SUPABASE_PROJECT_REF` | Phase 1 | Locks MCP connection to our Supabase project |
 | `ANTHROPIC_SUPABASE_VAULT_ID` | Phase 1 | Vault holding Supabase OAuth credential |
-| `ANTHROPIC_ENV_ID` | Phase 3 | Managed Agents environment ID |
-| `ANTHROPIC_AGENT_ID` | Phase 3 | Agent ID |
-| `ANTHROPIC_AGENT_VERSION` | Phase 3 | Pinned agent version for the webhook |
+| `ANTHROPIC_ENV_ID` | Phase 3 | Managed Agents environment ID (prod value: `env_01Vk6iyzeWm5v7881N33tZTE`) |
+| `ANTHROPIC_AGENT_ID` | Phase 3 | Agent ID (prod value: `agent_011CaAaKRToubdNFCu7CERao`) |
+| `ANTHROPIC_AGENT_VERSION` | Phase 3 | Pinned agent version for the webhook (currently `1`) |
 | `USE_MANAGED_AGENT` | Phase 8 | Feature flag for production cutover |
 
 ---

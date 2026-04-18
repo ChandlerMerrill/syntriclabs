@@ -108,7 +108,58 @@ Claude walked `src/lib/ai/tools.ts` (SHA `523bb67`) and produced `plans/tool-inv
 
 ## Phase 3 — Agent creation script
 
-_(Populate when Phase 3 starts. Will include: running `setup-agent.ts` once, persisting `ANTHROPIC_ENV_ID` / `ANTHROPIC_AGENT_ID` / `ANTHROPIC_AGENT_VERSION` to `.env.local` + Vercel.)_
+Claude has committed `scripts/managed-agent/{custom-tool-schemas,build-agent-tools,setup-agent,update-system-prompt}.ts` plus two new npm scripts. The work below is everything outside the repo.
+
+### 3.1 Preflight
+
+- [ ] Confirm `.env.local` has `ANTHROPIC_API_KEY`, `SUPABASE_PROJECT_REF`, `ANTHROPIC_SUPABASE_VAULT_ID` (Phase 1 artifact — should already be there). If not, re-run Phase 1 first.
+- [ ] Confirm `.env.local` does **NOT** already have `ANTHROPIC_AGENT_ID`. The setup script aborts if it does (idempotency guard — we never want to accidentally create a second agent). If you need to redo this step for any reason, unset that var first.
+
+### 3.2 Create the environment + agent (one-shot)
+
+- [x] `npm run setup-agent` run 2026-04-17. Produced:
+  - `ANTHROPIC_ENV_ID=env_01Vk6iyzeWm5v7881N33tZTE`
+  - `ANTHROPIC_AGENT_ID=agent_011CaAaKRToubdNFCu7CERao`
+  - `ANTHROPIC_AGENT_VERSION=1`
+- [x] Three IDs appended to `.env.local` already.
+- Two bugs surfaced + worked around in `build-agent-tools.ts` on first-run; script is correct going forward. See Phase 3 tracker entry for details.
+- One orphan environment (`env_018R6bj9nPYW9LZNsviuxUpB`) was created during the initial failed attempt and has been deleted. The current live environment is the one above.
+
+### 3.3 Propagate to Vercel
+
+- [ ] Add all three vars (`ANTHROPIC_ENV_ID`, `ANTHROPIC_AGENT_ID`, `ANTHROPIC_AGENT_VERSION`) to Vercel for **Production**, **Preview**, **Development** (dashboard → Settings → Environment Variables, or `vercel env add`). Claude can't do this — it's a manual step before Phase 4a.
+
+### 3.4 Verify in the Anthropic Console
+
+- [ ] Open console.anthropic.com → Managed Agents.
+- [ ] Find the `syntric-crm-env` environment.
+- [ ] Find the `syntric-crm-telegram` agent. Confirm:
+  - Model: `claude-sonnet-4-6`.
+  - Tool count: **11 entries** (1 `mcp_toolset` for supabase + 1 `agent_toolset_20260401` enabling `web_search` + 9 `custom` tools — `generate_document`, `generate_custom_document`, `send_document_to_client`, `send_email`, `semantic_search`, `hard_delete_client`, `hard_delete_contact`, `hard_delete_lead`, `execute_crm_write`).
+  - System prompt byte-matches `buildSystemPrompt({}, 'telegram')` output (copy + diff locally if curious).
+  - MCP server bound to the PAT-backed vault from Phase 1 (`vlt_011CaAX3QC7jKibTcX44ouZS`).
+- [ ] Running `npm run setup-agent` a second time should fail immediately with `ANTHROPIC_AGENT_ID is already set` — sanity check the idempotency guard.
+
+### 3.5 Iteration going forward (reference, not a one-time step)
+
+Whenever the system prompt changes (edit `src/lib/ai/system-prompt.ts`) or the tool schemas change (edit `scripts/managed-agent/custom-tool-schemas.ts`):
+
+1. `npm run update-system-prompt -- --dry-run` to preview.
+2. `npm run update-system-prompt` to apply — prints the new version.
+3. Paste the new `ANTHROPIC_AGENT_VERSION` into `.env.local` + Vercel.
+
+Never re-run `setup-agent` once `ANTHROPIC_AGENT_ID` is set.
+
+### 3.6 Hand back to Claude
+
+- [ ] Confirm the Console view matches expectations. Claude will have already flipped Phase 3 `[ ]` → `[x]` in the implementation plan and committed `chore(managed-agents): phase 3 — agent creation script`.
+
+### Stop criteria (abort and debug)
+
+- `setup-agent` throws `400` on `agents.create` with "Extra inputs are not permitted" → `input_schema` grew an extra top-level key somehow. The `toInputSchema` helper in `build-agent-tools.ts` must emit only `{type, properties, required}`.
+- `setup-agent` throws `400` with "pattern must be a valid regex" → Zod added a regex-patterned field (`.email()`, `.uuid()`, `.url()`, `.regex()`) and the recursive `sanitizeNested` helper didn't strip `pattern`. Check that key isn't on the skip list.
+- System prompt in the Console is empty / truncated → check that the relative import `../../src/lib/ai/system-prompt` resolved under `tsx`. The `@/` path alias is declared in `tsconfig.json` and `tsx` respects it, but the scripts use relative paths to be hermetic.
+- Only 10 tools in the Console (missing one custom tool) → `buildAgentTools()` should return 11 entries (run `npx tsx -e "import {buildAgentTools} from './scripts/managed-agent/build-agent-tools'; console.log(buildAgentTools().length)"`).
 
 ---
 

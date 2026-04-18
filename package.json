@@ -9,7 +9,9 @@
     "lint": "eslint",
     "smoke-test-mcp": "tsx scripts/managed-agent/smoke-test-mcp.ts",
     "mint-supabase-tokens": "tsx scripts/managed-agent/mint-supabase-tokens.ts",
-    "setup-vault": "tsx scripts/managed-agent/setup-vault.ts"
+    "setup-vault": "tsx scripts/managed-agent/setup-vault.ts",
+    "setup-agent": "tsx scripts/managed-agent/setup-agent.ts",
+    "update-system-prompt": "tsx scripts/managed-agent/update-system-prompt.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.69",
