@@ -33,7 +33,7 @@ Each conversation picks up exactly one phase (or sub-phase). Cold-start workflow
 - [x] **Phase 4c** — Document pickup + Telegram delivery (~30–60 min) — done 2026-04-17; `generatedDocs` capture on `generate_document` / `generate_custom_document` results, post-loop signed-URL fetch + `sendTelegramDocument` shipping before text. End-to-end deferred to Phase 5b (verified via fake-doc stub patch workflow).
 - [x] **Phase 5a** — done 2026-04-17; ctx via `AsyncLocalStorage` (`src/lib/managed-agent/context.ts`); `withAIAudit` dual-source precedence (`experimental_context` → store → empty) so legacy AI-SDK path and dispatcher path share one audit wrapper; `registerTool(name, schema, fn)` helper landed in `src/lib/managed-agent/custom-tools.ts` with an empty handlers map + updated stub-error text (`"Unknown tool: <name>"`).
 - [x] **Phase 5b** — done 2026-04-17; 9 custom tool handlers ported across `src/lib/managed-agent/handlers/{search,email,documents,crm-write,hard-delete}.ts` with schemas re-exported from the Phase 3 source of truth via `src/lib/managed-agent/schemas.ts`. Every Category B handler is `withAIAudit`-wrapped for uniform `ai_actions` observability (generate_document / send_document_to_client / send_email / semantic_search / updateDocumentStatus newly wrapped on this path — net-positive). `execute_crm_write` dispatches through a mapped-type `actions` table over 20 discriminated-union variants and audits under the per-action tool_name (`createDeal`, `archiveClient`, …) not the wrapper name. Hard deletes use `getAgentCtx()` strict + preserve camelCase `hardDeleteClient/Contact/Lead` literals for `createPendingAction` / `consumeConfirmToken` parity with pre-cutover tokens. Size mitigations: 800-char content truncation in `semantic_search`; `writeSql` pre-image snapshot capped at 100 rows.
-- [ ] **Phase 6** — Delete dead code (~30 min)
+- [x] **Phase 6** — done 2026-04-17; audit-only pass. Import graph: handler.ts + tools.ts pinned alive by admin-chat (/api/ai/chat → handleChatStream → crmTools); sql-safety.ts + sql-client.ts pinned alive by the new managed-agent crm-write handler. No files deleted. Big cleanup (legacy else branch, USE_MANAGED_AGENT flag removal) deferred to Phase 8 step 4.
 - [ ] **Phase 7** — Validation suite (7a–7g) (~1 hr)
 - [ ] **Phase 8** — Production cutover + monitoring (~30 min)
 
@@ -503,41 +503,51 @@ For each Category B tool (typically ~8 tools), do:
 
 ---
 
-# Phase 6 — Delete dead code
+# Phase 6 — Dead-code audit (deletions deferred to Phase 8)
 
-**Status:** pending
-**Estimated time:** 30 min
+**Status:** complete (audit-only)
+**Estimated time:** 15 min (docs only; no src/ changes)
 
 ## Objective
-With the managed-agent path working end-to-end behind the feature flag, remove everything the Vercel AI SDK path uniquely required for Telegram. Keep admin-chat / widget paths intact.
+Record the pre-deletion import-graph audit and hand the actual deletion work off to Phase 8 step 4. The original Phase 6 intent (delete `handler.ts` / `tools.ts` / `sql-safety.ts` / `sql-client.ts`) is **blocked today** because admin-chat + the new managed-agent crm-write handler pin them alive. Phase 8's feature-flag removal is the natural moment to revisit.
 
 ## Prerequisites
 - Phase 5b complete.
-- Phase 7 validation has passed on `USE_MANAGED_AGENT=1`.
 
-## Context to load
-- `proposal-b-managed-agent-bridge.md` — **Phase 6** section (~450–460).
-- `src/lib/ai/handler.ts`, `src/lib/ai/tools.ts`, `src/lib/ai/sql-safety.ts`, `src/lib/ai/sql-client.ts`.
-- `src/app/api/admin/**` — confirm which AI paths it imports.
+## Audit findings — why nothing gets deleted this phase
 
-## Steps
-1. Confirm nothing outside Telegram imports from `src/lib/ai/handler.ts`. If admin chat does, decide whether to migrate admin too (out of current scope) or keep the handler for it — revisit in Phase 8 decisions.
-2. For anything truly Telegram-only:
-   - Delete `src/lib/ai/handler.ts` (if unused elsewhere).
-   - Prune Category A tool definitions from `src/lib/ai/tools.ts`. Keep Category B entries only, and refactor them to plain async functions (no `tool()` wrapper).
-   - Delete `src/lib/ai/sql-safety.ts`, `src/lib/ai/sql-client.ts` if no admin/widget path uses them.
-3. Keep: `src/lib/ai/audit.ts`, `src/lib/ai/confirm-tokens.ts`, `src/lib/ai/system-prompt.ts`, `src/lib/ai/embeddings.ts`, `src/lib/ai/undo.ts`, `src/lib/ai/widget-tools.ts`, `src/lib/ai/widget-system-prompt.ts`.
-4. Build + typecheck. Fix any broken imports.
+| File | Deletion blocker |
+|---|---|
+| `src/lib/ai/handler.ts` | `src/app/api/ai/chat/route.ts` (admin chat) imports `handleChatStream`. Also imported by `src/app/api/ai/dry-run/route.ts`. |
+| `src/lib/ai/tools.ts` (`crmTools`) | Imported by `src/lib/ai/handler.ts` — dies with handler.ts or not at all. |
+| `src/lib/ai/sql-safety.ts` | Imported by `src/lib/managed-agent/handlers/crm-write.ts` (live, Phase 5b) **and** `src/lib/ai/tools.ts` (live via admin). |
+| `src/lib/ai/sql-client.ts` | Same — live consumer on both the new managed-agent path and the legacy admin path. |
+
+## Partial-trim status — what was considered and kept
+
+- `src/lib/ai/system-prompt.ts` — still documents `querySql` / `writeSql`. **Kept**: admin-chat tool discovery still surfaces both.
+- `src/lib/ai/undo.ts` — still handles `writeSql-insert` / `writeSql-update` reversal kinds. **Kept**: admin's reversal UI still drives it.
+- `src/lib/services/ai-actions.ts` — filters `writeSql`. **Kept**: admin's `ai_actions` listing relies on it.
+
+## Deferred to Phase 8 step 4
+
+When Phase 8 removes the feature flag, the following become safe in one pass (conditional on admin-chat either having migrated, or on explicit acceptance that the legacy path stays alive for admin only):
+
+- Delete the legacy `else` branch in `src/app/api/telegram/webhook/route.ts:173–259` (the `handleChatGenerate` rollback path).
+- Remove the `USE_MANAGED_AGENT` env var from the Environment reference at the bottom of this file and from Vercel.
+- If admin-chat migrates to managed-agent before Phase 8, the `handler.ts` + `tools.ts` + `crmTools` deletion moves with that migration. Otherwise they stay, pinned by admin.
+
+Migrating admin-chat to managed-agent is **out of scope** for this migration — would be a separate multi-session phase.
 
 ## Verification
-- Build passes.
-- Admin chat still works (`/admin/ai-chat`).
-- Widget still works.
-- Telegram still works with `USE_MANAGED_AGENT=1`.
+- `git diff --stat` shows only `plans/` files on this phase.
+- Build still passes (trivially — no code changed).
+- Admin chat (`/admin/ai-chat`) still works.
+- Telegram with `USE_MANAGED_AGENT=1` still works.
 
 ## Handoff
-- Commit: `refactor(managed-agents): phase 6 — delete Vercel AI SDK path for telegram`.
-- Flip Phase 6 in tracker to `[x]`.
+- Commit: `chore(managed-agents): phase 6 — audit-only, deletions deferred to phase 8`.
+- Tracker already flipped to `[x]` with the audit outcome.
 
 ---
 

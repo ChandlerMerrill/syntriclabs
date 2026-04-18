@@ -471,6 +471,53 @@ For each row, send the trigger from Telegram, then verify the side effect + `ai_
 
 ---
 
-## Phases 6–8
+## Phase 6 — Dead-code audit (no src/ changes)
+
+Claude performed an import-graph audit instead of deleting code. The original Phase 6 deletion list (`handler.ts`, `tools.ts`, `sql-safety.ts`, `sql-client.ts`) turned out to be pinned alive by admin-chat and by the new Phase 5b crm-write handler, so none of those files can safely be removed today. The big cleanup migrates to Phase 8 step 4 (which already removes the feature-flag branch). **Nothing in `src/` changes this phase** — here's what you verify.
+
+### 6.1 Preflight
+
+- [ ] Phase 5b checks all green.
+- [ ] On branch `feat/managed-agents`.
+
+### 6.2 Audit spot-check (optional, ~5 min)
+
+Run these to reproduce the audit Claude cited in the Phase 6 section of the implementation doc:
+
+```bash
+# Admin chat pins handler.ts
+rg "from '@/lib/ai/handler'" src/app/api src/app
+
+# The new managed-agent crm-write handler pins sql-safety + sql-client
+rg "from '@/lib/ai/sql-(safety|client)'" src
+
+# crmTools pinned by handler.ts
+rg "from '@/lib/ai/tools'" src
+```
+
+- [ ] `handler.ts` import shows up in `src/app/api/ai/chat/route.ts` and `src/app/api/ai/dry-run/route.ts`.
+- [ ] `sql-safety` / `sql-client` imports show up in `src/lib/managed-agent/handlers/crm-write.ts` (the new path) **and** in `src/lib/ai/tools.ts` (the legacy path).
+
+If any of those lookups come back empty, the import graph has shifted since the audit — re-check before drawing conclusions.
+
+### 6.3 Build + smoke regression (no-op check)
+
+- [ ] `npm run build` passes. Trivial — no code changed this phase, but confirms the docs-only edits didn't accidentally touch anything else.
+- [ ] `npm run dev` (flag off) → `/admin/ai-chat` → "list 3 recent deals." Coherent reply + fresh `ai_actions` row. Proves the untouched admin path is fine.
+- [ ] `USE_MANAGED_AGENT=1 npm run dev` → Telegram → "list 5 recent deals." Coherent reply. Proves the untouched managed-agent path is fine.
+
+### 6.4 Hand back to Claude
+
+- [ ] Confirm 6.2–6.3 all pass. Claude has already flipped Phase 6 `[ ]` → `[x]` and committed `chore(managed-agents): phase 6 — audit-only, deletions deferred to phase 8`.
+
+### Stop criteria (abort and debug)
+
+- `git diff` shows anything under `src/` on the Phase 6 commit → Claude overstepped the reduced scope. Revert the non-docs changes before continuing.
+- Admin chat broken after this phase → same root cause; nothing in `src/` should have moved.
+- Managed-agent Telegram path broken after this phase → same root cause.
+
+---
+
+## Phases 7–8
 
 _(Populate as each phase begins.)_
