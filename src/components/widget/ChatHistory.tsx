@@ -134,24 +134,27 @@ export default function ChatHistory({
     <div className="relative flex-1 overflow-y-auto px-3 py-2">
       <button
         onClick={onNewChat}
-        className="group/btn mb-1 flex w-full items-center gap-2.5 rounded-lg border border-dashed border-indigo-300/60 px-3 py-2.5 text-left transition-all duration-200 hover:border-indigo-400 hover:bg-indigo-50/50"
+        className="group/btn mb-2 flex w-full items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 text-left shadow-sm shadow-black/[0.02] transition-all duration-200 hover:-translate-y-px hover:border-[#6366F1]/30 hover:bg-gradient-to-br hover:from-white hover:to-indigo-50/60 hover:shadow-md hover:shadow-indigo-500/[0.08]"
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] via-[#6366F1] to-[#4F46E5] shadow-sm shadow-indigo-500/20 transition-transform duration-200 group-hover/btn:scale-110">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] via-[#6366F1] to-[#4F46E5] shadow-sm shadow-indigo-500/30 transition-transform duration-200 group-hover/btn:scale-110 group-hover/btn:rotate-90">
           <Plus className="h-3.5 w-3.5 text-white" />
         </div>
-        <span className="text-sm font-medium text-indigo-600">New chat</span>
+        <span className="text-sm font-medium text-slate-700 group-hover/btn:text-[#4F46E5]">New chat</span>
       </button>
       {conversations.map((conv) => {
         const isActive = conv.id === currentConversationId
         return (
           <div
             key={conv.id}
-            className={`group flex w-full items-start rounded-lg transition-colors ${
+            className={`group relative flex w-full items-start overflow-hidden rounded-lg transition-all ${
               isActive
-                ? "border border-indigo-200/50 bg-indigo-50"
-                : "border border-transparent hover:bg-slate-100"
+                ? "border border-indigo-200/60 bg-gradient-to-br from-indigo-50 to-white shadow-sm shadow-indigo-500/[0.06]"
+                : "border border-transparent hover:bg-slate-100/80"
             }`}
           >
+            {isActive && (
+              <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-gradient-to-b from-[#8B5CF6] via-[#6366F1] to-[#06B6D4]" />
+            )}
             <button
               onClick={() => onSelectConversation(conv.id)}
               className="flex min-w-0 flex-1 items-start justify-between px-3 py-3 text-left"

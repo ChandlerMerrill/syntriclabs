@@ -45,10 +45,12 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
         <div key={`text-${i}`} className="mb-3 flex items-end gap-2">
           {showAvatar ? (
             <div className="shrink-0 self-end mb-0.5">
-              <SyntricMascot size={20} />
+              <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-800 ring-1 ring-white/10 shadow-sm shadow-black/20">
+                <SyntricMascot size={44} />
+              </div>
             </div>
           ) : (
-            <div className="w-5 shrink-0" />
+            <div className="w-11 shrink-0" />
           )}
           <div className="max-w-[80%] rounded-2xl bg-white px-3.5 py-2 text-sm leading-relaxed text-slate-700 shadow-sm shadow-black/[0.03]">
             <div className="whitespace-pre-wrap break-words [&>p]:mb-2 [&>p:last-child]:mb-0">
@@ -124,7 +126,9 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
     return (
       <div className="mb-3 flex items-end gap-2">
         <div className="shrink-0 self-end mb-0.5">
-          <SyntricMascot size={20} />
+          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-800 ring-1 ring-white/10 shadow-sm shadow-black/20">
+            <SyntricMascot size={44} />
+          </div>
         </div>
         <ThinkingDots />
       </div>
@@ -139,9 +143,9 @@ function ThinkingDots() {
   return (
     <div className="rounded-2xl bg-white px-4 py-3">
       <div className="flex items-center gap-1">
-        <span className="widget-thinking-dot h-1.5 w-1.5 rounded-full bg-slate-400" />
-        <span className="widget-thinking-dot h-1.5 w-1.5 rounded-full bg-slate-400" />
-        <span className="widget-thinking-dot h-1.5 w-1.5 rounded-full bg-slate-400" />
+        <span className="widget-thinking-dot h-1.5 w-1.5 rounded-full bg-indigo-400" />
+        <span className="widget-thinking-dot h-1.5 w-1.5 rounded-full bg-indigo-400" />
+        <span className="widget-thinking-dot h-1.5 w-1.5 rounded-full bg-indigo-400" />
       </div>
     </div>
   )

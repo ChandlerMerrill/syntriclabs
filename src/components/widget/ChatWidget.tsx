@@ -208,10 +208,10 @@ export default function ChatWidget() {
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
             onClick={() => setOpen(true)}
-            className="widget-bubble-pulse fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] via-[#6366F1] to-[#4F46E5] shadow-lg shadow-indigo-500/30 transition-all duration-200 hover:scale-110 hover:shadow-xl hover:shadow-indigo-500/35"
+            className="widget-bubble-pulse fixed bottom-6 right-6 z-50 flex h-[65px] w-[65px] items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#7C3AED] via-[#6366F1] to-[#4F46E5] p-2.5 shadow-[0_10px_32px_-6px_rgba(99,102,241,0.55),0_4px_12px_-2px_rgba(0,0,0,0.25),inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-200 hover:scale-105 hover:shadow-[0_14px_40px_-6px_rgba(99,102,241,0.65),0_4px_12px_-2px_rgba(0,0,0,0.3),inset_0_0_0_1px_rgba(255,255,255,0.12)]"
             aria-label="Open chat"
           >
-            <SyntricMascot size={28} variant="light" />
+            <SyntricMascot size={65} variant="light" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -242,7 +242,7 @@ export default function ChatWidget() {
             className={`fixed bottom-0 left-0 right-0 z-50 flex h-[88dvh] max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-[#F8FAFC] shadow-[0_-12px_40px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/10 sm:bottom-6 sm:left-auto sm:right-6 sm:h-[520px] sm:max-h-none sm:w-[380px] sm:rounded-2xl sm:border sm:border-slate-200/40 sm:shadow-2xl sm:shadow-black/15 sm:ring-black/[0.03] ${isStreaming ? "widget-streaming" : ""}`}
           >
             {/* Header */}
-            <div className="relative flex items-center justify-between bg-gradient-to-r from-[#0F172A] to-[#1A1F3A] px-5 py-4 sm:px-4 sm:py-3.5">
+            <div className="relative flex items-center justify-between bg-gradient-to-r from-[#0F172A] to-[#1A1F3A] px-5 py-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-purple-400/40 after:to-cyan-400/30 sm:px-4 sm:py-3.5">
               {view === "chat" ? (
                 <>
                   <div className="flex items-center gap-2">
@@ -277,7 +277,9 @@ export default function ChatWidget() {
               ) : (
                 <>
                   <div className="flex items-center gap-2.5">
-                    <SyntricMascot size={24} />
+                    <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-800 ring-1 ring-white/10 shadow-sm shadow-black/20">
+                      <SyntricMascot size={56} />
+                    </div>
                     <span className="font-[family-name:var(--font-rajdhani)] text-base font-semibold tracking-wide text-white sm:text-sm">
                       Chat History
                     </span>

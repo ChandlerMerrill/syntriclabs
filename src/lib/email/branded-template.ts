@@ -13,7 +13,13 @@ const BRAND_FONT = "'Rajdhani', 'Helvetica Neue', Arial, sans-serif"
 
 const PHONE_TEL = FOUNDER.phone.replace(/[^\d+]/g, '')
 
-const MASCOT_IMG = `<img src="https://www.syntriclabs.com/images/syntric-mascot.png" alt="" width="25" height="25" style="display:inline-block;vertical-align:middle;width:25px;height:25px;border:0;outline:none;text-decoration:none">`
+const MASCOT_BADGE = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="44" style="width:44px;background-color:#475569;background-image:linear-gradient(135deg,#475569,#1E293B);border-radius:22px;border-collapse:separate">
+  <tr>
+    <td align="center" valign="middle" height="44" style="height:44px;line-height:0;padding:0;text-align:center;vertical-align:middle;border-radius:22px">
+      <img src="https://www.syntriclabs.com/images/syntric-mascot.png" alt="" width="33" height="44" style="display:block;margin:0 auto;width:33px;height:44px;border:0;outline:none;text-decoration:none">
+    </td>
+  </tr>
+</table>`
 
 function escapeHtml(s: string): string {
   return s
@@ -89,10 +95,8 @@ export function renderBrandedEmail(body: string): string {
         <tr><td style="padding:12px 32px;background:${BRAND_TINT_BG};border-top:1px solid ${BRAND_TINT_BORDER};border-bottom:1px solid ${BRAND_TINT_BORDER}">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0">
             <tr>
-              <td style="vertical-align:middle;padding-right:10px">
-                <div style="width:38px;height:38px;background:#FFFFFF;border:1px solid ${BRAND_TINT_BORDER};border-radius:50%;text-align:center;line-height:38px">
-                  ${MASCOT_IMG}
-                </div>
+              <td style="vertical-align:middle;padding-right:12px">
+                ${MASCOT_BADGE}
               </td>
               <td style="vertical-align:middle;color:${BRAND_PURPLE_DARK};font-size:12px;font-weight:600;letter-spacing:0.02em">
                 Sent by ${FOUNDER.firstName}'s AI assistant on his behalf

@@ -133,10 +133,15 @@ export default function ChatView({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {messages.length === 0 && (
-          <div className="space-y-3">
-            <div className="flex flex-col items-center gap-2 py-2">
-              <SyntricMascot size={32} />
-              <p className="text-center text-sm text-slate-500">
+          <div className="space-y-4">
+            <div className="flex flex-col items-center gap-3 py-4">
+              <div className="relative">
+                <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-purple-500/30 via-indigo-500/20 to-cyan-500/30 blur-xl" />
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-slate-800 to-slate-950 ring-1 ring-white/10 shadow-md shadow-black/20">
+                  <SyntricMascot size={64} />
+                </div>
+              </div>
+              <p className="text-center text-sm font-medium text-slate-600">
                 Hi! How can I help you learn about Syntric?
               </p>
             </div>
@@ -145,9 +150,10 @@ export default function ChatView({
                 <button
                   key={s}
                   onClick={() => submit(s)}
-                  className="w-full max-w-[260px] rounded-full border border-slate-200 bg-white px-4 py-2 text-center text-xs font-medium text-slate-600 shadow-sm transition-all duration-200 hover:border-[#6366F1]/40 hover:bg-[#6366F1]/[0.05] hover:text-[#4F46E5] hover:shadow-md hover:shadow-indigo-500/[0.06]"
+                  className="group/starter flex w-full max-w-[260px] items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-left text-xs font-medium text-slate-600 shadow-sm shadow-black/[0.02] transition-all duration-200 hover:-translate-y-px hover:border-[#6366F1]/40 hover:bg-gradient-to-br hover:from-white hover:to-indigo-50/60 hover:text-[#4F46E5] hover:shadow-md hover:shadow-indigo-500/[0.08]"
                 >
-                  {s}
+                  <span className="truncate">{s}</span>
+                  <span className="text-[#6366F1]/40 transition-all duration-200 group-hover/starter:translate-x-0.5 group-hover/starter:text-[#6366F1]">→</span>
                 </button>
               ))}
             </div>
@@ -219,7 +225,11 @@ export default function ChatView({
           <button
             onClick={() => submit()}
             disabled={!input.trim() || isLoading}
-            className="shrink-0 rounded-lg p-2 text-[#6366F1] transition-all duration-200 hover:bg-[#6366F1]/10 hover:text-[#4F46E5] active:scale-95 disabled:opacity-30 disabled:hover:scale-100 sm:p-1.5 sm:hover:scale-110"
+            className={`shrink-0 rounded-lg p-2 transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 sm:p-1.5 ${
+              input.trim() && !isLoading
+                ? "bg-gradient-to-br from-[#6366F1] to-[#4F46E5] text-white shadow-md shadow-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/40 hover:brightness-110"
+                : "text-slate-400"
+            }`}
           >
             <Send className="h-[18px] w-[18px] sm:h-4 sm:w-4" />
           </button>
