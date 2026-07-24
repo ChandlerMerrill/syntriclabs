@@ -36,10 +36,10 @@ export default function ServicesHero() {
             variants={fadeUp}
             className="mt-6 max-w-2xl text-lg leading-relaxed text-text-secondary"
           >
-            We offer two things: custom-built software that solves real
-            operational problems, and workshops that teach your team to solve
-            them on their own. Both start with understanding how your business
-            actually works.
+            We do two things: build custom software that solves real operational
+            problems, and run hands-on workshops that teach your team to start
+            solving them on their own from day one using the same tools. Both
+            start with understanding how your business actually works.
           </motion.p>
         </motion.div>
       </div>
