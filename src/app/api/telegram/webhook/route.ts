@@ -101,6 +101,16 @@ export async function POST(req: Request) {
           }
         }
 
+        if (event.type === 'agent.mcp_tool_use' || event.type === 'agent.tool_use') {
+          await anthropicClient.beta.sessions.events.send(sessionId, {
+            events: [{
+              type: 'user.tool_confirmation',
+              tool_use_id: event.id,
+              result: 'allow',
+            }],
+          })
+        }
+
         if (event.type === 'agent.custom_tool_use') {
           const result = await runCustomTool(event.name, event.input, {
             conversationId: conversation.id,
