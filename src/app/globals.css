@@ -131,16 +131,6 @@ body {
   background: rgba(148, 163, 184, 0.4);
 }
 
-/* Prevent Relevance AI widget from blocking scroll */
-#relevance-bot-launcher-container {
-  pointer-events: none;
-}
-
-#relevance-bot-launcher-container button,
-#relevance-bot-launcher-container iframe {
-  pointer-events: auto;
-}
-
 /* Widget thinking dots */
 @keyframes widget-dot-bounce {
   0%, 60%, 100% {

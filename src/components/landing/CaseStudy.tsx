@@ -26,7 +26,7 @@ const features = [
 ];
 
 export default function CaseStudy() {
-  const cost = useCountUp({ end: 10, prefix: "~$", suffix: "k" });
+  const cost = useCountUp({ end: 15, prefix: "~$", suffix: "k" });
   const time = useCountUp({ end: 2, prefix: "~", suffix: " wks" });
 
   return (
@@ -42,7 +42,7 @@ export default function CaseStudy() {
           <motion.div variants={fadeUp}>
             <SectionLabel label="Proof of Work" />
             <h2 className="mt-3 max-w-3xl font-[family-name:var(--font-rajdhani)] text-3xl font-bold tracking-tight sm:text-4xl lg:text-[2.75rem]">
-              A $30k quote. We did it for a third of that — with more features.
+              A $30k quote. We did it for half that — with more features.
             </h2>
           </motion.div>
         </motion.div>
@@ -64,10 +64,13 @@ export default function CaseStudy() {
                   $30,000 by another agency for a basic e-commerce setup.
                 </p>
                 <p>
-                  We built them a full multi-tenant platform in about two weeks.
-                  The result: their manual workflows disappeared. The platform
-                  handles what used to take hours of spreadsheet wrangling. And
-                  it cost roughly $10,000 — a third of the competing quote, with
+                  They had a working multi-tenant platform in about two weeks.
+                  Five months on, it&apos;s still in production and we&apos;re
+                  still building — the spreadsheet wrangling is gone, and the
+                  system handles what used to take hours.
+                </p>
+                <p>
+                  About $15,000 to date. Half the competing quote, with
                   significantly more functionality.
                 </p>
               </motion.div>
@@ -89,7 +92,7 @@ export default function CaseStudy() {
 
               <motion.div variants={fadeUp} className="mt-8">
                 <Button
-                  render={<a href="https://esotericdesignlab-platform.vercel.app/" target="_blank" rel="noopener noreferrer" />}
+                  render={<a href="https://www.esotericdesignlab.com/" target="_blank" rel="noopener noreferrer" />}
                   variant="secondary"
                 >
                   See the Platform Live
@@ -129,7 +132,7 @@ export default function CaseStudy() {
                     {time.display}
                   </p>
                   <p className="mt-1 text-xs text-text-secondary">
-                    Solo build time
+                    To a working platform
                   </p>
                 </motion.div>
               </motion.div>
@@ -138,15 +141,15 @@ export default function CaseStudy() {
               <motion.div variants={popIn}>
                 <div className="rounded-xl border border-accent-purple/20 bg-gradient-to-br from-accent-purple/[0.10] to-accent-cyan/[0.07] p-6">
                   <Quote className="mb-3 h-6 w-6 text-accent-purple/60" />
-                  <blockquote className="text-[0.95rem] leading-relaxed font-medium text-text-primary">
-                    &ldquo;We&apos;re never going back. Syntric built exactly what
-                    we needed, faster than we thought possible. We won&apos;t work
-                    with anyone else — and we&apos;re telling every business we
-                    partner with to do the same.&rdquo;
-                  </blockquote>
+                  <p className="text-[0.95rem] leading-relaxed font-medium text-text-primary">
+                    They&apos;re never going back. We built exactly what they
+                    needed, faster than they expected — and they&apos;ve told us
+                    they won&apos;t work with anyone else, and are telling the
+                    businesses they partner with to do the same.
+                  </p>
                   <div className="mt-4 h-px w-10 bg-gradient-to-r from-accent-purple/30 to-transparent" />
                   <p className="mt-3 text-sm text-text-secondary">
-                    Founder, Esoteric Design Lab
+                    Paraphrased from the founder, Esoteric Design Lab
                   </p>
                 </div>
               </motion.div>
