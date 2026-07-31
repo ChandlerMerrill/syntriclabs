@@ -5,6 +5,21 @@ import type { Client, ClientContact, Project, Deal, Activity, Transcript } from 
 
 const embeddingModel = openai.embedding('text-embedding-3-small')
 
+/**
+ * Entity types the `embeddings` table accepts. Kept in lockstep with the
+ * CHECK constraint — widened last in migration 023 for the marketing module.
+ */
+export type EmbeddingEntityType =
+  | 'client'
+  | 'project'
+  | 'deal'
+  | 'activity'
+  | 'email'
+  | 'transcript'
+  | 'knowledgebase'
+  | 'marketing_source'
+  | 'marketing_pain_point'
+
 export async function generateEmbedding(text: string): Promise<number[]> {
   const { embedding } = await embed({ model: embeddingModel, value: text })
   return embedding
@@ -81,7 +96,7 @@ export function serializeTranscript(transcript: Transcript, clientName?: string)
 // ── Upsert ──
 
 export async function upsertEmbedding(
-  entityType: 'client' | 'project' | 'deal' | 'activity' | 'email' | 'transcript' | 'knowledgebase',
+  entityType: EmbeddingEntityType,
   entityId: string,
   text: string
 ): Promise<void> {
@@ -126,7 +141,7 @@ export async function searchSimilar(
 // ── Fire-and-forget helper ──
 
 export function embedInBackground(
-  entityType: 'client' | 'project' | 'deal' | 'activity' | 'email' | 'transcript' | 'knowledgebase',
+  entityType: EmbeddingEntityType,
   entityId: string,
   text: string
 ): void {
