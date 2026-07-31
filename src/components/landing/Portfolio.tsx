@@ -11,7 +11,7 @@ const projects = [
   {
     name: "Esoteric Design Lab",
     description:
-      "Multi-tenant e-commerce platform with client portals, kit builder, design review tools, and production tracking. Working in ~2 weeks, in production and still growing five months later.",
+      "Multi-tenant e-commerce platform with client portals, kit builder, design review tools, and production tracking. Built in ~3–4 weeks, in production and still growing five months later.",
     href: "https://www.esotericdesignlab.com/",
     image: "/images/work/esoteric.jpg",
     tags: ["E-Commerce", "Multi-Tenant", "Client Portal"],

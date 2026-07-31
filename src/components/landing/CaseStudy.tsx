@@ -27,7 +27,8 @@ const features = [
 
 export default function CaseStudy() {
   const cost = useCountUp({ end: 15, prefix: "~$", suffix: "k" });
-  const time = useCountUp({ end: 2, prefix: "~", suffix: " wks" });
+  // Static rather than a count-up: useCountUp animates 0 -> n, and a range
+  // rolling through "~3-0 wks", "~3-1 wks" reads as a glitch.
 
   return (
     <section className="bg-grid py-24 sm:py-32">
@@ -64,10 +65,10 @@ export default function CaseStudy() {
                   $30,000 by another agency for a basic e-commerce setup.
                 </p>
                 <p>
-                  They had a working multi-tenant platform in about two weeks.
-                  Five months on, it&apos;s still in production and we&apos;re
-                  still building — the spreadsheet wrangling is gone, and the
-                  system handles what used to take hours.
+                  They had a working multi-tenant platform in about three to
+                  four weeks. Five months on, it&apos;s still in production and
+                  we&apos;re still building — the spreadsheet wrangling is gone,
+                  and the system handles what used to take hours.
                 </p>
                 <p>
                   About $15,000 to date. Half the competing quote, with
@@ -128,11 +129,11 @@ export default function CaseStudy() {
                   whileHover={springHover}
                   className="rounded-xl border border-border bg-bg-secondary p-5 transition-shadow hover:shadow-lg hover:shadow-accent-cyan/5"
                 >
-                  <p ref={time.ref} className="font-[family-name:var(--font-rajdhani)] text-3xl font-bold text-accent-cyan">
-                    {time.display}
+                  <p className="font-[family-name:var(--font-rajdhani)] text-3xl font-bold text-accent-cyan">
+                    ~3&ndash;4 wks
                   </p>
                   <p className="mt-1 text-xs text-text-secondary">
-                    To a working platform
+                    Build time
                   </p>
                 </motion.div>
               </motion.div>
