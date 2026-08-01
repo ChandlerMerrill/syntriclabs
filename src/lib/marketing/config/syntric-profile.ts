@@ -72,6 +72,10 @@ export const SYNTRIC_BRAND_PROFILE: BrandProfileSeed = {
       'Never open with a scene-setting cliche ("In today\'s fast-paced digital landscape...").',
       'Line 1 is an observation about THEIR operation, specific enough that it could not be sent to anyone else.',
     ],
+
+    // brain/templates/cold-email.md — the shape's sign-off block. Appended at
+    // render time, never generated.
+    signOff: 'Chandler\nSyntric · syntriclabs.com',
   },
 
   // brain/context/voice.md — hard list. Do not ship copy containing these.

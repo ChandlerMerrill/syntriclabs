@@ -259,15 +259,43 @@ export async function listProspects(
   return (data ?? []) as MarketingProspect[]
 }
 
+/**
+ * Upserts a prospect, matching on id then on email.
+ *
+ * Not a real `upsert`: the uniqueness guarantee on email is a *partial
+ * expression* index (`lower(email) where email is not null`), and Postgres only
+ * accepts a conflict target that matches the index exactly — `onConflict:
+ * 'email'` is rejected outright. Emails are lower-cased on the way in, so an
+ * equality lookup is exact.
+ *
+ * The read-then-write is not atomic. Two concurrent inserts of the same address
+ * race, and the index is what catches it: the loser gets a unique violation
+ * instead of a duplicate row.
+ */
 export async function upsertProspect(
   supabase: SupabaseClient,
   prospect: Partial<MarketingProspect> & { company: string }
 ): Promise<MarketingProspect> {
-  const { data, error } = await supabase
-    .from('marketing_prospects')
-    .upsert(prospect, { onConflict: 'email' })
-    .select('*')
-    .single()
+  const { id, ...fields } = prospect
+  const email = fields.email?.trim().toLowerCase() || null
+
+  let targetId = id ?? null
+  if (!targetId && email) {
+    const { data: existing } = await supabase
+      .from('marketing_prospects')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+    targetId = (existing?.id as string | undefined) ?? null
+  }
+
+  const payload = { ...fields, email }
+
+  const query = targetId
+    ? supabase.from('marketing_prospects').update(payload).eq('id', targetId)
+    : supabase.from('marketing_prospects').insert(payload)
+
+  const { data, error } = await query.select('*').single()
   if (error || !data) {
     throw new Error(`Failed to upsert prospect: ${error?.message ?? 'no row returned'}`)
   }

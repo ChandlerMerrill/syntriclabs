@@ -31,6 +31,12 @@ export const voiceRulesSchema = z.object({
   contentRules: z.array(z.string()).default([]),
   /** How the first line has to behave. */
   hookRules: z.array(z.string()).default([]),
+  /**
+   * How a message is signed. Appended verbatim when a send is rendered for a
+   * prospect — the generator never writes it, so it never eats into the word
+   * ceiling and can never be quietly reworded by a model.
+   */
+  signOff: z.string().default(''),
 })
 
 export const hardRulesSchema = z.object({
