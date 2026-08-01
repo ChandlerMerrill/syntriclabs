@@ -23,6 +23,7 @@ create table if not exists public.marketing_campaigns (
 create index if not exists idx_marketing_campaigns_status
   on public.marketing_campaigns(status, created_at desc);
 
+drop trigger if exists marketing_campaigns_updated_at on public.marketing_campaigns;
 create trigger marketing_campaigns_updated_at before update
   on public.marketing_campaigns
   for each row execute function update_updated_at();
@@ -73,6 +74,7 @@ create index if not exists idx_marketing_variants_parent
 create index if not exists idx_marketing_variants_status
   on public.marketing_variants(status);
 
+drop trigger if exists marketing_variants_updated_at on public.marketing_variants;
 create trigger marketing_variants_updated_at before update
   on public.marketing_variants
   for each row execute function update_updated_at();
@@ -150,6 +152,7 @@ create index if not exists idx_marketing_prospects_segment
 create index if not exists idx_marketing_prospects_client
   on public.marketing_prospects(client_id);
 
+drop trigger if exists marketing_prospects_updated_at on public.marketing_prospects;
 create trigger marketing_prospects_updated_at before update
   on public.marketing_prospects
   for each row execute function update_updated_at();

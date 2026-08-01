@@ -49,6 +49,7 @@ create table if not exists public.marketing_brand_profiles (
 create unique index if not exists idx_marketing_brand_profiles_default
   on public.marketing_brand_profiles(is_default) where is_default;
 
+drop trigger if exists marketing_brand_profiles_updated_at on public.marketing_brand_profiles;
 create trigger marketing_brand_profiles_updated_at before update
   on public.marketing_brand_profiles
   for each row execute function update_updated_at();
@@ -75,6 +76,7 @@ create table if not exists public.marketing_segments (
   unique (brand_profile_id, slug)
 );
 
+drop trigger if exists marketing_segments_updated_at on public.marketing_segments;
 create trigger marketing_segments_updated_at before update
   on public.marketing_segments
   for each row execute function update_updated_at();

@@ -11,7 +11,9 @@
     "mint-supabase-tokens": "tsx scripts/managed-agent/mint-supabase-tokens.ts",
     "setup-vault": "tsx scripts/managed-agent/setup-vault.ts",
     "setup-agent": "tsx scripts/managed-agent/setup-agent.ts",
-    "update-system-prompt": "tsx scripts/managed-agent/update-system-prompt.ts"
+    "update-system-prompt": "tsx scripts/managed-agent/update-system-prompt.ts",
+    "db:migrate": "tsx --env-file=.env.local scripts/db/migrate.ts",
+    "db:seed-marketing": "tsx --env-file=.env.local scripts/db/seed-marketing.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.69",

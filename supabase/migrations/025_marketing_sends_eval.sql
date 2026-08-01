@@ -72,6 +72,7 @@ create index if not exists idx_marketing_sends_prospect
 create index if not exists idx_marketing_sends_thread
   on public.marketing_sends(gmail_thread_id) where gmail_thread_id is not null;
 
+drop trigger if exists marketing_sends_updated_at on public.marketing_sends;
 create trigger marketing_sends_updated_at before update
   on public.marketing_sends
   for each row execute function update_updated_at();
