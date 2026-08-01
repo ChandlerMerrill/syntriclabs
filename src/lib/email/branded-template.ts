@@ -11,8 +11,6 @@ const BORDER_LIGHT = '#E2E8F0'
 const BG_LIGHT = '#F8FAFC'
 const BRAND_FONT = "'Rajdhani', 'Helvetica Neue', Arial, sans-serif"
 
-const PHONE_TEL = FOUNDER.phone.replace(/[^\d+]/g, '')
-
 const MASCOT_BADGE = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="44" style="width:44px;background-color:#475569;background-image:linear-gradient(135deg,#475569,#1E293B);border-radius:22px;border-collapse:separate">
   <tr>
     <td align="center" valign="middle" height="44" style="height:44px;line-height:0;padding:0;text-align:center;vertical-align:middle;border-radius:22px">
@@ -61,8 +59,70 @@ function markdownToHtml(md: string): string {
   }).filter(Boolean).join('')
 }
 
-export function renderBrandedEmail(body: string): string {
+export interface BrandedEmailOptions {
+  /**
+   * The "sent by an AI assistant" banner.
+   *
+   * On by default because the agent paths send without a human in the loop and
+   * the disclosure is load-bearing there. Marketing turns it off: every one of
+   * those messages is approved by Chandler personally before it leaves, so
+   * "sent by Chandler" is the accurate description, and announcing automation
+   * on a first contact undercuts the thing the email is trying to be.
+   */
+  assistantBanner?: boolean
+  /**
+   * The footer CTA button. `null` omits it.
+   *
+   * Marketing omits it: the brand gate allows one ask, and a calendar button on
+   * top of the body's question is the second one — precisely the "proof link
+   * plus a calendar link" case `checkOneAsk` exists to prevent.
+   */
+  ctaUrl?: string | null
+  ctaLabel?: string
+  /** Footer identity. Defaults to the founder profile. */
+  signature?: {
+    name?: string
+    title?: string
+    company?: string
+    email?: string
+    phone?: string
+  }
+}
+
+export function renderBrandedEmail(body: string, options: BrandedEmailOptions = {}): string {
   const bodyHtml = markdownToHtml(body)
+
+  const assistantBanner = options.assistantBanner ?? true
+  const ctaUrl = options.ctaUrl === undefined ? FOUNDER.calendlyUrl : options.ctaUrl
+  const ctaLabel = options.ctaLabel ?? 'Schedule a call →'
+
+  const sigName = options.signature?.name ?? FOUNDER.fullName
+  const sigTitle = options.signature?.title ?? FOUNDER.title
+  const sigCompany = options.signature?.company ?? FOUNDER.company
+  const sigEmail = options.signature?.email ?? FOUNDER.email
+  const sigPhone = options.signature?.phone ?? FOUNDER.phone
+  const sigPhoneTel = sigPhone.replace(/[^\d+]/g, '')
+
+  const bannerRow = assistantBanner
+    ? `<tr><td style="padding:12px 32px;background:${BRAND_TINT_BG};border-top:1px solid ${BRAND_TINT_BORDER};border-bottom:1px solid ${BRAND_TINT_BORDER}">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td style="vertical-align:middle;padding-right:12px">
+                ${MASCOT_BADGE}
+              </td>
+              <td style="vertical-align:middle;color:${BRAND_PURPLE_DARK};font-size:12px;font-weight:600;letter-spacing:0.02em">
+                Sent by ${FOUNDER.firstName}'s AI assistant on his behalf
+              </td>
+            </tr>
+          </table>
+        </td></tr>`
+    : ''
+
+  const ctaRow = ctaUrl
+    ? `<tr><td style="padding:0 32px 28px 32px">
+          <a href="${ctaUrl}" style="display:inline-block;background:${BRAND_PURPLE};color:#FFFFFF;text-decoration:none;font-size:13px;font-weight:600;padding:10px 18px;border-radius:8px;letter-spacing:0.01em">${escapeHtml(ctaLabel)}</a>
+        </td></tr>`
+    : ''
 
   return `<!DOCTYPE html>
 <html>
@@ -92,32 +152,19 @@ export function renderBrandedEmail(body: string): string {
           </table>
         </td></tr>
 
-        <tr><td style="padding:12px 32px;background:${BRAND_TINT_BG};border-top:1px solid ${BRAND_TINT_BORDER};border-bottom:1px solid ${BRAND_TINT_BORDER}">
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
-            <tr>
-              <td style="vertical-align:middle;padding-right:12px">
-                ${MASCOT_BADGE}
-              </td>
-              <td style="vertical-align:middle;color:${BRAND_PURPLE_DARK};font-size:12px;font-weight:600;letter-spacing:0.02em">
-                Sent by ${FOUNDER.firstName}'s AI assistant on his behalf
-              </td>
-            </tr>
-          </table>
-        </td></tr>
+        ${bannerRow}
 
         <tr><td style="padding:32px 32px 24px 32px">${bodyHtml}</td></tr>
 
-        <tr><td style="padding:0 32px 28px 32px">
-          <a href="${FOUNDER.calendlyUrl}" style="display:inline-block;background:${BRAND_PURPLE};color:#FFFFFF;text-decoration:none;font-size:13px;font-weight:600;padding:10px 18px;border-radius:8px;letter-spacing:0.01em">Schedule a call →</a>
-        </td></tr>
+        ${ctaRow}
 
         <tr><td style="padding:24px 32px 28px 32px;background:${BG_LIGHT};border-top:1px solid ${BORDER_LIGHT}">
-          <p style="margin:0 0 4px;color:${TEXT_DARK};font-size:14px;font-weight:600">${FOUNDER.fullName}</p>
-          <p style="margin:0 0 14px;color:${TEXT_MUTED};font-size:13px">${FOUNDER.title}, ${FOUNDER.company}</p>
+          <p style="margin:0 0 4px;color:${TEXT_DARK};font-size:17px;font-weight:600">${escapeHtml(sigName)}</p>
+          <p style="margin:0 0 14px;color:${TEXT_MUTED};font-size:13px">${escapeHtml(sigTitle)}, ${escapeHtml(sigCompany)}</p>
           <p style="margin:0 0 22px;color:${TEXT_MUTED};font-size:13px;line-height:1.7">
-            <a href="mailto:${FOUNDER.email}" style="color:${TEXT_MUTED};text-decoration:none">${FOUNDER.email}</a>
+            <a href="mailto:${sigEmail}" style="color:${TEXT_MUTED};text-decoration:none">${escapeHtml(sigEmail)}</a>
             &nbsp;·&nbsp;
-            <a href="tel:${PHONE_TEL}" style="color:${TEXT_MUTED};text-decoration:none">${FOUNDER.phone}</a>
+            <a href="tel:${sigPhoneTel}" style="color:${TEXT_MUTED};text-decoration:none">${escapeHtml(sigPhone)}</a>
           </p>
           <div style="text-align:center">
             <img src="https://www.syntriclabs.com/images/Syntric-logo-pill.png" alt="Syntric" width="120" style="width:120px;height:auto;display:inline-block;border:0;outline:none;text-decoration:none">
