@@ -19,7 +19,12 @@ import type { MarketingChannel, MarketingPainPoint, MarketingSegment } from '../
  * performance view can separate "this angle won" from "this scaffold changed
  * underneath us".
  */
-export const GENERATION_PROMPT_VERSION = 'v1'
+// v2 — "AI front office" entered the offerings list as never-delivered, which
+// adds a line to "What may be claimed". Every prompt built from here differs
+// from the v1 rows by exactly that line: proof-asset selection changed in the
+// same commit and moved nothing, and all six v1 prompts were checked to rebuild
+// byte-identical apart from it.
+export const GENERATION_PROMPT_VERSION = 'v2'
 
 export type SegmentContext = Pick<
   MarketingSegment,
@@ -46,22 +51,26 @@ export interface GenerationTarget {
 /**
  * Picks the proof asset that is credible for a segment.
  *
- * Prefers one explicitly scoped to the segment, then one scoped to nothing
- * (usable anywhere), and only then falls back to the first on file. Naming an
- * asset from the wrong domain is not fatal — the template has an honest way to
- * do it ("different industry, same problem shape") — but it should be the
- * deliberate choice, not the default.
+ * Prefers one explicitly scoped to the segment, then one scoped to nothing —
+ * which is a declaration that the asset travels, not an absence of one.
+ * Returns null when neither exists.
+ *
+ * There is deliberately no last-resort fallback to the first asset on file.
+ * That fallback read as harmless and was not: it made a segment with no
+ * credible proof silently inherit whichever asset happened to be first, so a
+ * vet clinic would have been offered a clothing-supplier platform. A segment
+ * with nothing credible on file gets an email that earns attention on the
+ * observation alone, and `proofSection` says so.
  */
 export function selectProofAsset(
   profile: BrandProfile,
   segmentSlug?: string | null
 ): ProofAsset | null {
-  if (profile.proofAssets.length === 0) return null
   if (segmentSlug) {
     const scoped = profile.proofAssets.find((a) => a.segments.includes(segmentSlug))
     if (scoped) return scoped
   }
-  return profile.proofAssets.find((a) => a.segments.length === 0) ?? profile.proofAssets[0]
+  return profile.proofAssets.find((a) => a.segments.length === 0) ?? null
 }
 
 function bullets(items: string[]): string {
@@ -88,7 +97,11 @@ function proofSection(asset: ProofAsset | null, segmentSlug: string | null): str
     ].join('\n')
   }
 
-  const offDomain = segmentSlug && asset.segments.length > 0 && !asset.segments.includes(segmentSlug)
+  // Anything not scoped to this segment is off-domain here — including an asset
+  // declared usable anywhere. "Travels" means it may be named, not that it is
+  // about this industry, and that difference has to be said out loud rather
+  // than left for the reader to discover.
+  const offDomain = !!segmentSlug && !asset.segments.includes(segmentSlug)
 
   return [
     `${asset.name} — ${asset.url}`,

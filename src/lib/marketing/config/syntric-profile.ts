@@ -190,7 +190,12 @@ export const SYNTRIC_BRAND_PROFILE: BrandProfileSeed = {
       url: 'https://esotericdesignlab.com',
       description:
         'A multi-tenant platform with a client portal, e-commerce, inventory and production tracking — in production and still under continuous development.',
-      segments: [],
+      // A clothing supplier serving youth clubs, which is the `suppliers`
+      // segment — already described there as its strongest proof. This was
+      // empty, meaning "travels anywhere", and so it became the default asset
+      // for every segment with none of its own: a vet clinic was about to be
+      // offered a clothing-supplier platform as proof.
+      segments: ['suppliers'],
     },
   ],
 
@@ -200,12 +205,16 @@ export const SYNTRIC_BRAND_PROFILE: BrandProfileSeed = {
         key: 'custom_builds',
         name: 'Custom software builds',
         status: 'proven',
+        aliases: [],
         notes: 'What Syntric is actually paid for today. Results may be cited.',
       },
       {
         key: 'design_sprint',
         name: 'Design Sprint',
         status: 'intended',
+        // Names it has been floated under, per brain/context/offers.md. Copy
+        // using one of them is claiming the same undelivered thing.
+        aliases: ['Systems Sprint', 'Operations Review', 'Build Plan', 'AI Roadmap'],
         notes:
           'Embedded assessment plus an implementation plan. Never delivered. May be described, scoped, and quoted. No outcome or track record may be claimed. Never called an audit externally.',
       },
@@ -213,7 +222,22 @@ export const SYNTRIC_BRAND_PROFILE: BrandProfileSeed = {
         key: 'education',
         name: 'Education / workshops',
         status: 'intended',
+        aliases: ['workshop', 'training'],
         notes: 'Never delivered. Same constraint as the Design Sprint.',
+      },
+      {
+        key: 'ai_front_office',
+        name: 'AI front office',
+        status: 'intended',
+        // Without these the guard is guarded by a phrase no email would use.
+        // Each one names the offering rather than the prospect's own desk —
+        // "front desk" alone would fire on every clinic email written.
+        aliases: ['AI receptionist', 'AI front desk', 'front-desk agent', 'AI phone agent'],
+        notes:
+          'Chat and voice agents that answer, book, and triage on a business\'s behalf. ' +
+          'Demoed on the Syntric site and running for Syntric itself — never delivered to a ' +
+          'client. May be described, scoped, and quoted. No outcome or track record may be ' +
+          'claimed, including for the demos.',
       },
     ],
     bannedOfferingTerms: ['audit'],

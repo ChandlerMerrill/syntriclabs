@@ -114,6 +114,12 @@ export const offerConstraintsSchema = z.object({
     key: z.string(),
     name: z.string(),
     /**
+     * Other ways copy might name this offering. `claim_traced` matches these
+     * alongside the name, because an offering is only guarded by the words
+     * actually used for it — nobody writes "AI front office" in a cold email.
+     */
+    aliases: z.array(z.string()).default([]),
+    /**
      * `proven` may be cited as a delivered result. `intended` may be described,
      * scoped, and quoted — never claimed as a track record. This distinction is
      * the single most damaging thing to get wrong, so it is data, not prose.

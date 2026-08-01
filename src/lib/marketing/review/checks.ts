@@ -218,7 +218,8 @@ export function checkClaimsTraced(draft: VariantDraft, profile: BrandProfile): C
 
   const intended = profile.offerConstraints.offerings.filter((o) => o.status === 'intended')
   for (const offering of intended) {
-    if (!containsTerm(text, offering.name)) continue
+    const names = [offering.name, ...offering.aliases]
+    if (!names.some((n) => containsTerm(text, n))) continue
     // Naming it is fine — describing, scoping, and quoting are all allowed.
     // Claiming an outcome for it is not.
     const resultLanguage =

@@ -68,11 +68,10 @@ async function buildTarget() {
   const variantCount = Number(arg('count') ?? 3)
   const guidance = arg('guidance')
 
-  // `selectProofAsset` cannot return null while any asset exists — the trailing
-  // `?? proofAssets[0]` guarantees one. That means the prompt's "None on file"
-  // branch is unreachable for a segment with no credible asset, and a new
-  // segment silently inherits whichever asset happens to be unscoped. Until
-  // that is decided in the profile, `--no-proof` states it explicitly.
+  // `selectProofAsset` now returns null for a segment with nothing credible on
+  // file, so `--no-proof` is no longer the workaround for that — it is the way
+  // to suppress an asset that would otherwise be selected legitimately, e.g. to
+  // see what the copy looks like standing on the observation alone.
   const proofAsset = process.argv.includes('--no-proof')
     ? null
     : selectProofAsset(profile, segment?.slug)
