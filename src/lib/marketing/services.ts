@@ -114,6 +114,19 @@ export async function listPainPoints(
   return (data ?? []) as MarketingPainPoint[]
 }
 
+export async function getPainPoint(
+  supabase: SupabaseClient,
+  id: string
+): Promise<MarketingPainPoint | null> {
+  const { data, error } = await supabase
+    .from('marketing_pain_points')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw new Error(`Failed to load pain point: ${error.message}`)
+  return (data as MarketingPainPoint | null) ?? null
+}
+
 export async function listSources(
   supabase: SupabaseClient,
   opts: { runId?: string; segmentId?: string; limit?: number }
