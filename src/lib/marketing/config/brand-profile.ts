@@ -35,8 +35,36 @@ export const voiceRulesSchema = z.object({
    * How a message is signed. Appended verbatim when a send is rendered for a
    * prospect — the generator never writes it, so it never eats into the word
    * ceiling and can never be quietly reworded by a model.
+   *
+   * Superseded by `signature` when one is present. Kept because it is the
+   * fallback for a profile that has not been given structured details yet.
    */
   signOff: z.string().default(''),
+  /**
+   * The sign-off as data rather than as a blob of text.
+   *
+   * Structured because the same details have to render two different ways: as
+   * plain lines that look like a person typed them, and as a branded block with
+   * a logo. A single pre-formatted string can serve one of those, not both.
+   */
+  signature: z
+    .object({
+      name: z.string(),
+      title: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      website: z.string().optional(),
+      /**
+       * Absolute URL to the logo, used by the branded template only.
+       *
+       * A remote image in an email is also an open-tracker: requesting it
+       * reveals that the message was opened, from roughly where, in which
+       * client. That is the deliberate trade the branded template makes and the
+       * plain one refuses — see `templates.ts`.
+       */
+      logoUrl: z.string().url().optional(),
+    })
+    .optional(),
 })
 
 export const hardRulesSchema = z.object({

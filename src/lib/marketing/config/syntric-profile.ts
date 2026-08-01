@@ -74,8 +74,23 @@ export const SYNTRIC_BRAND_PROFILE: BrandProfileSeed = {
     ],
 
     // brain/templates/cold-email.md — the shape's sign-off block. Appended at
-    // render time, never generated.
+    // render time, never generated. Retained as the fallback for a profile
+    // without structured signature details; `signature` below is what the
+    // templates actually use.
     signOff: 'Chandler\nSyntric · syntriclabs.com',
+
+    // Transcribed from the Gmail signature so outbound cold mail and a reply
+    // typed by hand end in the same block. Matching them matters more than it
+    // looks: a prospect who replies and gets a differently-signed message from
+    // the same person has been given a reason to wonder which one was automated.
+    signature: {
+      name: 'Chandler Merrill',
+      title: 'Founder & Systems Architect',
+      phone: '(801) 518-7571',
+      email: 'chandler@syntriclabs.com',
+      website: 'www.syntriclabs.com',
+      logoUrl: 'https://www.syntriclabs.com/images/Syntric-logo.png',
+    },
   },
 
   // brain/context/voice.md — hard list. Do not ship copy containing these.
