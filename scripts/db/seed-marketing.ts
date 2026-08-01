@@ -181,9 +181,7 @@ async function main() {
   let runId: string
   if (existingRun) {
     runId = existingRun.id
-    await supabase.from('marketing_sources').delete().eq('research_run_id', runId)
-    await supabase.from('marketing_pain_points').delete().eq('research_run_id', runId)
-    console.log(`  ▪ reusing research run ${runId.slice(0, 8)} (cleared its sources/pain points)`)
+    console.log(`  ▪ reusing research run ${runId.slice(0, 8)}`)
   } else {
     const { data, error } = await supabase
       .from('marketing_research_runs')
@@ -204,27 +202,46 @@ async function main() {
     console.log(`  ✅ research run ${runId.slice(0, 8)} (seeded, marked completed)`)
   }
 
-  // ── 3. Sources ──
-  const { data: sources, error: srcErr } = await supabase
-    .from('marketing_sources')
-    .insert(
-      SEED_SOURCES.map((s) => ({
-        research_run_id: runId,
-        segment_id: guiding.id,
-        kind: s.kind,
-        url: s.url,
-        title: s.title,
-        content: s.content,
-        signal_rank: s.signal_rank,
-      }))
-    )
-    .select('id, url')
-  if (srcErr) throw new Error(`sources: ${srcErr.message}`)
-  console.log(`  ✅ ${sources!.length} sources`)
+  // ── 3. Sources, matched on url within the run so ids survive a re-run ──
+  const sourceIds: string[] = []
+  for (const s of SEED_SOURCES) {
+    const payload = {
+      research_run_id: runId,
+      segment_id: guiding.id,
+      kind: s.kind,
+      url: s.url,
+      title: s.title,
+      content: s.content,
+      signal_rank: s.signal_rank,
+    }
+    const { data: existing } = await supabase
+      .from('marketing_sources')
+      .select('id')
+      .eq('research_run_id', runId)
+      .eq('url', s.url)
+      .maybeSingle()
+
+    const { data, error } = existing
+      ? await supabase
+          .from('marketing_sources')
+          .update(payload)
+          .eq('id', existing.id)
+          .select('id')
+          .single()
+      : await supabase.from('marketing_sources').insert(payload).select('id').single()
+    if (error) throw new Error(`source ${s.url}: ${error.message}`)
+    sourceIds.push(data.id)
+  }
+  console.log(`  ✅ ${sourceIds.length} sources`)
 
   // ── 4. Pain points, each carrying evidence that links to a real source ──
-  const { error: ppErr } = await supabase.from('marketing_pain_points').insert(
-    SEED_PAIN_POINTS.map((p) => ({
+  //
+  // Matched on statement, and updated rather than replaced. Deleting these on a
+  // re-run would null `pain_point_id` on every variant already generated from
+  // them — the fk is `on delete set null` — silently cutting the trace from a
+  // variant back to the research that produced it. The trace is the point.
+  for (const p of SEED_PAIN_POINTS) {
+    const payload = {
       research_run_id: runId,
       segment_id: guiding.id,
       statement: p.statement,
@@ -233,13 +250,23 @@ async function main() {
       score: p.score,
       icp_fear: p.icp_fear,
       evidence: p.sourceIdx.map((i, n) => ({
-        source_id: sources![i].id,
+        source_id: sourceIds[i],
         quote: p.quotes[n],
-        url: sources![i].url,
+        url: SEED_SOURCES[i].url,
       })),
-    }))
-  )
-  if (ppErr) throw new Error(`pain points: ${ppErr.message}`)
+    }
+    const { data: existing } = await supabase
+      .from('marketing_pain_points')
+      .select('id')
+      .eq('research_run_id', runId)
+      .eq('statement', p.statement)
+      .maybeSingle()
+
+    const { error } = existing
+      ? await supabase.from('marketing_pain_points').update(payload).eq('id', existing.id)
+      : await supabase.from('marketing_pain_points').insert(payload)
+    if (error) throw new Error(`pain point: ${error.message}`)
+  }
   console.log(`  ✅ ${SEED_PAIN_POINTS.length} pain points, each with a resolvable evidence link`)
 
   // ── 5. A campaign ──
@@ -273,12 +300,40 @@ async function main() {
 
   // ── 6. Test prospects ──
   for (const p of SEED_PROSPECTS) {
-    const email = alias(p.tag)
-    const { data: existing } = await supabase
+    const email = alias(p.tag).toLowerCase()
+
+    // Identity is the company, not the address. Keying on email meant that
+    // editing a tag here inserted a second row for the same company and left
+    // the old one behind — the exact opposite of the idempotency this script
+    // claims at the top. Two duplicates had to be deleted by hand once already.
+    const { data: matches, error: lookupErr } = await supabase
       .from('marketing_prospects')
-      .select('id')
+      .select('id, email')
+      .eq('company', p.company)
+    if (lookupErr) throw new Error(`prospect lookup ${p.company}: ${lookupErr.message}`)
+    if (matches.length > 1) {
+      throw new Error(
+        `${matches.length} rows already exist for "${p.company}" ` +
+          `(${matches.map((m) => m.email ?? 'no email').join(', ')}). ` +
+          'Delete all but one by hand — this script will not guess which is current.'
+      )
+    }
+    const existing = matches[0] ?? null
+
+    // marketing_prospects has a unique index on lower(email). A row for some
+    // other company already holding this address would fail the write with a
+    // constraint message that names the index and nothing else.
+    const { data: emailHolder } = await supabase
+      .from('marketing_prospects')
+      .select('id, company')
       .eq('email', email)
       .maybeSingle()
+    if (emailHolder && emailHolder.id !== existing?.id) {
+      throw new Error(
+        `${email} already belongs to "${emailHolder.company}". ` +
+          `Free that address or change the tag for "${p.company}".`
+      )
+    }
 
     const payload = {
       segment_id: guiding.id,
