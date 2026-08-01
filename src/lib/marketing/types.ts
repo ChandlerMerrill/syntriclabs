@@ -1,6 +1,12 @@
-/** Row shapes for the `marketing_*` tables. Mirrors migrations 023–025. */
+/** Row shapes for the `marketing_*` tables. Mirrors migrations 023–026. */
 
 export type MarketingChannel = 'email' | 'linkedin' | 'meta_ads'
+
+/**
+ * How a send is presented. `plain` reads as a person typing; `branded` as an
+ * organisation. Stored per send so the two can be compared on identical copy.
+ */
+export type SendTemplate = 'plain' | 'branded'
 
 export type ResearchRunStatus = 'pending' | 'processing' | 'completed' | 'failed'
 
@@ -170,6 +176,10 @@ export interface MarketingSend {
   status: SendStatus
   rendered_subject: string | null
   rendered_body: string | null
+  /** Exactly what ships. Null on rows queued before templates existed. */
+  rendered_html: string | null
+  /** Which presentation was used. The A/B dimension. */
+  template: SendTemplate
   approved_by: string | null
   approved_at: string | null
   claimed_at: string | null

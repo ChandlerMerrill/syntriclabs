@@ -4,6 +4,7 @@ import { loadBrandProfile } from '@/lib/marketing/config/brand-profile'
 import { getCampaign, getVariant, listProspects, listSends } from '@/lib/marketing/services'
 import { assertVariantSendable } from '@/lib/marketing/review/gate'
 import { renderSend } from '@/lib/marketing/send/render'
+import { isSendTemplate, SEND_TEMPLATES } from '@/lib/marketing/send/templates'
 import { prospectSendGate } from '@/lib/marketing/send/throttle'
 
 export async function GET(req: Request) {
@@ -42,7 +43,13 @@ export async function POST(req: Request) {
   if (!auth.ok) return auth.response
   const { supabase } = auth
 
-  let body: { variantId?: string; prospectIds?: string[]; segmentId?: string; limit?: number }
+  let body: {
+    variantId?: string
+    prospectIds?: string[]
+    segmentId?: string
+    limit?: number
+    template?: string
+  }
   try {
     body = await req.json()
   } catch {
@@ -52,6 +59,17 @@ export async function POST(req: Request) {
   if (!body.variantId) {
     return NextResponse.json({ error: 'variantId is required' }, { status: 400 })
   }
+
+  // Rejected rather than defaulted. Silently falling back to `plain` on a typo
+  // would file the send under the wrong arm of the experiment, and a reply rate
+  // attributed to the wrong treatment is worse than no reading at all.
+  if (body.template !== undefined && !isSendTemplate(body.template)) {
+    return NextResponse.json(
+      { error: `template must be one of: ${SEND_TEMPLATES.join(', ')}` },
+      { status: 400 }
+    )
+  }
+  const template = body.template ?? 'plain'
 
   try {
     const variant = await getVariant(supabase, body.variantId)
@@ -98,7 +116,7 @@ export async function POST(req: Request) {
         continue
       }
 
-      const rendered = renderSend(variant, prospect, profile)
+      const rendered = renderSend(variant, prospect, profile, template)
       if (rendered.missing.length > 0) {
         skipped.push({
           prospect: prospect.company,
@@ -115,6 +133,8 @@ export async function POST(req: Request) {
         status: 'pending_approval',
         rendered_subject: rendered.subject,
         rendered_body: rendered.body,
+        rendered_html: rendered.html,
+        template: rendered.template,
       })
 
       if (insertError) {
@@ -131,7 +151,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { queued: queued.length, skipped, companies: queued },
+      { queued: queued.length, template, skipped, companies: queued },
       { status: queued.length > 0 ? 201 : 200 }
     )
   } catch (err) {

@@ -65,7 +65,7 @@ function sleep(ms: number) {
  */
 async function sendWithRetry(
   channel: MarketingChannel,
-  req: { to: string; subject: string; body: string }
+  req: { to: string; subject: string; body: string; html?: string | null }
 ) {
   const adapter = channelAdapter(channel)
   let last = await adapter.send(req)
@@ -182,6 +182,9 @@ export async function dispatchApprovedSends(opts?: { limit?: number }): Promise<
       to,
       subject: claimedRow.rendered_subject,
       body: claimedRow.rendered_body,
+      // What the outbox rendered and a human approved. A row queued before
+      // templates existed has none, and falls back to the plain conversion.
+      html: claimedRow.rendered_html,
     })
 
     if (outcome.ok) {

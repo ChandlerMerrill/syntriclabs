@@ -1,4 +1,5 @@
 import { sendMessage } from '@/lib/gmail/client'
+import { plainTextToHtml } from '../send/templates'
 import type { ChannelAdapter, SendRequest, SendResult } from './types'
 
 /**
@@ -18,27 +19,7 @@ import type { ChannelAdapter, SendRequest, SendResult } from './types'
 /** Matches the shape gmailAPI throws: `Gmail API <path>: <status> - <message>`. */
 const STATUS_RE = /:\s(\d{3})\s-\s/
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
-
-/**
- * Plain text to the least HTML that still renders it faithfully.
- *
- * No styling, no wrapper table, no tracking pixel. A cold email that looks
- * like a newsletter gets read like one.
- */
-export function plainTextToHtml(text: string): string {
-  return text
-    .trim()
-    .split(/\n{2,}/)
-    .map((para) => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
-    .join('\n')
-}
+export { plainTextToHtml } from '../send/templates'
 
 export function classifyGmailError(err: unknown): { error: string; retryable: boolean; status?: number } {
   const message = err instanceof Error ? err.message : String(err)
@@ -69,7 +50,9 @@ export const emailAdapter: ChannelAdapter = {
       const res = await sendMessage({
         to: req.to,
         subject: req.subject,
-        body: plainTextToHtml(req.body),
+        // Whatever the outbox stored, byte for byte. Only an unrendered send
+        // falls back to converting the plain text here.
+        body: req.html || plainTextToHtml(req.body),
         threadId: req.threadId,
         inReplyTo: req.inReplyTo,
         references: req.references,

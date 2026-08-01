@@ -16,6 +16,13 @@ export interface SendRequest {
   subject: string
   /** Plain text. Adapters do their own transport-specific encoding. */
   body: string
+  /**
+   * Pre-rendered HTML, when the caller has already chosen a presentation.
+   *
+   * Passed through verbatim rather than regenerated, because it is what a human
+   * approved. Absent, the adapter falls back to converting `body`.
+   */
+  html?: string | null
   /** Set when continuing an existing thread. */
   threadId?: string
   inReplyTo?: string
