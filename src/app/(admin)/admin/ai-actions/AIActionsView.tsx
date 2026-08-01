@@ -1,27 +1,31 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Activity, Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Activity, ArrowUpDown, CalendarRange, Wrench, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import EmptyState from "@/components/admin/shared/EmptyState"
+import FilterBar from "@/components/admin/shared/FilterBar"
+import FilterSearch from "@/components/admin/shared/FilterSearch"
+import FilterSelect from "@/components/admin/shared/FilterSelect"
 import AIActionsTable from "./AIActionsTable"
 import type { AIActionRow } from "@/lib/services/ai-actions"
 
-const rangeTabs = [
-  { value: "24h", label: "24h" },
-  { value: "7d", label: "7d" },
-  { value: "30d", label: "30d" },
-  { value: "custom", label: "Custom" },
-] as const
+// Unlike every other list in the panel these filters run on the server, because
+// the table is paginated — facet counts drawn from one page of 50 would be a
+// lie. Same controls, same chrome; the state just lives in the URL.
+const RANGES = [
+  { value: "24h", label: "Last 24 hours" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+]
 
-const statusTabs = [
-  { value: "all", label: "All" },
+const STATUSES = [
+  { value: "all", label: "Any outcome" },
   { value: "success", label: "Success" },
   { value: "error", label: "Error" },
-] as const
+]
 
 export default function AIActionsView({
   actions,
@@ -51,15 +55,24 @@ export default function AIActionsView({
   const router = useRouter()
   const [search, setSearch] = useState("")
 
-  const filtered = actions.filter((a) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      a.tool_name.toLowerCase().includes(q) ||
-      JSON.stringify(a.args).toLowerCase().includes(q) ||
-      (a.error_message ?? "").toLowerCase().includes(q)
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return actions
+    return actions.filter(
+      (a) =>
+        a.tool_name.toLowerCase().includes(q) ||
+        JSON.stringify(a.args).toLowerCase().includes(q) ||
+        (a.error_message ?? "").toLowerCase().includes(q)
     )
-  })
+  }, [actions, search])
+
+  const toolOptions = useMemo(
+    () => [
+      { value: "", label: "All tools" },
+      ...toolNames.map((n) => ({ value: n, label: n })),
+    ],
+    [toolNames]
+  )
 
   const buildHref = (overrides: Record<string, string | undefined>) => {
     const sp = new URLSearchParams()
@@ -80,71 +93,65 @@ export default function AIActionsView({
   }
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const serverFiltersActive =
+    activeRange !== "24h" || !!activeTool || activeStatus !== "all" || !!activeConversation
+  const filtersActive = serverFiltersActive || search.trim() !== ""
 
   return (
     <div className="space-y-4">
-      {/* Filter row */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex gap-1 rounded-lg border border-white/8 bg-[#0B1120] p-1">
-          {rangeTabs.map((t) => (
-            <Link
-              key={t.value}
-              href={buildHref({ range: t.value === "24h" ? undefined : t.value })}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeRange === t.value ? "bg-white/10 text-white" : "text-[#94A3B8] hover:text-white"
-              }`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="flex gap-1 rounded-lg border border-white/8 bg-[#0B1120] p-1">
-          {statusTabs.map((t) => (
-            <Link
-              key={t.value}
-              href={buildHref({ status: t.value === "all" ? undefined : t.value })}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeStatus === t.value ? "bg-white/10 text-white" : "text-[#94A3B8] hover:text-white"
-              }`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
-
-        <select
-          value={activeTool}
-          onChange={(e) => router.push(buildHref({ tool: e.target.value || undefined }))}
-          className="rounded-md border border-white/8 bg-[#0B1120] px-2 py-1.5 text-xs text-white"
-        >
-          <option value="">All tools</option>
-          {toolNames.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-
+      <FilterBar
+        active={filtersActive}
+        onClear={() => {
+          setSearch("")
+          router.push("/admin/ai-actions")
+        }}
+        summary={
+          search.trim()
+            ? `${filtered.length} of ${actions.length} on this page`
+            : `${actions.length} of ${totalCount}`
+        }
+      >
+        <FilterSearch
+          value={search}
+          onChange={setSearch}
+          placeholder="Search tool / args / error…"
+        />
+        <FilterSelect
+          options={RANGES}
+          value={RANGES.some((r) => r.value === activeRange) ? activeRange : "24h"}
+          onChange={(v) => router.push(buildHref({ range: v === "24h" ? undefined : v }))}
+          icon={CalendarRange}
+          className="w-44"
+        />
+        <FilterSelect
+          options={STATUSES}
+          value={activeStatus || "all"}
+          onChange={(v) => router.push(buildHref({ status: v === "all" ? undefined : v }))}
+          icon={ArrowUpDown}
+          className="w-40"
+        />
+        {toolNames.length > 0 && (
+          <FilterSelect
+            options={toolOptions}
+            value={activeTool}
+            onChange={(v) => router.push(buildHref({ tool: v || undefined }))}
+            icon={Wrench}
+            placeholder="All tools"
+            searchable={toolNames.length > 6}
+            searchPlaceholder="Search tools…"
+            className="w-48"
+          />
+        )}
         {activeConversation && (
           <Link
             href={buildHref({ conversation: undefined })}
-            className="rounded-md border border-[#8B5CF6]/40 bg-[#8B5CF6]/10 px-2 py-1.5 text-xs text-[#C4B5FD] hover:bg-[#8B5CF6]/20"
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-[#8B5CF6]/40 bg-[#8B5CF6]/10 px-2.5 text-xs font-medium text-[#C4B5FD] transition-colors hover:bg-[#8B5CF6]/20"
           >
-            conversation: {activeConversation.slice(0, 8)} ✕
+            conversation {activeConversation.slice(0, 8)}
+            <X className="h-3 w-3" />
           </Link>
         )}
-
-        <div className="relative ml-auto w-64">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-          <Input
-            placeholder="Search tool / args / error..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-white/8 bg-[#0B1120] pl-9 text-white placeholder:text-[#94A3B8]/50"
-          />
-        </div>
-      </div>
+      </FilterBar>
 
       {filtered.length > 0 ? (
         <>
@@ -178,8 +185,16 @@ export default function AIActionsView({
       ) : (
         <EmptyState
           icon={Activity}
-          title="No AI actions in this window."
-          description="Tool calls from Telegram, admin chat, and the playground will appear here."
+          title={
+            actions.length === 0
+              ? "No AI actions in this window."
+              : "Nothing matches this search."
+          }
+          description={
+            actions.length === 0
+              ? "Tool calls from Telegram, admin chat, and the playground will appear here."
+              : "Clear the search to see every action in this window."
+          }
         />
       )}
     </div>

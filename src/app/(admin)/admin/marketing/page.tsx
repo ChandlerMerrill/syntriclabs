@@ -22,8 +22,9 @@ export default async function MarketingPage() {
   const profile = await loadBrandProfile(supabase, {}).catch(() => null)
   const segments = profile ? await listSegments(supabase, profile.id).catch(() => []) : []
 
-  const [painPoints, variants, prospects, pendingApproval, sent] = await Promise.all([
+  const [painPoints, campaigns, variants, prospects, pendingApproval, sent] = await Promise.all([
     countRows(supabase, "marketing_pain_points"),
+    countRows(supabase, "marketing_campaigns"),
     countRows(supabase, "marketing_variants"),
     countRows(supabase, "marketing_prospects"),
     countRows(supabase, "marketing_sends", { column: "status", value: "pending_approval" }),
@@ -46,7 +47,7 @@ export default async function MarketingPage() {
           : null
       }
       segments={segments.map((s) => ({ id: s.id, name: s.name, slug: s.slug }))}
-      counts={{ painPoints, variants, prospects, pendingApproval, sent }}
+      counts={{ painPoints, campaigns, variants, prospects, pendingApproval, sent }}
     />
   )
 }

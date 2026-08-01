@@ -4,28 +4,9 @@ import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  LayoutDashboard,
-  Inbox,
-  Building2,
-  FolderKanban,
-  GitBranch,
-  FileText,
-  MessageCircle,
-  BarChart3,
-  Settings,
-  Mail,
-  Mic,
-  UserPlus,
-  BookOpen,
-  Megaphone,
-  FlaskConical,
-  Activity,
-  Pin,
-  PinOff,
-  ArrowLeft,
-} from "lucide-react"
+import { Pin, PinOff, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { navSections, navBottomItems, type NavItem } from "./nav"
 import {
   Tooltip,
   TooltipContent,
@@ -43,61 +24,45 @@ interface AdminSidebarProps {
   mobile?: boolean
 }
 
-type NavItem = {
-  label: string
-  href: string
-  icon: typeof LayoutDashboard
-  enabled: boolean
-  badgeKey?: 'submissions' | 'messages' | 'emails' | 'leads'
-}
-
-const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard, enabled: true },
-  { label: "Submissions", href: "/admin/submissions", icon: Inbox, enabled: true, badgeKey: 'submissions' },
-]
-
-const phase2Items: NavItem[] = [
-  { label: "Clients", href: "/admin/clients", icon: Building2, enabled: true },
-  { label: "Projects", href: "/admin/projects", icon: FolderKanban, enabled: true },
-  { label: "Pipeline", href: "/admin/pipeline", icon: GitBranch, enabled: true },
-]
-
-const phase3Items: NavItem[] = [
-  { label: "Documents", href: "/admin/documents", icon: FileText, enabled: true },
-]
-
-const phase4Items: NavItem[] = [
-  { label: "Messages", href: "/admin/messages", icon: MessageCircle, enabled: true, badgeKey: 'messages' },
-]
-
-const phase5Items: NavItem[] = [
-  { label: "Analytics", href: "/admin/analytics", icon: BarChart3, enabled: true },
-  { label: "Emails", href: "/admin/emails", icon: Mail, enabled: true, badgeKey: 'emails' },
-  { label: "Transcripts", href: "/admin/transcripts", icon: Mic, enabled: true },
-]
-
-const phase6Items: NavItem[] = [
-  { label: "Leads", href: "/admin/leads", icon: UserPlus, enabled: true, badgeKey: 'leads' },
-  { label: "Knowledge Base", href: "/admin/knowledgebase", icon: BookOpen, enabled: true },
-]
-
-const phase7Items: NavItem[] = [
-  { label: "Marketing", href: "/admin/marketing", icon: Megaphone, enabled: true },
-]
-
-const devItems: NavItem[] = [
-  { label: "AI Playground", href: "/admin/ai-playground", icon: FlaskConical, enabled: true },
-  { label: "AI Actions", href: "/admin/ai-actions", icon: Activity, enabled: true },
-]
-
-const bottomItems = [
-  { label: "Settings", href: "/admin/settings", icon: Settings, enabled: true },
-]
-
 const HOVER_DELAY = 80
-const COLLAPSED_WIDTH = "3rem"
-const EXPANDED_WIDTH = "14rem"
+// Centring is arithmetic, not a nudge: nav px-3 (12) + item px-3 (12) + half a
+// 20px icon (10) = 34 = 68/2. Change any one of these and the rail is off again.
+const COLLAPSED_WIDTH = "4.25rem"
+const EXPANDED_WIDTH = "15rem"
 const PIN_STORAGE_KEY = "admin-sidebar-pinned"
+
+/**
+ * Collapses to genuinely zero width rather than going transparent.
+ *
+ * `opacity-0` leaves the label occupying its full width, which is what pushed
+ * every icon off the centre of the collapsed rail. A `0fr → 1fr` grid column
+ * animates the width itself, so the icon is the only thing left in the row.
+ */
+function Collapsible({
+  open,
+  children,
+  className,
+}: {
+  open: boolean
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <span
+      className={cn("grid transition-[grid-template-columns] duration-300 ease-in-out", className)}
+      style={{ gridTemplateColumns: open ? "1fr" : "0fr" }}
+    >
+      <span
+        className={cn(
+          "overflow-hidden whitespace-nowrap transition-opacity duration-200",
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+      >
+        {children}
+      </span>
+    </span>
+  )
+}
 
 export default function AdminSidebar({
   unreadCount = 0,
@@ -143,7 +108,12 @@ export default function AdminSidebar({
     }
   }, [])
 
-  const isExpanded = mobile || isPinned || isHovered
+  // Hover is ignored until we have hydrated. If the pointer happens to be
+  // resting over the rail as a page loads — which it is every time you click a
+  // nav item — expanding mid-hydration makes React re-render a tree it was
+  // still adopting, and it reports a hydration mismatch. The hover timer keeps
+  // running either way, so the rail opens the moment hydration finishes.
+  const isExpanded = mobile || isPinned || (hydrated && isHovered)
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin"
@@ -157,83 +127,118 @@ export default function AdminSidebar({
     leads: newLeads,
   }
 
-  const renderNavItem = (item: NavItem, disabled = false) => {
+  const renderNavItem = (item: NavItem) => {
     const Icon = item.icon
     const active = isActive(item.href)
+    const disabled = !item.enabled
     const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] : 0
-    const hasBadge = item.badgeKey && badgeCount > 0
+    const hasBadge = Boolean(item.badgeKey) && badgeCount > 0
 
+    // No `gap` here on purpose — a flex gap still occupies its 12px next to a
+    // zero-width label, which would drag the icon back off centre. The spacing
+    // lives inside the collapsing label instead, so it collapses with it.
     const content = (
       <div
         className={cn(
-          "relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors duration-150",
+          "relative flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
           active
             ? "bg-white/10 text-white"
             : disabled
-            ? "cursor-not-allowed text-[#94A3B8]/40"
-            : "text-[#94A3B8] hover:bg-white/5 hover:text-white"
+              ? "cursor-not-allowed text-[#94A3B8]/40"
+              : "text-[#94A3B8] hover:bg-white/5 hover:text-white"
         )}
       >
         <div className="relative shrink-0">
-          <Icon className="h-4 w-4" />
-          {hasBadge && !isExpanded && (
-            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#2563EB] ring-2 ring-[#0B1120]" />
+          <Icon className="h-5 w-5" />
+          {hasBadge && (
+            <span
+              className={cn(
+                "absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#2563EB] ring-2 ring-[#0B1120] transition-opacity duration-200",
+                isExpanded && "opacity-0"
+              )}
+            />
           )}
         </div>
-        <span
-          className={cn(
-            "flex-1 whitespace-nowrap transition-opacity duration-200",
-            isExpanded ? "opacity-100" : "pointer-events-none opacity-0"
-          )}
-        >
-          {item.label}
-        </span>
+        <Collapsible open={isExpanded} className="min-w-0">
+          <span className="block pl-3">{item.label}</span>
+        </Collapsible>
         {hasBadge && (
-          <Badge
-            variant="secondary"
-            className={cn(
-              "h-5 min-w-[20px] justify-center bg-[#2563EB] px-1.5 text-[10px] text-white transition-opacity duration-200",
-              isExpanded ? "opacity-100" : "pointer-events-none opacity-0"
-            )}
-          >
-            {badgeCount}
-          </Badge>
+          <Collapsible open={isExpanded} className="ml-auto">
+            <Badge
+              variant="secondary"
+              className="ml-2 h-5 min-w-[20px] justify-center bg-[#2563EB] px-1.5 text-[10px] text-white"
+            >
+              {badgeCount}
+            </Badge>
+          </Collapsible>
         )}
       </div>
     )
 
-    if (disabled) {
-      return (
-        <Tooltip key={item.label}>
-          <TooltipTrigger>{content}</TooltipTrigger>
-          <TooltipContent side="right">
-            <p className="text-xs">Coming in Phase 2</p>
-          </TooltipContent>
-        </Tooltip>
-      )
-    }
+    const tip = disabled ? "Coming soon" : item.label
 
     return (
-      <Link key={item.label} href={item.href}>
-        {content}
-      </Link>
+      // The rail is 68px of icons when collapsed, so the label has to be one
+      // hover away. Disabling on the root rather than the trigger matters:
+      // hovering also *expands* the rail, and root-level disabling closes an
+      // already-open tooltip, so it never sits next to the label it duplicates.
+      <Tooltip key={item.label} disabled={isExpanded}>
+        <TooltipTrigger
+          render={
+            disabled ? (
+              <div aria-disabled="true" />
+            ) : (
+              <Link href={item.href} aria-current={active ? "page" : undefined} />
+            )
+          }
+          className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/50 focus-visible:ring-offset-0"
+        >
+          {content}
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          <p className="text-xs">{tip}</p>
+        </TooltipContent>
+      </Tooltip>
     )
   }
 
-  const innerWidth = mobile ? "240px" : isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH
-  const spacerWidth = mobile ? "240px" : isPinned ? EXPANDED_WIDTH : COLLAPSED_WIDTH
+  /**
+   * A named group when expanded, a plain rule when collapsed.
+   *
+   * Both are always mounted and cross-faded rather than swapped. Expanding is
+   * hover-driven, so it can land while React is still hydrating — and a node
+   * that mounts mid-hydration is a hydration mismatch. Fixed height in both
+   * states, so the flip never shifts the items below it either.
+   */
+  const renderSectionLabel = (title: string) => (
+    <div className="relative flex h-6 shrink-0 items-center px-3">
+      <span
+        className={cn(
+          "truncate text-[10px] font-semibold uppercase tracking-wider text-[#94A3B8]/50 transition-opacity duration-200",
+          isExpanded ? "opacity-100" : "opacity-0"
+        )}
+      >
+        {title}
+      </span>
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-x-3 h-px bg-white/8 transition-opacity duration-200",
+          isExpanded ? "opacity-0" : "opacity-100"
+        )}
+      />
+    </div>
+  )
+
+  const innerWidth = mobile ? EXPANDED_WIDTH : isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH
+  const spacerWidth = mobile ? EXPANDED_WIDTH : isPinned ? EXPANDED_WIDTH : COLLAPSED_WIDTH
 
   const sidebarBody = (
     <>
-      {/* Header */}
-      <div className="flex h-[4.5rem] items-center justify-between px-3">
-        <Link
-          href="/admin"
-          className={cn(
-            "flex items-center gap-2 overflow-hidden whitespace-nowrap transition-opacity duration-200",
-            isExpanded ? "opacity-100" : "pointer-events-none opacity-0"
-          )}
-        >
+      {/* Header — the mark stays mounted at every width. Its 44px box inside
+          px-3 centres on 34px, the same axis as every icon below it. */}
+      <div className="flex h-[4.5rem] items-center justify-between overflow-hidden px-3">
+        <Link href="/admin" className="flex min-w-0 items-center">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/90 p-0.5">
             <Image
               src="/images/updated-logo.png"
@@ -243,80 +248,58 @@ export default function AdminSidebar({
               className="h-[2.25rem] w-auto"
             />
           </div>
-          <span className="font-[family-name:var(--font-rajdhani)] text-xl font-bold tracking-tight text-white">
-            Syntric<span className="text-[#8B5CF6]">.</span>
-          </span>
+          <Collapsible open={isExpanded} className="min-w-0">
+            <span className="block pl-2 font-[family-name:var(--font-rajdhani)] text-xl font-bold tracking-tight text-white">
+              Syntric<span className="text-[#8B5CF6]">.</span>
+            </span>
+          </Collapsible>
         </Link>
         {!mobile && (
-          <button
-            type="button"
-            onClick={() => setIsPinned((v) => !v)}
-            className={cn(
-              "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#94A3B8] transition-all duration-200 hover:bg-white/5 hover:text-white",
-              !isExpanded && "pointer-events-none opacity-0"
-            )}
-            aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
-          >
-            {isPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
-          </button>
+          <Collapsible open={isExpanded}>
+            <button
+              type="button"
+              onClick={() => setIsPinned((v) => !v)}
+              tabIndex={isExpanded ? undefined : -1}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#94A3B8] transition-colors duration-200 hover:bg-white/5 hover:text-white"
+              aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+            >
+              {isPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+            </button>
+          </Collapsible>
         )}
       </div>
 
       <Separator className="bg-white/8" />
 
       {/* Navigation */}
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 py-3">
-        {navItems.map((item) => renderNavItem(item))}
-
-        <Separator className="my-2 bg-white/8" />
-
-        {phase2Items.map((item) => renderNavItem(item))}
-
-        <Separator className="my-2 bg-white/8" />
-
-        {phase3Items.map((item) => renderNavItem(item))}
-
-        <Separator className="my-2 bg-white/8" />
-
-        {phase4Items.map((item) => renderNavItem(item))}
-
-        <Separator className="my-2 bg-white/8" />
-
-        {phase5Items.map((item) => renderNavItem(item))}
-
-        <Separator className="my-2 bg-white/8" />
-
-        {phase6Items.map((item) => renderNavItem(item))}
-
-        <Separator className="my-2 bg-white/8" />
-
-        {phase7Items.map((item) => renderNavItem(item))}
-
-        <Separator className="my-2 bg-white/8" />
-
-        {devItems.map((item) => renderNavItem(item))}
-
-        <Separator className="my-2 bg-white/8" />
+      {/* Sixteen items plus five section labels is a tall column — the rhythm is
+          deliberately tight so the whole panel fits without scrolling on a
+          laptop, and scrolls gracefully when it doesn't. */}
+      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-3 py-2">
+        {navSections.map((section) => (
+          <div key={section.title} className="flex flex-col gap-0.5">
+            {renderSectionLabel(section.title)}
+            {section.items.map((item) => renderNavItem(item))}
+          </div>
+        ))}
 
         <div className="mt-auto" />
-        {bottomItems.map((item) => renderNavItem(item))}
+        <div className="flex h-6 shrink-0 items-center px-3" aria-hidden>
+          <span className="h-px w-full bg-white/8" />
+        </div>
+        {navBottomItems.map((item) => renderNavItem(item))}
       </nav>
 
       {/* Back to Website */}
-      <div className="border-t border-white/8 px-2 py-2">
+      <div className="border-t border-white/8 px-3 py-2">
         <Link
           href="/"
-          className="flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-[#60A5FA] transition-colors duration-150 hover:bg-white/5 hover:text-white"
+          className="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-[#60A5FA] transition-colors duration-150 hover:bg-white/5 hover:text-white"
         >
-          <ArrowLeft className="h-4 w-4 shrink-0" />
-          <span
-            className={cn(
-              "whitespace-nowrap transition-opacity duration-200",
-              isExpanded ? "opacity-100" : "pointer-events-none opacity-0"
-            )}
-          >
-            Back to Website
-          </span>
+          <ArrowLeft className="h-5 w-5 shrink-0" />
+          <Collapsible open={isExpanded} className="min-w-0">
+            <span className="block pl-3">Back to Website</span>
+          </Collapsible>
         </Link>
       </div>
     </>
@@ -325,7 +308,10 @@ export default function AdminSidebar({
   if (mobile) {
     return (
       <TooltipProvider delay={0}>
-        <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-white/8 bg-[#0B1120]">
+        <aside
+          className="flex h-full shrink-0 flex-col border-r border-white/8 bg-[#0B1120]"
+          style={{ width: EXPANDED_WIDTH }}
+        >
           {sidebarBody}
         </aside>
       </TooltipProvider>

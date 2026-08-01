@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { ArrowUpDown, Inbox } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -13,7 +12,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Search } from "lucide-react"
+import EmptyState from "@/components/admin/shared/EmptyState"
+import FilterBar from "@/components/admin/shared/FilterBar"
+import FilterSearch from "@/components/admin/shared/FilterSearch"
+import FilterSelect from "@/components/admin/shared/FilterSelect"
+import FilterMultiSelect from "@/components/admin/shared/FilterMultiSelect"
+import { facetedList, filterSummary, type Facet } from "@/components/admin/shared/faceted"
 import { formatDate } from "@/lib/utils"
 
 interface Submission {
@@ -26,13 +30,14 @@ interface Submission {
   created_at: string
 }
 
-const statusTabs = [
-  { value: "all", label: "All" },
-  { value: "unread", label: "Unread" },
-  { value: "read", label: "Read" },
-  { value: "replied", label: "Replied" },
-  { value: "archived", label: "Archived" },
-]
+const STATUS_META: Record<string, { label: string; dotClassName: string }> = {
+  unread: { label: "Unread", dotClassName: "bg-yellow-400" },
+  read: { label: "Read", dotClassName: "bg-blue-400" },
+  replied: { label: "Replied", dotClassName: "bg-emerald-400" },
+  archived: { label: "Archived", dotClassName: "bg-zinc-400" },
+}
+
+const STATUS_ORDER = ["unread", "read", "replied", "archived"] as const
 
 const statusColors: Record<string, string> = {
   unread: "bg-yellow-500/10 text-yellow-400",
@@ -41,60 +46,120 @@ const statusColors: Record<string, string> = {
   archived: "bg-zinc-500/10 text-zinc-400",
 }
 
+const SORTS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "name", label: "Name A–Z" },
+]
+
 export default function SubmissionsList({
   submissions,
-  activeStatus,
+  initialStatus,
 }: {
   submissions: Submission[]
-  activeStatus: string
+  /** Seeds the status filter so an old `?status=` bookmark still lands filtered. */
+  initialStatus?: string
 }) {
   const router = useRouter()
   const [search, setSearch] = useState("")
+  const [statusSel, setStatusSel] = useState<Set<string>>(() =>
+    initialStatus && initialStatus !== "all" ? new Set([initialStatus]) : new Set()
+  )
+  const [serviceSel, setServiceSel] = useState<Set<string>>(new Set())
+  const [sort, setSort] = useState("newest")
 
-  const filtered = submissions.filter((sub) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      sub.name.toLowerCase().includes(q) ||
-      sub.email.toLowerCase().includes(q) ||
-      sub.company?.toLowerCase().includes(q)
-    )
-  })
+  const facets = useMemo<Record<"status" | "service", Facet<Submission>>>(
+    () => ({
+      status: { values: (s) => s.status, order: STATUS_ORDER, meta: STATUS_META },
+      service: { values: (s) => s.service },
+    }),
+    []
+  )
+
+  const { options, counts, active, visible, filtersActive } = useMemo(
+    () =>
+      facetedList({
+        rows: submissions,
+        search,
+        matchesSearch: (sub, q) =>
+          sub.name.toLowerCase().includes(q) ||
+          sub.email.toLowerCase().includes(q) ||
+          (sub.company?.toLowerCase().includes(q) ?? false),
+        facets,
+        selected: { status: statusSel, service: serviceSel },
+      }),
+    [submissions, search, facets, statusSel, serviceSel]
+  )
+
+  const sorted = useMemo(() => {
+    const rows = [...visible]
+    switch (sort) {
+      case "oldest":
+        rows.sort((a, b) => a.created_at.localeCompare(b.created_at))
+        break
+      case "name":
+        rows.sort((a, b) => a.name.localeCompare(b.name))
+        break
+      default:
+        rows.sort((a, b) => b.created_at.localeCompare(a.created_at))
+    }
+    return rows
+  }, [visible, sort])
+
+  function clearFilters() {
+    setSearch("")
+    setStatusSel(new Set())
+    setServiceSel(new Set())
+  }
 
   return (
     <div className="space-y-4">
-      {/* Filter tabs */}
-      <div className="flex items-center gap-4">
-        <div className="flex gap-1 rounded-lg border border-white/8 bg-[#0B1120] p-1">
-          {statusTabs.map((tab) => (
-            <Link
-              key={tab.value}
-              href={tab.value === "all" ? "/admin/submissions" : `/admin/submissions?status=${tab.value}`}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeStatus === tab.value
-                  ? "bg-white/10 text-white"
-                  : "text-[#94A3B8] hover:text-white"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="relative ml-auto w-64">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-          <Input
-            placeholder="Search by name, email, company..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-white/8 bg-[#0B1120] pl-9 text-white placeholder:text-[#94A3B8]/50"
+      <FilterBar
+        active={filtersActive}
+        onClear={clearFilters}
+        summary={filterSummary(visible.length, submissions.length, "submission")}
+      >
+        <FilterSearch
+          value={search}
+          onChange={setSearch}
+          placeholder="Search name, email, company…"
+        />
+        {options.status.length > 1 && (
+          <FilterMultiSelect
+            options={options.status}
+            selected={active.status}
+            onChange={setStatusSel}
+            counts={counts.status}
+            allLabel="All statuses"
+            manyLabel="Statuses"
+            className="w-44"
           />
-        </div>
-      </div>
+        )}
+        {options.service.length > 1 && (
+          <FilterMultiSelect
+            options={options.service}
+            selected={active.service}
+            onChange={setServiceSel}
+            counts={counts.service}
+            allLabel="All services"
+            manyLabel="Services"
+            searchable={options.service.length > 6}
+            searchPlaceholder="Search services…"
+            className="w-48"
+          />
+        )}
+        <FilterSelect
+          options={SORTS}
+          value={sort}
+          onChange={setSort}
+          label="Sort"
+          icon={ArrowUpDown}
+          className="w-44"
+        />
+      </FilterBar>
 
-      {/* Table */}
-      {filtered.length > 0 ? (
-        <div className="rounded-lg border border-white/8">
+      {sorted.length > 0 ? (
+        <div className="rounded-xl border border-white/8">
           <Table>
             <TableHeader>
               <TableRow className="border-white/8 hover:bg-transparent">
@@ -107,7 +172,7 @@ export default function SubmissionsList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((sub) => (
+              {sorted.map((sub) => (
                 <TableRow
                   key={sub.id}
                   className="cursor-pointer border-white/8 transition-colors hover:bg-white/5"
@@ -129,11 +194,15 @@ export default function SubmissionsList({
           </Table>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-white/8 py-16">
-          <p className="text-sm text-[#94A3B8]">
-            {search ? "No submissions match your search." : "No submissions yet."}
-          </p>
-        </div>
+        <EmptyState
+          icon={Inbox}
+          title={submissions.length === 0 ? "No submissions yet" : "Nothing matches these filters"}
+          description={
+            submissions.length === 0
+              ? "Contact form submissions from your website will appear here."
+              : "Clear the filters to see every submission."
+          }
+        />
       )}
     </div>
   )

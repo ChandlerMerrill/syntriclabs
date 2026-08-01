@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Input } from "@/components/ui/input"
+import { ArrowUpDown, BookOpen, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -13,79 +13,154 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Search, Plus } from "lucide-react"
+import PageHeader from "@/components/admin/shared/PageHeader"
+import EmptyState from "@/components/admin/shared/EmptyState"
+import FilterBar from "@/components/admin/shared/FilterBar"
+import FilterSearch from "@/components/admin/shared/FilterSearch"
+import FilterSelect from "@/components/admin/shared/FilterSelect"
+import FilterMultiSelect from "@/components/admin/shared/FilterMultiSelect"
+import { facetedList, filterSummary, type Facet } from "@/components/admin/shared/faceted"
 import { formatDate } from "@/lib/utils"
 import type { KnowledgebaseArticle } from "@/lib/types"
 
-const categoryTabs = [
-  { value: "all", label: "All" },
-  { value: "services", label: "Services" },
-  { value: "faq", label: "FAQ" },
-  { value: "case_study", label: "Case Study" },
-  { value: "process", label: "Process" },
-  { value: "about", label: "About" },
+const CATEGORY_ORDER = ["services", "faq", "case_study", "process", "about"] as const
+const CATEGORY_META: Record<string, { label: string }> = {
+  services: { label: "Services" },
+  faq: { label: "FAQ" },
+  case_study: { label: "Case Study" },
+  process: { label: "Process" },
+  about: { label: "About" },
+}
+
+const PUBLISHED_META: Record<string, { label: string; dotClassName: string }> = {
+  published: { label: "Published", dotClassName: "bg-emerald-400" },
+  draft: { label: "Draft", dotClassName: "bg-white/30" },
+}
+
+const SORTS = [
+  { value: "updated", label: "Recently updated" },
+  { value: "created", label: "Newest first" },
+  { value: "title", label: "Title A–Z" },
 ]
 
 export default function KBArticlesList({
   articles,
-  activeCategory,
+  initialCategory,
 }: {
   articles: KnowledgebaseArticle[]
-  activeCategory: string
+  /** Seeds the category filter so an old `?category=` bookmark still lands filtered. */
+  initialCategory?: string
 }) {
   const router = useRouter()
   const [search, setSearch] = useState("")
+  const [categorySel, setCategorySel] = useState<Set<string>>(() =>
+    initialCategory && initialCategory !== "all" ? new Set([initialCategory]) : new Set()
+  )
+  const [publishedSel, setPublishedSel] = useState<Set<string>>(new Set())
+  const [sort, setSort] = useState("updated")
 
-  const filtered = articles.filter((article) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      article.title.toLowerCase().includes(q) ||
-      article.content.toLowerCase().includes(q)
-    )
-  })
+  const facets = useMemo<Record<"category" | "published", Facet<KnowledgebaseArticle>>>(
+    () => ({
+      category: { values: (a) => a.category, order: CATEGORY_ORDER, meta: CATEGORY_META },
+      published: {
+        values: (a) => (a.is_published ? "published" : "draft"),
+        order: ["published", "draft"],
+        meta: PUBLISHED_META,
+      },
+    }),
+    []
+  )
+
+  const { options, counts, active, visible, filtersActive } = useMemo(
+    () =>
+      facetedList({
+        rows: articles,
+        search,
+        matchesSearch: (a, q) =>
+          a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q),
+        facets,
+        selected: { category: categorySel, published: publishedSel },
+      }),
+    [articles, search, facets, categorySel, publishedSel]
+  )
+
+  const sorted = useMemo(() => {
+    const rows = [...visible]
+    switch (sort) {
+      case "created":
+        rows.sort((a, b) => b.created_at.localeCompare(a.created_at))
+        break
+      case "title":
+        rows.sort((a, b) => a.title.localeCompare(b.title))
+        break
+      default:
+        rows.sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    }
+    return rows
+  }, [visible, sort])
+
+  function clearFilters() {
+    setSearch("")
+    setCategorySel(new Set())
+    setPublishedSel(new Set())
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Filter tabs + actions */}
-      <div className="flex items-center gap-4">
-        <div className="flex gap-1 rounded-lg border border-white/8 bg-[#0B1120] p-1">
-          {categoryTabs.map((tab) => (
-            <Link
-              key={tab.value}
-              href={tab.value === "all" ? "/admin/knowledgebase" : `/admin/knowledgebase?category=${tab.value}`}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeCategory === tab.value
-                  ? "bg-white/10 text-white"
-                  : "text-[#94A3B8] hover:text-white"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="relative ml-auto w-64">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-          <Input
-            placeholder="Search articles..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-white/8 bg-[#0B1120] pl-9 text-white placeholder:text-[#94A3B8]/50"
-          />
-        </div>
-
+    <div className="space-y-6">
+      <PageHeader
+        title="Knowledge Base"
+        description="Manage articles for the widget assistant"
+      >
         <Link href="/admin/knowledgebase/new">
           <Button size="sm" className="bg-[#8B5CF6] text-white hover:bg-[#7C3AED]">
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             New Article
           </Button>
         </Link>
-      </div>
+      </PageHeader>
 
-      {/* Table */}
-      {filtered.length > 0 ? (
-        <div className="rounded-lg border border-white/8">
+      {articles.length > 0 && (
+        <FilterBar
+          active={filtersActive}
+          onClear={clearFilters}
+          summary={filterSummary(visible.length, articles.length, "article")}
+        >
+          <FilterSearch value={search} onChange={setSearch} placeholder="Search articles…" />
+          {options.category.length > 1 && (
+            <FilterMultiSelect
+              options={options.category}
+              selected={active.category}
+              onChange={setCategorySel}
+              counts={counts.category}
+              allLabel="All categories"
+              manyLabel="Categories"
+              className="w-44"
+            />
+          )}
+          {options.published.length > 1 && (
+            <FilterMultiSelect
+              options={options.published}
+              selected={active.published}
+              onChange={setPublishedSel}
+              counts={counts.published}
+              allLabel="Any state"
+              manyLabel="States"
+              className="w-40"
+            />
+          )}
+          <FilterSelect
+            options={SORTS}
+            value={sort}
+            onChange={setSort}
+            label="Sort"
+            icon={ArrowUpDown}
+            className="w-52"
+          />
+        </FilterBar>
+      )}
+
+      {sorted.length > 0 ? (
+        <div className="rounded-xl border border-white/8">
           <Table>
             <TableHeader>
               <TableRow className="border-white/8 hover:bg-transparent">
@@ -96,7 +171,7 @@ export default function KBArticlesList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((article) => (
+              {sorted.map((article) => (
                 <TableRow
                   key={article.id}
                   className="cursor-pointer border-white/8 transition-colors hover:bg-white/5"
@@ -122,11 +197,17 @@ export default function KBArticlesList({
           </Table>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-white/8 py-16">
-          <p className="text-sm text-[#94A3B8]">
-            {search ? "No articles match your search." : "No articles yet."}
-          </p>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          title={articles.length === 0 ? "No articles yet" : "Nothing matches these filters"}
+          description={
+            articles.length === 0
+              ? "Write the first article the widget assistant can draw on."
+              : "Clear the filters to see every article."
+          }
+          actionLabel={articles.length === 0 ? "New Article" : undefined}
+          actionHref={articles.length === 0 ? "/admin/knowledgebase/new" : undefined}
+        />
       )}
     </div>
   )

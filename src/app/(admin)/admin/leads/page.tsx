@@ -9,9 +9,9 @@ export default async function LeadsPage({
 }) {
   const params = await searchParams
   const supabase = await createClient()
-  const { data: leads } = await getLeads(supabase, {
-    status: params.status,
-  })
+  // Unfiltered: the status facet is computed from the rows on screen, so the
+  // server handing back a pre-narrowed set would make its counts lie.
+  const { data: leads } = await getLeads(supabase, {})
 
-  return <LeadsView initialLeads={leads ?? []} activeStatus={params.status ?? "all"} />
+  return <LeadsView initialLeads={leads ?? []} initialStatus={params.status} />
 }

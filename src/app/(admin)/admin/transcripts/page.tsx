@@ -11,13 +11,6 @@ export default async function TranscriptsPage() {
     .order("date", { ascending: false })
     .limit(100)
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Transcripts</h1>
-        <p className="text-sm text-[#94A3B8]">Meeting transcripts from Fireflies.ai with AI-extracted insights</p>
-      </div>
-      <TranscriptsList initialTranscripts={(transcripts ?? []) as TranscriptWithClient[]} />
-    </div>
-  )
+  // The header lives inside the list — it owns the Backfill action.
+  return <TranscriptsList initialTranscripts={(transcripts ?? []) as TranscriptWithClient[]} />
 }

@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import useSWR from "swr"
@@ -9,7 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import PageHeader from "@/components/admin/shared/PageHeader"
 import EmptyState from "@/components/admin/shared/EmptyState"
-import { Microscope, ExternalLink, AlertTriangle } from "lucide-react"
+import FilterSelect from "@/components/admin/shared/FilterSelect"
+import PainPointList from "@/components/admin/marketing/PainPointList"
+import { Microscope, AlertTriangle, ChevronDown, ChevronRight, Layers } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import type { MarketingPainPoint, MarketingResearchRun } from "@/lib/marketing/types"
 
@@ -37,6 +38,7 @@ export default function ResearchView({
 }: Props) {
   const router = useRouter()
   const [starting, setStarting] = useState(false)
+  const [showAllRuns, setShowAllRuns] = useState(false)
 
   const key = activeSegment ? `/api/admin/marketing/research?segmentId=${activeSegment}` : null
   // Poll while a run is in flight; stop once nothing is moving.
@@ -50,7 +52,7 @@ export default function ResearchView({
   })
 
   const runs = data?.runs ?? []
-  const painPoints = data?.painPoints ?? []
+  const painPoints = useMemo(() => data?.painPoints ?? [], [data?.painPoints])
   const running = runs.some((r) => r.status === "pending" || r.status === "processing")
 
   async function startRun() {
@@ -89,12 +91,27 @@ export default function ResearchView({
     )
   }
 
+  const shownRuns = showAllRuns ? runs.slice(0, 20) : runs.slice(0, 3)
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Research"
         description="Ranked by how often the complaint actually appears — not by how good it sounds."
       >
+        {segments.length > 0 && (
+          <FilterSelect
+            options={segments.map((s) => ({ value: s.id, label: s.name, hint: s.slug }))}
+            value={activeSegment}
+            onChange={(id) => router.push(`/admin/marketing/research?segment=${id}`)}
+            label="Segment"
+            placeholder="Pick a segment"
+            icon={Layers}
+            searchable={segments.length > 6}
+            searchPlaceholder="Search segments…"
+            className="max-w-64"
+          />
+        )}
         <Button
           size="sm"
           onClick={startRun}
@@ -105,36 +122,34 @@ export default function ResearchView({
         </Button>
       </PageHeader>
 
-      {/* Segment tabs */}
-      {segments.length > 0 && (
-        <div className="flex gap-1 rounded-lg border border-white/8 bg-[#0B1120] p-1">
-          {segments.map((s) => (
-            <Link
-              key={s.id}
-              href={`/admin/marketing/research?segment=${s.id}`}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeSegment === s.id
-                  ? "bg-white/10 text-white"
-                  : "text-[#94A3B8] hover:text-white"
-              }`}
+      {/* Runs — the latest one is the only one that usually matters, so the
+          rest stay folded away. */}
+      <section className="rounded-xl border border-white/8 bg-[#0B1120]">
+        <div className="flex items-center justify-between px-4 py-3">
+          <h2 className="text-sm font-medium text-white">Runs</h2>
+          {runs.length > 3 && (
+            <button
+              onClick={() => setShowAllRuns((v) => !v)}
+              className="flex items-center gap-1 text-xs text-[#60A5FA] transition-colors hover:text-white"
             >
-              {s.name}
-            </Link>
-          ))}
+              {showAllRuns ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+              {showAllRuns ? "Show fewer" : `${runs.length - 3} earlier`}
+            </button>
+          )}
         </div>
-      )}
 
-      {/* Runs */}
-      <div className="space-y-2">
-        <h2 className="text-sm font-medium text-white">Runs</h2>
         {runs.length === 0 ? (
-          <p className="rounded-lg border border-white/8 px-4 py-6 text-sm text-[#94A3B8]">
+          <p className="border-t border-white/8 px-4 py-6 text-sm text-[#94A3B8]">
             No runs yet for this segment.
           </p>
         ) : (
-          <div className="divide-y divide-white/8 rounded-lg border border-white/8">
-            {runs.slice(0, 8).map((run) => (
-              <div key={run.id} className="flex items-center gap-4 px-4 py-3">
+          <div className="divide-y divide-white/8 border-t border-white/8">
+            {shownRuns.map((run) => (
+              <div key={run.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
                 <Badge
                   variant="secondary"
                   className={RUN_STATUS_COLORS[run.status] ?? "bg-zinc-500/10 text-zinc-400"}
@@ -145,9 +160,7 @@ export default function ResearchView({
                 <span className="text-xs text-[#94A3B8]">
                   {run.source_count} sources
                   {run.outside_source_count > 0 && (
-                    <span className="text-[#94A3B8]/60">
-                      {" "}(+{run.outside_source_count} outside)
-                    </span>
+                    <span className="text-[#94A3B8]/60"> (+{run.outside_source_count} outside)</span>
                   )}
                 </span>
                 <span className="text-xs text-[#94A3B8]">{run.pain_point_count} pain points</span>
@@ -167,79 +180,19 @@ export default function ResearchView({
             ))}
           </div>
         )}
-      </div>
+      </section>
 
       {/* Pain points */}
-      <div className="space-y-2">
-        <div className="flex items-baseline justify-between">
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-sm font-medium text-white">Pain points</h2>
           <p className="text-xs text-[#94A3B8]/60">
             Every one carries at least one resolvable source link, or it is not stored.
           </p>
         </div>
 
-        {painPoints.length === 0 ? (
-          <EmptyState
-            icon={Microscope}
-            title="No pain points yet"
-            description="Run research against this segment to build the list."
-          />
-        ) : (
-          <div className="divide-y divide-white/8 rounded-lg border border-white/8">
-            {painPoints.map((p) => (
-              <div key={p.id} className="px-4 py-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 w-6 shrink-0 text-sm font-medium tabular-nums text-[#94A3B8]">
-                    {p.rank ?? "—"}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-white">{p.statement}</p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary" className="bg-white/5 text-[#94A3B8]">
-                        {p.frequency} source{p.frequency === 1 ? "" : "s"}
-                      </Badge>
-                      <Badge variant="secondary" className="bg-white/5 text-[#94A3B8]">
-                        score {Number(p.score).toFixed(2)}
-                      </Badge>
-                      {p.icp_fear && (
-                        <Badge variant="secondary" className="bg-[#8B5CF6]/10 text-[#A78BFA]">
-                          {p.icp_fear}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="mt-2 space-y-1">
-                      {p.evidence.slice(0, 3).map((e, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs text-[#94A3B8]">
-                          {e.url ? (
-                            <a
-                              href={e.url}
-                              target="_blank"
-                              rel="noreferrer noopener"
-                              className="mt-0.5 shrink-0 text-[#60A5FA] hover:text-white"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          ) : (
-                            <span className="mt-0.5 shrink-0 text-red-400">
-                              <AlertTriangle className="h-3 w-3" />
-                            </span>
-                          )}
-                          <span className="italic">&ldquo;{e.quote}&rdquo;</span>
-                        </div>
-                      ))}
-                      {p.evidence.length > 3 && (
-                        <p className="text-xs text-[#94A3B8]/50">
-                          +{p.evidence.length - 3} more quotes
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        <PainPointList painPoints={painPoints} />
+      </section>
     </div>
   )
 }

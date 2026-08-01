@@ -30,6 +30,8 @@ function extractContext(pathname: string) {
 export default function AdminShell({ children, userEmail, initialBadges }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  // Lifted so the header button and ⌘K drive the same palette.
+  const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
   const chatContext = extractContext(pathname)
   const { counts } = useBadgeCounts(initialBadges)
@@ -60,6 +62,7 @@ export default function AdminShell({ children, userEmail, initialBadges }: Admin
         <AdminHeader
           userEmail={userEmail}
           onToggleSidebar={() => setSidebarOpen(true)}
+          onOpenSearch={() => setSearchOpen(true)}
         />
         <main className="flex-1 overflow-y-auto p-6">
           {children}
@@ -71,7 +74,7 @@ export default function AdminShell({ children, userEmail, initialBadges }: Admin
       <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} context={chatContext} />
 
       {/* Global Search (Cmd+K) */}
-      <GlobalSearch />
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   )
 }

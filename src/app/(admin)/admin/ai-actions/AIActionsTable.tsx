@@ -50,7 +50,7 @@ function buttonLabelFor(hintKind: string): string {
 
 export default function AIActionsTable({ actions }: { actions: AIActionRow[] }) {
   return (
-    <div className="rounded-lg border border-white/8">
+    <div className="rounded-xl border border-white/8">
       <Table>
         <TableHeader>
           <TableRow className="border-white/8 hover:bg-transparent">

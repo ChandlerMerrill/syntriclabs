@@ -8,24 +8,19 @@ export default async function SubmissionsPage({
   searchParams: Promise<{ status?: string }>
 }) {
   const { status } = await searchParams
-  const activeStatus = status || "all"
   const supabase = await createClient()
 
-  let query = supabase
+  // Unfiltered: the status facet is computed from the rows on screen, so the
+  // server handing back a pre-narrowed set would make its counts lie.
+  const { data: submissions } = await supabase
     .from("submissions")
     .select("*")
     .order("created_at", { ascending: false })
 
-  if (status && status !== "all") {
-    query = query.eq("status", status)
-  }
-
-  const { data: submissions } = await query
-
   return (
     <SubmissionsView
       initialSubmissions={(submissions ?? []) as Submission[]}
-      activeStatus={activeStatus}
+      initialStatus={status}
     />
   )
 }

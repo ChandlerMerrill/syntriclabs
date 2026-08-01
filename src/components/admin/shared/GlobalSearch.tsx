@@ -44,8 +44,16 @@ const ENTITY_CONFIG: Record<string, { icon: typeof Building2; label: string; col
   },
 }
 
-export default function GlobalSearch() {
-  const [open, setOpen] = useState(false)
+interface GlobalSearchProps {
+  /** Controlled open state. Omit to let the palette own it (⌘K only). */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+export default function GlobalSearch({ open: openProp, onOpenChange }: GlobalSearchProps = {}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const isControlled = openProp !== undefined
+  const open = isControlled ? openProp : uncontrolledOpen
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -54,18 +62,30 @@ export default function GlobalSearch() {
   const router = useRouter()
   const debounceRef = useRef<NodeJS.Timeout>(null)
 
-  // Cmd+K listener
+  const setOpen = useCallback(
+    (next: boolean) => {
+      if (!isControlled) setUncontrolledOpen(next)
+      onOpenChange?.(next)
+    },
+    [isControlled, onOpenChange]
+  )
+
+  // ⌘K toggles from anywhere; the header button calls the same setter. Read the
+  // current value through a ref so the listener never goes stale.
+  const openRef = useRef(open)
+  openRef.current = open
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault()
-        setOpen((prev) => !prev)
+        setOpen(!openRef.current)
       }
       if (e.key === "Escape") setOpen(false)
     }
     document.addEventListener("keydown", handler)
     return () => document.removeEventListener("keydown", handler)
-  }, [])
+  }, [setOpen])
 
   useEffect(() => {
     if (open) {
