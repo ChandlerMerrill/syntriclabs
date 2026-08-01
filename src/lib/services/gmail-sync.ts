@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import {
   getGmailAccount,
+  getProfile,
   listMessages,
   listHistory,
   parseMessage,
@@ -22,12 +23,23 @@ export async function syncEmails(options?: { fullSync?: boolean }): Promise<Sync
   const supabase = await createServiceClient()
   const result: SyncResult = { synced: 0, matched: 0, errors: 0 }
 
+  // The watermark is captured BEFORE any listing, and is what gets written at
+  // the end. Reading it afterwards — from a getProfile() call made once the
+  // work is done — advances the pointer past mail that arrived mid-sync and was
+  // never fetched, which skips it permanently rather than deferring it. Taking
+  // it first means the worst case is re-seeing a message, which the
+  // gmail_message_id dedupe below already absorbs.
+  const startHistoryId = await getProfile()
+    .then((p) => parseInt(p.historyId, 10))
+    .catch(() => null)
+
   let messageIds: string[] = []
 
   const shouldFullSync = !account.history_id || options?.fullSync
 
   if (shouldFullSync) {
-    // Full sync — last 30 days
+    // Full sync — last 30 days, capped at 500 messages.
+    const MAX_FULL_SYNC = 500
     let pageToken: string | undefined
     do {
       const params: Record<string, string> = { q: 'newer_than:30d', maxResults: '100' }
@@ -35,13 +47,19 @@ export async function syncEmails(options?: { fullSync?: boolean }): Promise<Sync
       const res = await listMessages(params)
       if (res.messages) messageIds.push(...res.messages.map(m => m.id))
       pageToken = res.nextPageToken ?? undefined
-    } while (messageIds.length < 500 && messageIds.length > 0)
+      // Terminating on the page token, not on the count. The count alone kept
+      // re-requesting page one — once nextPageToken ran out, pageToken went
+      // undefined and the next iteration asked for the first page again, over
+      // and over until duplicates piled the array up to the cap.
+    } while (pageToken && messageIds.length < MAX_FULL_SYNC)
   } else {
-    // Incremental sync via history
+    // Incremental sync via history.
     try {
       let pageToken: string | undefined
       do {
-        const res = await listHistory(String(account.history_id))
+        // The page token has to go back in. Without it this re-issued an
+        // identical request forever the moment Gmail returned one.
+        const res = await listHistory(String(account.history_id), pageToken)
         if (res.history) {
           for (const h of res.history) {
             if (h.messagesAdded) {
@@ -64,7 +82,10 @@ export async function syncEmails(options?: { fullSync?: boolean }): Promise<Sync
   messageIds = [...new Set(messageIds)]
 
   if (messageIds.length === 0) {
-    await supabase.from('gmail_accounts').update({ last_sync_at: new Date().toISOString() }).eq('id', account.id)
+    await supabase.from('gmail_accounts').update({
+      ...(startHistoryId ? { history_id: startHistoryId } : {}),
+      last_sync_at: new Date().toISOString(),
+    }).eq('id', account.id)
     return result
   }
 
@@ -79,6 +100,7 @@ export async function syncEmails(options?: { fullSync?: boolean }): Promise<Sync
 
   if (newIds.length === 0) {
     await supabase.from('gmail_accounts').update({
+      ...(startHistoryId ? { history_id: startHistoryId } : {}),
       last_sync_at: new Date().toISOString(),
     }).eq('id', account.id)
     return result
@@ -150,10 +172,9 @@ export async function syncEmails(options?: { fullSync?: boolean }): Promise<Sync
     }
   }
 
-  // Update account sync state
-  const profile = await import('@/lib/gmail/client').then(m => m.getProfile())
+  // Update account sync state with the watermark taken before the work started.
   await supabase.from('gmail_accounts').update({
-    history_id: parseInt(profile.historyId, 10),
+    ...(startHistoryId ? { history_id: startHistoryId } : {}),
     last_sync_at: new Date().toISOString(),
   }).eq('id', account.id)
 

@@ -173,12 +173,14 @@ export async function sendMessage(params: {
   )
 }
 
-export async function listHistory(startHistoryId: string) {
+export async function listHistory(startHistoryId: string, pageToken?: string) {
+  const params: Record<string, string> = { startHistoryId, historyTypes: 'messageAdded' }
+  if (pageToken) params.pageToken = pageToken
   return gmailAPI<{
     history?: { id: string; messagesAdded?: { message: { id: string; threadId: string } }[] }[]
     nextPageToken?: string
     historyId?: string
-  }>('history', { params: { startHistoryId, historyTypes: 'messageAdded' } })
+  }>('history', { params })
 }
 
 export async function modifyMessage(id: string, addLabels?: string[], removeLabels?: string[]) {
