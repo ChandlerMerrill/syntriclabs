@@ -1,14 +1,21 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { BrandProfile } from '../config/brand-profile'
 import { runChecks, checksPassed, type CheckResult, type VariantDraft } from './checks'
+import { CRITICS } from './critique'
 
 /**
  * The gate.
  *
- * Mechanical checks decide whether a variant is allowed to be *offered* for
- * approval. A human decides whether it goes out. Neither substitutes for the
- * other: passing every rule is not permission to send, and no amount of human
- * enthusiasm lets a variant with a dead proof link through.
+ * Three layers, and none substitutes for another. Mechanical checks decide
+ * whether a variant is well-formed. Two model critics decide whether it is worth
+ * sending. A human decides whether it goes out. Passing everything is not
+ * permission to send, and no amount of human enthusiasm lets a variant with a
+ * dead proof link through.
+ *
+ * The critics were added after the fact and deliberately reuse the check-row
+ * machinery rather than introducing a parallel one, so "how does a variant
+ * become unsendable" still has exactly one answer: a row in
+ * `marketing_variant_checks` with `passed = false`.
  */
 
 export interface GateResult {
@@ -51,11 +58,19 @@ export async function gateVariant(
 }
 
 /**
- * A variant may be queued for a human only when every mechanical rule passes.
+ * A variant may be queued for a human only when every rule passes and both
+ * critics have actually run.
  *
  * This is checked at queue time rather than at send time on purpose: an
  * approver looking at a list should be looking at things that are actually
  * sendable, not filtering out broken ones by hand.
+ *
+ * The presence requirement is the part worth stating. Without it the critic gate
+ * would be skippable by simply never invoking it — no critique row means no
+ * failing check row means sendable, so the strictest gate in the system would be
+ * the one easiest to bypass, and it would bypass silently. A variant that has
+ * not been critiqued is not "provisionally fine"; it is unreviewed, and it says
+ * so with the command that fixes it.
  */
 export async function assertVariantSendable(
   supabase: SupabaseClient,
@@ -71,19 +86,32 @@ export async function assertVariantSendable(
   if (!variant) return { ok: false, reason: 'Variant not found' }
   if (variant.status === 'retired') return { ok: false, reason: 'Variant is retired' }
 
-  const { data: failed } = await supabase
+  const { data: checks } = await supabase
     .from('marketing_variant_checks')
-    .select('rule, detail')
+    .select('rule, passed, detail')
     .eq('variant_id', variantId)
-    .eq('passed', false)
 
-  if (failed && failed.length > 0) {
+  const rows = checks ?? []
+
+  const failed = rows.filter((c) => !c.passed)
+  if (failed.length > 0) {
     const names = failed.map((f) => `${f.rule}${f.detail ? ` (${f.detail})` : ''}`)
     return { ok: false, reason: `Failed checks: ${names.join('; ')}` }
   }
 
   if (variant.status !== 'ready') {
     return { ok: false, reason: `Variant has not been checked (status: ${variant.status})` }
+  }
+
+  const ruled = new Set(rows.map((c) => c.rule as string))
+  const missing = CRITICS.filter((c) => !ruled.has(c))
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      reason:
+        `Not critiqued yet: ${missing.join(', ')}. Run the critics from the Variants tab, ` +
+        `or by hand with scripts/db/critique-variant-manual.ts.`,
+    }
   }
 
   return { ok: true }

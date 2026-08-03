@@ -59,6 +59,16 @@ nothing per message — it goes out through the connected Gmail account.
                                     review/gate.ts       banned_words, word_count,
                                                          opens_with_i, one_ask,
                                                          claim_traced, link_verified
+                                          │
+   button: Variants tab ──────────────────┤
+   /api/admin/marketing/variants/critique  │
+                                          v
+                                  critiqueVariant()      🤖 2 calls PER VARIANT
+                                    review/critique.ts   qa_review + devils_advocate
+                                                         BOTH must run before a
+                                                         variant can be queued
+   No cron. Only ever runs when you press the button, or via
+   scripts/db/critique-variant-manual.ts.
 
 
                     ┌─────────────────────────────────────────────┐
@@ -85,7 +95,7 @@ costs nothing.
 
 ---
 
-## The five model calls
+## The six model calls
 
 | # | Function | File | Cost shape | Cron? |
 |---|----------|------|-----------|-------|
@@ -93,11 +103,54 @@ costs nothing.
 | 2 | `clusterAndRank` | `research/rank.ts:61` | one per research run | yes |
 | 3 | `qualifyProspects` | `prospects/qualify.ts:161` | one per batch of ≤20 rows | no |
 | 4 | `generateVariants` | `generate/variants.ts:112` | one per button press | no |
-| 5 | `scoreReply` | `eval/score.ts:76` | one per newly-recorded reply | yes |
+| 5 | `runCritic` | `review/critique.ts` | **two per variant** — both critics | no |
+| 6 | `scoreReply` | `eval/score.ts:76` | one per newly-recorded reply | yes |
 
 Call 1 is the one to watch. A research run scrapes up to ~30 URLs per segment
 and spends one Opus 5 extraction call on each readable one, then multiplies that
 by the segment count. Everything else is single calls.
+
+Only 1, 2 and 6 can ever be triggered without someone pressing a button, and 1
+and 2 are off by default.
+
+---
+
+## The critic gate
+
+Two model critics can block a send. `qa_review` judges the copy against what is
+on file; `devils_advocate` argues the recipient's case for deleting it. **Both
+must have run before a variant can be queued** — without that requirement the
+strictest gate in the system would also be the easiest to bypass, silently, by
+never invoking it.
+
+What makes a non-deterministic gate defensible rather than capricious:
+
+- **A blocking finding must quote the span it objects to, and the quote is
+  verified against the copy in code.** A critic that cannot point at the words
+  gets its finding demoted to a concern the approver reads. Enforced in
+  `verifyFindings`, on the model path and the manual path alike.
+- **The verdict is derived from the surviving findings, not taken from the
+  model.** A critique that lists a blocking finding and then says "pass" stores a
+  fail.
+- **The full argument is stored** — findings, summary, and the verbatim prompt —
+  in `marketing_variant_critiques`, the same discipline as
+  `marketing_variants.generation_prompt`.
+- **A human can override, with a reason, and the override is durable.** It writes
+  `checked_by: 'human'`, and a later critic re-run will not reinstate a verdict
+  someone deliberately overruled. Same precedent as `scoreAndStore` refusing to
+  overwrite a human score.
+
+Running them by hand, no API spend:
+
+```bash
+tsx --env-file=.env.local scripts/db/critique-variant-manual.ts prompt \
+  --variant <id> --critic qa_review        # print the prompt, answer it yourself
+tsx --env-file=.env.local scripts/db/critique-variant-manual.ts store \
+  --variant <id> --critic qa_review --critique critique.json
+tsx --env-file=.env.local scripts/db/critique-variant-manual.ts status --variant <id>
+tsx --env-file=.env.local scripts/db/critique-variant-manual.ts override \
+  --variant <id> --critic qa_review --reason "..."
+```
 
 ---
 
