@@ -127,6 +127,60 @@ export async function getPainPoint(
   return (data as MarketingPainPoint | null) ?? null
 }
 
+/** Which campaigns have actually written copy off a pain point, and how much. */
+export interface PainPointUse {
+  campaignId: string
+  campaignName: string
+  variantCount: number
+}
+
+/**
+ * The link from a pain point back to the campaigns that used it.
+ *
+ * Derived through `marketing_variants.pain_point_id → campaign_id` rather than
+ * stored on the run, and that is the honest reading of the relationship: it says
+ * a campaign *did* write copy from this complaint, not that one might. A run is a
+ * segment-scoped act that happens before any campaign exists, and one run's pain
+ * points can feed several campaigns — a nullable `campaign_id` on the run would
+ * be wrong the moment the second one used it.
+ */
+export async function listVariantsForPainPoints(
+  supabase: SupabaseClient,
+  painPointIds: string[]
+): Promise<Record<string, PainPointUse[]>> {
+  if (painPointIds.length === 0) return {}
+
+  const { data, error } = await supabase
+    .from('marketing_variants')
+    .select('id, label, pain_point_id, campaign_id, marketing_campaigns ( id, name )')
+    .in('pain_point_id', painPointIds)
+
+  if (error) throw new Error(`Failed to load pain point usage: ${error.message}`)
+
+  type Row = {
+    pain_point_id: string | null
+    campaign_id: string
+    marketing_campaigns: { id: string; name: string } | null
+  }
+
+  const usage: Record<string, PainPointUse[]> = {}
+  for (const row of (data ?? []) as unknown as Row[]) {
+    if (!row.pain_point_id) continue
+    const list = (usage[row.pain_point_id] ??= [])
+    const existing = list.find((u) => u.campaignId === row.campaign_id)
+    if (existing) existing.variantCount++
+    else {
+      list.push({
+        campaignId: row.campaign_id,
+        campaignName: row.marketing_campaigns?.name ?? 'Unnamed campaign',
+        variantCount: 1,
+      })
+    }
+  }
+
+  return usage
+}
+
 export async function listSources(
   supabase: SupabaseClient,
   opts: { runId?: string; segmentId?: string; limit?: number }

@@ -13,12 +13,14 @@ import PainPointList from "@/components/admin/marketing/PainPointList"
 import { Microscope, AlertTriangle, ChevronDown, ChevronRight, Layers } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import type { MarketingPainPoint, MarketingResearchRun } from "@/lib/marketing/types"
+import type { PainPointUse } from "@/lib/marketing/services"
 
 interface Props {
   segments: { id: string; name: string; slug: string }[]
   activeSegment: string | null
   initialRuns: MarketingResearchRun[]
   initialPainPoints: MarketingPainPoint[]
+  initialUsage?: Record<string, PainPointUse[]>
   hasProfile: boolean
 }
 
@@ -34,6 +36,7 @@ export default function ResearchView({
   activeSegment,
   initialRuns,
   initialPainPoints,
+  initialUsage,
   hasProfile,
 }: Props) {
   const router = useRouter()
@@ -45,15 +48,25 @@ export default function ResearchView({
   const { data, mutate } = useSWR<{
     runs: MarketingResearchRun[]
     painPoints: MarketingPainPoint[]
+    painPointUsage?: Record<string, PainPointUse[]>
   }>(key, {
-    fallbackData: { runs: initialRuns, painPoints: initialPainPoints },
+    fallbackData: { runs: initialRuns, painPoints: initialPainPoints, painPointUsage: initialUsage },
     refreshInterval: (latest) =>
       latest?.runs.some((r) => r.status === "pending" || r.status === "processing") ? 5000 : 0,
   })
 
   const runs = data?.runs ?? []
   const painPoints = useMemo(() => data?.painPoints ?? [], [data?.painPoints])
+  const usage = useMemo(() => data?.painPointUsage ?? {}, [data?.painPointUsage])
   const running = runs.some((r) => r.status === "pending" || r.status === "processing")
+
+  // A run row that only says "3 pain points" makes you go back to the filter to
+  // find out which industry produced them. The segment is the one fact about a
+  // run that is always true and never derived, so it goes on the row.
+  const segmentNames = useMemo(
+    () => Object.fromEntries(segments.map((s) => [s.id, s.name])),
+    [segments]
+  )
 
   async function startRun() {
     if (!activeSegment) return
@@ -156,6 +169,9 @@ export default function ResearchView({
                 >
                   {run.status}
                 </Badge>
+                <Badge variant="secondary" className="bg-[#06B6D4]/10 text-[#22D3EE]">
+                  {(run.segment_id && segmentNames[run.segment_id]) || "No segment"}
+                </Badge>
                 <span className="text-xs text-[#94A3B8]">{formatDate(run.created_at)}</span>
                 <span className="text-xs text-[#94A3B8]">
                   {run.source_count} sources
@@ -191,7 +207,7 @@ export default function ResearchView({
           </p>
         </div>
 
-        <PainPointList painPoints={painPoints} />
+        <PainPointList painPoints={painPoints} segmentNames={segmentNames} usage={usage} />
       </section>
     </div>
   )

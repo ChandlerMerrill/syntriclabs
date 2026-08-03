@@ -27,7 +27,7 @@ export default function VariantGenerator({ campaignId, painPoints, onGenerated }
   const [guidance, setGuidance] = useState("")
 
   async function generate() {
-    if (!campaignId) return
+    if (!campaignId || !painPointId) return
     setGenerating(true)
     try {
       const res = await fetch("/api/admin/marketing/variants/generate", {
@@ -35,7 +35,7 @@ export default function VariantGenerator({ campaignId, painPoints, onGenerated }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaignId,
-          painPointId: painPointId || null,
+          painPointId,
           variantCount,
           guidance: guidance.trim() || null,
         }),
@@ -76,7 +76,7 @@ export default function VariantGenerator({ campaignId, painPoints, onGenerated }
             onChange={(e) => setPainPointId(e.target.value)}
             className="h-9 w-full rounded-lg border border-white/8 bg-[#0B1120] px-3 text-sm text-white"
           >
-            <option value="">None — write from the ICP alone</option>
+            <option value="">Pick a pain point…</option>
             {painPoints.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.rank ? `${p.rank}. ` : ""}
@@ -117,11 +117,17 @@ export default function VariantGenerator({ campaignId, painPoints, onGenerated }
         <Button
           size="sm"
           onClick={generate}
-          disabled={generating || !campaignId}
+          disabled={generating || !campaignId || !painPointId}
           className="bg-[#2563EB] text-white hover:bg-[#3B82F6]"
         >
           {generating ? "Generating…" : "Generate variants"}
         </Button>
+        {painPoints.length > 0 && !painPointId && (
+          <span className="text-xs text-[#94A3B8]">
+            Pick the complaint this copy answers. It is recorded on every variant, which is what
+            lets the Research tab say a pain point earned its place.
+          </span>
+        )}
         {painPoints.length === 0 && (
           <span className="text-xs text-amber-400/80">
             No researched pain points yet —{" "}

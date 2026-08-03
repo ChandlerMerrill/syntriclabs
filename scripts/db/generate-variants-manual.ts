@@ -61,9 +61,13 @@ async function buildTarget() {
 
   const segment = campaign.segment_id ? await getSegment(supabase, campaign.segment_id) : null
 
+  // Required alongside --campaign, matching the API and the UI. This script
+  // exists to build the *real* prompt without paying for a model call; a prompt
+  // it could build and the route could not would defeat the point of it.
   const painPointId = arg('pain-point')
-  const painPoint = painPointId ? await getPainPoint(supabase, painPointId) : null
-  if (painPointId && !painPoint) throw new Error(`Pain point ${painPointId} not found`)
+  if (!painPointId) throw new Error('--pain-point is required')
+  const painPoint = await getPainPoint(supabase, painPointId)
+  if (!painPoint) throw new Error(`Pain point ${painPointId} not found`)
 
   const variantCount = Number(arg('count') ?? 3)
   const guidance = arg('guidance')
@@ -117,7 +121,7 @@ async function insertDrafts() {
     brandProfileId: profile.id,
     segmentId: segment?.id ?? null,
     segmentSlug: segment?.slug ?? null,
-    painPointId: painPoint?.id ?? null,
+    painPointId: painPoint.id,
     proofAssetKey: proofAsset?.key ?? null,
     guidance: guidance ?? null,
     transport: 'manual' as const,
@@ -131,7 +135,7 @@ async function insertDrafts() {
     .insert(
       drafts.map((d) => ({
         campaign_id: campaign.id,
-        pain_point_id: painPoint?.id ?? null,
+        pain_point_id: painPoint.id,
         parent_variant_id: null,
         label: d.label,
         subject: d.subject,

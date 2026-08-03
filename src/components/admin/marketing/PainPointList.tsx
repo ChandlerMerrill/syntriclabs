@@ -11,6 +11,7 @@ import { facetedList, filterSummary, type Facet } from "@/components/admin/share
 import { Microscope, ExternalLink, AlertTriangle, ArrowUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { MarketingPainPoint } from "@/lib/marketing/types"
+import type { PainPointUse } from "@/lib/marketing/services"
 
 const SORTS = [
   { value: "rank", label: "Rank", hint: "The ordering research produced" },
@@ -21,20 +22,32 @@ const SORTS = [
 
 interface Props {
   painPoints: MarketingPainPoint[]
+  /** Segment id → display name. A pain point with no segment renders no badge. */
+  segmentNames?: Record<string, string>
+  /** Pain point id → the campaigns that wrote copy from it. */
+  usage?: Record<string, PainPointUse[]>
   emptyDescription?: string
 }
 
 export default function PainPointList({
   painPoints,
+  segmentNames,
+  usage,
   emptyDescription = "Run research against this segment to build the list.",
 }: Props) {
   const [search, setSearch] = useState("")
   const [fearSel, setFearSel] = useState<Set<string>>(new Set())
+  const [campaignSel, setCampaignSel] = useState<Set<string>>(new Set())
   const [sort, setSort] = useState("rank")
 
-  const facets = useMemo<Record<"fear", Facet<MarketingPainPoint>>>(
-    () => ({ fear: { values: (p) => p.icp_fear } }),
-    []
+  // Faceting on campaign *name* rather than id: the option list is what a person
+  // reads, and two campaigns never share a name in practice.
+  const facets = useMemo<Record<"fear" | "campaign", Facet<MarketingPainPoint>>>(
+    () => ({
+      fear: { values: (p) => p.icp_fear },
+      campaign: { values: (p) => (usage?.[p.id] ?? []).map((u) => u.campaignName) },
+    }),
+    [usage]
   )
 
   const { options, counts, active, visible, filtersActive } = useMemo(
@@ -47,9 +60,9 @@ export default function PainPointList({
           (p.icp_fear?.toLowerCase().includes(q) ?? false) ||
           p.evidence.some((e) => e.quote.toLowerCase().includes(q)),
         facets,
-        selected: { fear: fearSel },
+        selected: { fear: fearSel, campaign: campaignSel },
       }),
-    [painPoints, search, facets, fearSel]
+    [painPoints, search, facets, fearSel, campaignSel]
   )
 
   const sorted = useMemo(() => {
@@ -74,6 +87,7 @@ export default function PainPointList({
   function clearFilters() {
     setSearch("")
     setFearSel(new Set())
+    setCampaignSel(new Set())
   }
 
   return (
@@ -98,6 +112,19 @@ export default function PainPointList({
               className="w-44"
             />
           )}
+          {options.campaign.length > 0 && (
+            <FilterMultiSelect
+              options={options.campaign}
+              selected={active.campaign}
+              onChange={setCampaignSel}
+              counts={counts.campaign}
+              allLabel="All campaigns"
+              manyLabel="Campaigns"
+              searchable={options.campaign.length > 6}
+              searchPlaceholder="Search campaigns…"
+              className="w-44"
+            />
+          )}
           <FilterSelect
             options={SORTS}
             value={sort}
@@ -115,7 +142,7 @@ export default function PainPointList({
         <EmptyState
           icon={Microscope}
           title="Nothing matches these filters"
-          description="Widen the search or clear the ICP fear filter."
+          description="Widen the search or clear the ICP fear and campaign filters."
         />
       ) : (
         <div className="divide-y divide-white/8 overflow-hidden rounded-xl border border-white/8">
@@ -135,6 +162,11 @@ export default function PainPointList({
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-white">{p.statement}</p>
                   <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    {p.segment_id && segmentNames?.[p.segment_id] && (
+                      <Badge variant="secondary" className="bg-[#06B6D4]/10 text-[#22D3EE]">
+                        {segmentNames[p.segment_id]}
+                      </Badge>
+                    )}
                     <Badge variant="secondary" className="bg-white/5 text-[#94A3B8]">
                       {p.frequency} source{p.frequency === 1 ? "" : "s"}
                     </Badge>
@@ -146,6 +178,26 @@ export default function PainPointList({
                         {p.icp_fear}
                       </Badge>
                     )}
+                    {/* Only rendered when usage was actually loaded. A caller
+                        that passes nothing gets no badge, rather than every pain
+                        point claiming it was never used. */}
+                    {usage &&
+                      (usage[p.id]?.length ? (
+                        usage[p.id].map((u) => (
+                          <Badge
+                            key={u.campaignId}
+                            variant="secondary"
+                            className="bg-emerald-500/10 text-emerald-400"
+                          >
+                            Used by {u.campaignName} · {u.variantCount} variant
+                            {u.variantCount === 1 ? "" : "s"}
+                          </Badge>
+                        ))
+                      ) : (
+                        <Badge variant="secondary" className="bg-white/5 text-[#94A3B8]/60">
+                          Not yet used
+                        </Badge>
+                      ))}
                   </div>
                   <div className="mt-2 space-y-1">
                     {p.evidence.slice(0, 3).map((e, i) => (

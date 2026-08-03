@@ -24,7 +24,13 @@ import type { MarketingChannel, MarketingPainPoint, MarketingSegment } from '../
 // from the v1 rows by exactly that line: proof-asset selection changed in the
 // same commit and moved nothing, and all six v1 prompts were checked to rebuild
 // byte-identical apart from it.
-export const GENERATION_PROMPT_VERSION = 'v2'
+//
+// v3 — the pain point is required. The null branch of `painPointSection` is
+// gone, so no prompt built from here can carry the "write from the ICP alone"
+// instruction. Every v1 and v2 row on file took that branch; without the bump,
+// the performance view would compare copy written against researched evidence
+// with copy written against nothing and call the difference an angle.
+export const GENERATION_PROMPT_VERSION = 'v3'
 
 export type SegmentContext = Pick<
   MarketingSegment,
@@ -40,7 +46,13 @@ export interface GenerationTarget {
   profile: BrandProfile
   campaign: { name: string; goal: string | null; channel: MarketingChannel }
   segment: SegmentContext | null
-  painPoint: PainPointContext | null
+  /**
+   * Required. Copy written from the ICP alone had nothing researched to open on
+   * and no provenance afterwards — nothing linked the variant back to the
+   * complaint it answered, so the Research tab could never say a pain point had
+   * earned its place. Every variant generated from here names one.
+   */
+  painPoint: PainPointContext
   proofAsset: ProofAsset | null
   /** How many distinct angles to produce in one call. */
   variantCount: number
@@ -116,16 +128,7 @@ function proofSection(asset: ProofAsset | null, segmentSlug: string | null): str
   ].join('\n')
 }
 
-function painPointSection(painPoint: PainPointContext | null): string {
-  if (!painPoint) {
-    return [
-      'No researched pain point supplied.',
-      '',
-      'Write from the ICP situation and the named fears instead, and stay at the level of',
-      'what is on file. Do not invent a specific operational detail to open on.',
-    ].join('\n')
-  }
-
+function painPointSection(painPoint: PainPointContext): string {
   const evidence = painPoint.evidence
     .slice(0, 5)
     .map((e) => `- "${e.quote}"${e.url ? ` — ${e.url}` : ''}`)

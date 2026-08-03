@@ -35,11 +35,14 @@ export async function POST(req: Request) {
   if (!body.campaignId) {
     return NextResponse.json({ error: 'campaignId is required' }, { status: 400 })
   }
+  if (!body.painPointId) {
+    return NextResponse.json({ error: 'painPointId is required' }, { status: 400 })
+  }
 
   try {
     const result = await generateVariants(supabase, {
       campaignId: body.campaignId,
-      painPointId: body.painPointId ?? null,
+      painPointId: body.painPointId,
       parentVariantId: body.parentVariantId ?? null,
       variantCount: body.variantCount,
       guidance: body.guidance ?? null,

@@ -54,7 +54,8 @@ export type GeneratedVariant = z.infer<typeof variantSchema>
 
 export interface GenerateVariantsParams {
   campaignId: string
-  painPointId?: string | null
+  /** Required. See the note on `GenerationTarget.painPoint`. */
+  painPointId: string
   /** Lineage — set when breeding from a variant that performed. */
   parentVariantId?: string | null
   variantCount?: number
@@ -88,11 +89,9 @@ export async function generateVariants(
   if (!profile) throw new Error(`Brand profile ${campaign.brand_profile_id} not found`)
 
   const segment = campaign.segment_id ? await getSegment(supabase, campaign.segment_id) : null
-  const painPoint = params.painPointId ? await getPainPoint(supabase, params.painPointId) : null
 
-  if (params.painPointId && !painPoint) {
-    throw new Error(`Pain point ${params.painPointId} not found`)
-  }
+  const painPoint = await getPainPoint(supabase, params.painPointId)
+  if (!painPoint) throw new Error(`Pain point ${params.painPointId} not found`)
 
   const proofAsset = selectProofAsset(profile, segment?.slug)
 

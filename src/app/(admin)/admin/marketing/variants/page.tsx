@@ -23,13 +23,18 @@ export default async function MarketingVariantsPage({
 
   const campaign = campaigns.find((c) => c.id === activeCampaign) ?? null
 
+  // A campaign with no segment offers nothing rather than everything. The old
+  // fallback listed pain points across all segments, which — now that picking one
+  // is mandatory — would make the required choice a cross-segment one: copy for
+  // plumbers opening on a complaint researched from veterinary clinics. The
+  // generator already tells you to run research when the list is empty.
   const [variants, painPoints] = await Promise.all([
     activeCampaign
       ? listVariants(supabase, { campaignId: activeCampaign }).catch(() => [])
       : Promise.resolve([]),
     campaign?.segment_id
       ? listPainPoints(supabase, { segmentId: campaign.segment_id, limit: 25 }).catch(() => [])
-      : listPainPoints(supabase, { limit: 25 }).catch(() => []),
+      : Promise.resolve([]),
   ])
 
   const checks = await listVariantChecks(

@@ -1,7 +1,12 @@
 import { NextResponse, after } from 'next/server'
 import { requireAdmin } from '@/lib/api/admin-auth'
 import { loadBrandProfile } from '@/lib/marketing/config/brand-profile'
-import { listPainPoints, listResearchRuns, listSources } from '@/lib/marketing/services'
+import {
+  listPainPoints,
+  listResearchRuns,
+  listSources,
+  listVariantsForPainPoints,
+} from '@/lib/marketing/services'
 import { createResearchRun, processResearchRun } from '@/lib/marketing/research/run'
 
 export const maxDuration = 300
@@ -28,7 +33,15 @@ export async function GET(req: Request) {
       listResearchRuns(supabase, { segmentId }),
       listPainPoints(supabase, { segmentId, limit: 50 }),
     ])
-    return NextResponse.json({ runs, painPoints })
+    // Which campaigns wrote copy off each of these. Second query rather than an
+    // embed on the pain point, because the relationship runs the other way —
+    // variants point at pain points, and PostgREST cannot walk it backwards
+    // without a view.
+    const painPointUsage = await listVariantsForPainPoints(
+      supabase,
+      painPoints.map((p) => p.id)
+    )
+    return NextResponse.json({ runs, painPoints, painPointUsage })
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to load research' },
