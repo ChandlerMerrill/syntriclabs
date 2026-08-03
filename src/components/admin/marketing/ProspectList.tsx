@@ -229,6 +229,11 @@ export default function ProspectList({
                       not qualified
                     </Badge>
                   )}
+                  {p.qualified === null && !p.suppressed_at && (
+                    <Badge variant="secondary" className="bg-white/5 text-[#94A3B8]/70">
+                      unreviewed
+                    </Badge>
+                  )}
                   {showSegmentFilter && (
                     <Badge variant="secondary" className="bg-white/5 text-[#94A3B8]/80">
                       {segmentName(p.segment_id)}
@@ -239,6 +244,14 @@ export default function ProspectList({
                   {[p.contact_name, p.email].filter(Boolean).join(" · ") || "No contact on file"}
                   {p.suppression_reason ? ` — ${p.suppression_reason}` : ""}
                 </p>
+                {/* Why the qualifier decided what it did. A verdict with no
+                    reason is not reviewable, and this list is where the review
+                    happens. */}
+                {p.qualification_reason && (
+                  <p className="mt-0.5 truncate text-xs text-[#94A3B8]/60" title={p.qualification_reason}>
+                    {p.qualification_reason}
+                  </p>
+                )}
               </div>
               <Button
                 size="sm"
