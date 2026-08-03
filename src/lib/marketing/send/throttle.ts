@@ -106,11 +106,29 @@ export interface ProspectGate {
  * who asked not to be contacted is not subject to a cooldown, they are done.
  * The cooldown then
  * covers the ordinary case: a prospect who was emailed recently on some other
- * campaign should not hear from us again this month.
+ * campaign should not hear from us again this month. "Some other" is literal —
+ * see `opts.campaignId`.
  */
 export async function prospectSendGate(
   supabase: SupabaseClient,
-  prospectId: string
+  prospectId: string,
+  opts?: {
+    /**
+     * The campaign this send belongs to, excluded from the cooldown.
+     *
+     * The cooldown asks "have we bothered this person lately", and inside one
+     * campaign that question is answered by the sequence's own `delay_days`,
+     * not by a thirty-day rule. Left in, a 30-day cooldown blocks step 2 on day
+     * 4 and sequences silently never fire — the failure mode is invisible
+     * because nothing errors, rows just never appear.
+     *
+     * What this gives up: two different variants of the same campaign can now
+     * reach the same prospect inside the window. That is the deliberate cost,
+     * and the compensating control is unchanged — every send, every step, is
+     * approved by a person before it leaves.
+     */
+    campaignId?: string
+  }
 ): Promise<ProspectGate> {
   // Before anything about this particular prospect: can a recipient get out at
   // all? A missing signing key or site URL means the unsubscribe link cannot be
@@ -141,12 +159,15 @@ export async function prospectSendGate(
   const { prospectCooldownDays } = sendLimits()
   if (prospectCooldownDays > 0) {
     const since = new Date(Date.now() - prospectCooldownDays * 24 * 60 * 60 * 1000)
-    const { data: recent, error: recentError } = await supabase
+    let query = supabase
       .from('marketing_sends')
       .select('sent_at')
       .eq('prospect_id', prospectId)
       .eq('status', 'sent')
       .gte('sent_at', since.toISOString())
+    if (opts?.campaignId) query = query.neq('campaign_id', opts.campaignId)
+
+    const { data: recent, error: recentError } = await query
       .order('sent_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -157,7 +178,7 @@ export async function prospectSendGate(
     if (recent) {
       return {
         ok: false,
-        reason: `Contacted ${new Date(recent.sent_at as string).toISOString().slice(0, 10)} — inside the ${prospectCooldownDays}-day cooldown`,
+        reason: `Contacted ${new Date(recent.sent_at as string).toISOString().slice(0, 10)} on another campaign — inside the ${prospectCooldownDays}-day cooldown`,
       }
     }
   }

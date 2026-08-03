@@ -143,7 +143,7 @@ export async function dispatchApprovedSends(opts?: { limit?: number }): Promise<
     if (result.sent >= budget) break
 
     // Pre-claim checks. Cheap, and a failure here should not consume the claim.
-    const gate = await prospectSendGate(supabase, row.prospect_id)
+    const gate = await prospectSendGate(supabase, row.prospect_id, { campaignId: row.campaign_id })
     if (!gate.ok) {
       result.skipped++
       result.outcomes.push({ sendId: row.id, status: 'skipped', detail: gate.reason })

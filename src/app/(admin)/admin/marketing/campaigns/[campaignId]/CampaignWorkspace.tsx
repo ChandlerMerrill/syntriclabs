@@ -22,6 +22,7 @@ import VariantGenerator, {
   type GeneratorPainPoint,
 } from "@/components/admin/marketing/VariantGenerator"
 import SendList, { initialSendStatusSelection } from "@/components/admin/marketing/SendList"
+import SequencePanel from "@/components/admin/marketing/SequencePanel"
 import QueueVariantPanel, {
   type QueueableVariant,
 } from "@/components/admin/marketing/QueueVariantPanel"
@@ -38,6 +39,7 @@ import type {
   MarketingVariantCheck,
 } from "@/lib/marketing/types"
 import type { SendWithContext } from "@/lib/marketing/services"
+import type { CampaignStep } from "@/lib/marketing/send/sequence"
 import type { PerformanceTotals, RatedVariant } from "@/lib/marketing/eval/performance"
 import { WORKSPACE_TABS, TAB_LABELS, type WorkspaceTab } from "./tabs"
 
@@ -59,7 +61,11 @@ interface Props {
     checks: MarketingVariantCheck[]
     painPoints: GeneratorPainPoint[]
   } | null
-  outboxData: { sends: SendWithContext[]; readyVariants: QueueableVariant[] } | null
+  outboxData: {
+    sends: SendWithContext[]
+    readyVariants: QueueableVariant[]
+    steps: CampaignStep[]
+  } | null
   performanceData: {
     variants: RatedVariant[]
     totals: PerformanceTotals
@@ -262,7 +268,7 @@ function OutboxTab({
   initial,
 }: {
   campaignId: string
-  initial: { sends: SendWithContext[]; readyVariants: QueueableVariant[] }
+  initial: { sends: SendWithContext[]; readyVariants: QueueableVariant[]; steps: CampaignStep[] }
 }) {
   const router = useRouter()
   const [showQueue, setShowQueue] = useState(initial.sends.length === 0)
@@ -310,6 +316,19 @@ function OutboxTab({
           }}
         />
       )}
+
+      {/* Not behind the queue toggle. A sequence is a standing property of the
+          campaign — how many steps, what gap — not an action you take once, and
+          hiding it behind "Queue a variant" is how it goes unnoticed. */}
+      <SequencePanel
+        campaignId={campaignId}
+        readyVariants={initial.readyVariants}
+        initialSteps={initial.steps}
+        onQueued={() => {
+          setStatusSel(new Set(["pending_approval"]))
+          revalidate()
+        }}
+      />
 
       {/* Already scoped to one campaign, so the campaign facet would only ever
           offer the campaign you are standing in. */}

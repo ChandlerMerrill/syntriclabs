@@ -5,6 +5,7 @@ import { getCampaign, getVariant, listProspects, listSends } from '@/lib/marketi
 import { assertVariantSendable } from '@/lib/marketing/review/gate'
 import { renderSend } from '@/lib/marketing/send/render'
 import { isSendTemplate, SEND_TEMPLATES } from '@/lib/marketing/send/templates'
+import { listCampaignSteps } from '@/lib/marketing/send/sequence'
 import { prospectSendGate } from '@/lib/marketing/send/throttle'
 
 export async function GET(req: Request) {
@@ -106,11 +107,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No prospects matched' }, { status: 400 })
     }
 
+    // If this variant happens to be a step in the campaign's sequence, the row
+    // records that step rather than 1. Queueing step 3 by hand and filing it as
+    // an opener would make the sequence scan think the prospect never got past
+    // step 1 and re-queue everything after it.
+    const steps = await listCampaignSteps(supabase, campaign.id)
+    const stepNo = steps.find((s) => s.variant_id === variant.id)?.step_no ?? 1
+
     const queued: string[] = []
     const skipped: { prospect: string; reason: string }[] = []
 
     for (const prospect of prospects) {
-      const gate = await prospectSendGate(supabase, prospect.id)
+      const gate = await prospectSendGate(supabase, prospect.id, { campaignId: campaign.id })
       if (!gate.ok) {
         skipped.push({ prospect: prospect.company, reason: gate.reason ?? 'Blocked' })
         continue
@@ -131,6 +139,9 @@ export async function POST(req: Request) {
         prospect_id: prospect.id,
         channel: campaign.channel,
         status: 'pending_approval',
+        // This path queues openers. Follow-ups come from `queueFollowUps`,
+        // which is the only thing that knows a step's turn has arrived.
+        step_no: stepNo,
         rendered_subject: rendered.subject,
         rendered_body: rendered.body,
         rendered_html: rendered.html,

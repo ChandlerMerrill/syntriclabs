@@ -15,6 +15,7 @@ import {
   totals,
   MIN_SAMPLE_FOR_SIGNAL,
 } from "@/lib/marketing/eval/performance"
+import { listCampaignSteps } from "@/lib/marketing/send/sequence"
 import CampaignWorkspace from "./CampaignWorkspace"
 import { resolveTab } from "./tabs"
 
@@ -95,16 +96,18 @@ export default async function CampaignWorkspacePage({
   const outboxData =
     tab === "outbox"
       ? await (async () => {
-          const [sends, ready] = await Promise.all([
+          const [sends, ready, steps] = await Promise.all([
             listSends(supabase, { campaignId: campaign.id }).catch(() => []),
             listVariants(supabase, {
               campaignId: campaign.id,
               status: "ready",
               limit: 50,
             }).catch(() => []),
+            listCampaignSteps(supabase, campaign.id).catch(() => []),
           ])
           return {
             sends,
+            steps,
             readyVariants: ready.map((v) => ({
               id: v.id,
               label: v.label,
