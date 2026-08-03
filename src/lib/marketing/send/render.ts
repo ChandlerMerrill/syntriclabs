@@ -1,6 +1,7 @@
 import type { BrandProfile } from '../config/brand-profile'
 import type { MarketingProspect, MarketingVariant } from '../types'
 import { renderMessage, type SendTemplate } from './templates'
+import { unsubscribeUrl } from './unsubscribe-token'
 
 /**
  * Rendering a variant for one prospect.
@@ -54,7 +55,7 @@ export function renderTemplate(
 
 export function renderSend(
   variant: Pick<MarketingVariant, 'subject' | 'body'>,
-  prospect: Pick<MarketingProspect, 'company' | 'contact_name'>,
+  prospect: Pick<MarketingProspect, 'id' | 'company' | 'contact_name'>,
   profile: BrandProfile,
   template: SendTemplate = 'plain'
 ): RenderResult {
@@ -66,7 +67,11 @@ export function renderSend(
   // Both forms are produced here, at queue time, and both are stored. Deriving
   // the HTML later would mean a profile edit between approval and send could
   // change what goes out after a human signed off on it.
-  const message = renderMessage(template, body.text, profile)
+  //
+  // The unsubscribe link is frozen with them. It has to be: the same freeze that
+  // makes approval byte-for-byte would otherwise leave the one part of the
+  // message a recipient acts on out of what was approved.
+  const message = renderMessage(template, body.text, profile, unsubscribeUrl(prospect.id))
 
   return {
     subject: subject.text.trim(),

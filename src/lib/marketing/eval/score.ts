@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createServiceClient } from '@/lib/supabase/server'
 import { marketingModel, marketingModelId, MARKETING_MAX_OUTPUT_TOKENS } from '../model'
 import type { ReplyMatch } from './match-replies'
+import { suppressProspect } from './suppress'
 
 /**
  * Scoring a reply.
@@ -90,12 +91,29 @@ export async function scoreReply(params: {
  * `marketing_outcomes.send_id` is unique, and a human score is never
  * overwritten by a model one — the whole point of `scored_by` is that a person
  * correcting the model is the signal worth keeping.
+ *
+ * An `unsubscribe` classification is the one sentiment that does something
+ * besides being recorded. It used to score -1 and stop there, which meant the
+ * loop understood the reply perfectly and then contacted the person again as
+ * soon as the cooldown lapsed. The suppression is written here, next to the
+ * classification that justifies it, rather than left to a caller to remember.
  */
 export async function scoreAndStore(
   supabase: Awaited<ReturnType<typeof createServiceClient>>,
   match: ReplyMatch,
-  send: { rendered_subject: string | null; rendered_body: string | null }
-): Promise<{ scored: boolean; reason?: string; score?: ReplyScore }> {
+  send: {
+    id: string
+    prospect_id: string
+    rendered_subject: string | null
+    rendered_body: string | null
+  }
+): Promise<{
+  scored: boolean
+  reason?: string
+  score?: ReplyScore
+  /** True when this reply is what suppressed the prospect. */
+  suppressed?: boolean
+}> {
   const { data: existing } = await supabase
     .from('marketing_outcomes')
     .select('id, scored_by')
@@ -129,7 +147,19 @@ export async function scoreAndStore(
 
   if (error) throw new Error(`Failed to store outcome: ${error.message}`)
 
-  return { scored: true, score }
+  // The outcome is stored first on purpose. If suppression fails, the reply is
+  // still on record and visible; if the order were reversed, a failure here
+  // would leave someone suppressed with no trace of why.
+  const suppressed =
+    score.sentiment === 'unsubscribe'
+      ? await suppressProspect(
+          supabase,
+          send.prospect_id,
+          `Unsubscribe reply (send ${send.id})`
+        )
+      : false
+
+  return { scored: true, score, suppressed }
 }
 
 export function scoringModelId(): string {

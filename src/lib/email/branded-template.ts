@@ -79,6 +79,15 @@ export interface BrandedEmailOptions {
    */
   ctaUrl?: string | null
   ctaLabel?: string
+  /**
+   * Footer unsubscribe link. Omitted when absent.
+   *
+   * Optional here, unlike in `renderMessage`, because this template is shared:
+   * `/api/documents/send` and `/api/email-preview` use it for transactional mail
+   * a person asked for, which is not something to unsubscribe from. Marketing
+   * passes it on every send, and its own renderer requires it.
+   */
+  unsubscribeUrl?: string
   /** Footer identity. Defaults to the founder profile. */
   signature?: {
     name?: string
@@ -121,6 +130,12 @@ export function renderBrandedEmail(body: string, options: BrandedEmailOptions = 
   const ctaRow = ctaUrl
     ? `<tr><td style="padding:0 32px 28px 32px">
           <a href="${ctaUrl}" style="display:inline-block;background:${BRAND_PURPLE};color:#FFFFFF;text-decoration:none;font-size:13px;font-weight:600;padding:10px 18px;border-radius:8px;letter-spacing:0.01em">${escapeHtml(ctaLabel)}</a>
+        </td></tr>`
+    : ''
+
+  const unsubscribeRow = options.unsubscribeUrl
+    ? `<tr><td align="center" style="padding:0 32px 24px 32px;background:${BG_LIGHT}">
+          <a href="${escapeHtml(options.unsubscribeUrl)}" style="color:${TEXT_MUTED};font-size:11px;text-decoration:underline">Unsubscribe</a>
         </td></tr>`
     : ''
 
@@ -170,6 +185,8 @@ export function renderBrandedEmail(body: string, options: BrandedEmailOptions = 
             <img src="https://www.syntriclabs.com/images/Syntric-logo-pill.png" alt="Syntric" width="120" style="width:120px;height:auto;display:inline-block;border:0;outline:none;text-decoration:none">
           </div>
         </td></tr>
+
+        ${unsubscribeRow}
 
       </table>
     </td></tr>

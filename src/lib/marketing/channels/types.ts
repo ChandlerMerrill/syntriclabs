@@ -27,6 +27,13 @@ export interface SendRequest {
   threadId?: string
   inReplyTo?: string
   references?: string
+  /**
+   * Transport headers the caller needs on the wire — `List-Unsubscribe` today.
+   *
+   * Not every channel has headers; the ones that don't ignore this rather than
+   * the dispatcher branching on which channel it is holding.
+   */
+  headers?: Record<string, string>
 }
 
 export interface SendSuccess {

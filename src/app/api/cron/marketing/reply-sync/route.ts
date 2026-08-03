@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import {
   findRepliesForSend,
-  recordReplyEvent,
+  recordInboundEvent,
   sendsAwaitingReplies,
 } from '@/lib/marketing/eval/match-replies'
 import { scoreAndStore } from '@/lib/marketing/eval/score'
+import { suppressProspect } from '@/lib/marketing/eval/suppress'
 
 export const maxDuration = 300
 
@@ -19,6 +20,11 @@ export const maxDuration = 300
  *
  * Only newly-recorded replies are scored. Re-scoring on every pass would spend
  * a model call per reply per run and quietly overwrite a human's correction.
+ *
+ * Two of the things found here stop the loop rather than just being counted: a
+ * hard bounce and a reply asking to be taken off the list both suppress the
+ * prospect. Recognising either and then contacting the person again in thirty
+ * days is worse than not recognising it at all.
  */
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -32,7 +38,9 @@ export async function GET(request: NextRequest) {
 
     let matched = 0
     let newReplies = 0
+    let bounces = 0
     let scored = 0
+    let suppressed = 0
     const errors: string[] = []
 
     for (const send of sends) {
@@ -42,16 +50,33 @@ export async function GET(request: NextRequest) {
         matched += replies.length
 
         for (const reply of replies) {
-          const isNew = await recordReplyEvent(supabase, reply)
+          const isNew = await recordInboundEvent(supabase, reply)
           if (!isNew) continue
+
+          // A bounce is not an answer. It never reaches the scorer — spending a
+          // model call to classify a mailer-daemon message is waste, and storing
+          // its verdict as an outcome would put a machine's rejection in the
+          // column meant for a person's.
+          if (reply.kind === 'bounce') {
+            bounces++
+            if (reply.bounce === 'hard') {
+              const did = await suppressProspect(supabase, send.prospect_id, 'Hard bounce')
+              if (did) suppressed++
+            }
+            continue
+          }
+
           newReplies++
 
           try {
             const result = await scoreAndStore(supabase, reply, {
+              id: send.id,
+              prospect_id: send.prospect_id,
               rendered_subject: send.rendered_subject,
               rendered_body: send.rendered_body,
             })
             if (result.scored) scored++
+            if (result.suppressed) suppressed++
           } catch (err) {
             errors.push(
               `score ${reply.sendId}: ${err instanceof Error ? err.message : 'failed'}`
@@ -68,7 +93,9 @@ export async function GET(request: NextRequest) {
       sendsChecked: sends.length,
       matched,
       newReplies,
+      bounces,
       scored,
+      suppressed,
       errors,
     })
   } catch (err) {

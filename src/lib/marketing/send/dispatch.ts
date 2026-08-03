@@ -1,7 +1,9 @@
+import { FOUNDER } from '@/lib/founder-profile'
 import { createServiceClient } from '@/lib/supabase/server'
 import { channelAdapter, automatedChannels } from '../channels'
 import { assertVariantSendable } from '../review/gate'
 import { sendAllowance, prospectSendGate } from './throttle'
+import { unsubscribeUrl } from './unsubscribe-token'
 import type { MarketingChannel, MarketingSend } from '../types'
 
 /**
@@ -55,6 +57,27 @@ function sleep(ms: number) {
 }
 
 /**
+ * The RFC 8058 one-click headers.
+ *
+ * Built here at dispatch rather than frozen at queue time with the body, which
+ * is the one asymmetry in this design and is deliberate. Headers are not part of
+ * what a human reviews — nobody approves a message by looking at its
+ * `List-Unsubscribe` — so freezing them buys nothing, and computing them late
+ * means a row queued before this shipped still leaves with a valid one.
+ *
+ * The `mailto:` is the second entry on purpose: clients that support one-click
+ * prefer the https URL, and clients that don't still have something a human can
+ * act on. `List-Unsubscribe-Post` is what tells Gmail the URL is safe to POST
+ * without confirming, which is what turns the header into a visible button.
+ */
+function unsubscribeHeaders(prospectId: string): Record<string, string> {
+  return {
+    'List-Unsubscribe': `<${unsubscribeUrl(prospectId)}>, <mailto:${FOUNDER.email}?subject=unsubscribe>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  }
+}
+
+/**
  * Sends with bounded retry on transient failures only.
  *
  * The shared Gmail client has no backoff and collapses every error into a
@@ -65,7 +88,13 @@ function sleep(ms: number) {
  */
 async function sendWithRetry(
   channel: MarketingChannel,
-  req: { to: string; subject: string; body: string; html?: string | null }
+  req: {
+    to: string
+    subject: string
+    body: string
+    html?: string | null
+    headers?: Record<string, string>
+  }
 ) {
   const adapter = channelAdapter(channel)
   let last = await adapter.send(req)
@@ -185,6 +214,7 @@ export async function dispatchApprovedSends(opts?: { limit?: number }): Promise<
       // What the outbox rendered and a human approved. A row queued before
       // templates existed has none, and falls back to the plain conversion.
       html: claimedRow.rendered_html,
+      headers: unsubscribeHeaders(row.prospect_id),
     })
 
     if (outcome.ok) {

@@ -23,6 +23,53 @@ export interface ReplyMatch {
   internalDate: string
   /** How the match was made. Thread id is strong; header is the fallback. */
   via: 'thread' | 'header'
+  /**
+   * What actually arrived.
+   *
+   * A bounce lands on our own thread and is inbound, so a thread-id match alone
+   * cannot tell the two apart — which is how a mailer-daemon message was being
+   * recorded as a reply and handed to the scorer as though a person had answered.
+   */
+  kind: 'reply' | 'bounce'
+  /**
+   * For bounces: `hard` when the enhanced status is 5.x.x, `soft` for 4.x.x,
+   * null when neither could be read out of the body.
+   */
+  bounce: 'hard' | 'soft' | null
+}
+
+/** Local parts that only ever belong to a mail system, never to a person. */
+const DAEMON_RE = /^(mailer-daemon|postmaster)@/i
+
+/**
+ * The enhanced status code (RFC 3463), most trustworthy source first.
+ *
+ * `Status:` is the machine-readable field of the `message/delivery-status` part
+ * and is unambiguous when present. The SMTP reply line — `550 5.1.1 …` — is next.
+ * A bare code anywhere in the body is last, and only reached on a DSN, where a
+ * loose `5.1.1`-shaped string is far more likely to be a status than a version
+ * number.
+ */
+function bounceSeverity(bodyText: string): 'hard' | 'soft' | null {
+  const patterns = [
+    /^\s*Status:\s*([45])\.\d{1,3}\.\d{1,3}/im,
+    /\b[45]\d{2}[-\s]([45])\.\d{1,3}\.\d{1,3}\b/,
+    /\b([45])\.\d{1,3}\.\d{1,3}\b/,
+  ]
+  for (const re of patterns) {
+    const digit = bodyText.match(re)?.[1]
+    if (digit === '5') return 'hard'
+    if (digit === '4') return 'soft'
+  }
+  return null
+}
+
+function classifyInbound(
+  fromAddress: string,
+  bodyText: string
+): Pick<ReplyMatch, 'kind' | 'bounce'> {
+  if (!DAEMON_RE.test(fromAddress.trim())) return { kind: 'reply', bounce: null }
+  return { kind: 'bounce', bounce: bounceSeverity(bodyText) }
 }
 
 interface EmailRow {
@@ -71,6 +118,7 @@ export async function findRepliesForSend(
         bodyText: row.body_text ?? '',
         internalDate: row.internal_date,
         via: 'thread',
+        ...classifyInbound(row.from_address ?? '', row.body_text ?? ''),
       })
     }
   }
@@ -97,6 +145,7 @@ export async function findRepliesForSend(
           bodyText: row.body_text ?? '',
           internalDate: row.internal_date,
           via: 'header',
+          ...classifyInbound(row.from_address ?? '', row.body_text ?? ''),
         })
       }
     }
@@ -106,27 +155,36 @@ export async function findRepliesForSend(
 }
 
 /**
- * Records a reply as an event.
+ * Records an inbound message as an event.
  *
  * The unique (send_id, type, email_id) makes this idempotent — a re-run of the
  * sync cannot double-count a reply into the reply rate. Returns whether the
  * event was new.
+ *
+ * A bounce is written as `bounced`, not `replied`. `marketing_template_performance`
+ * already counts both, so getting the type right is the whole of what the rate
+ * needs — and a bounce counted as a reply inflates the one number the loop is
+ * being judged on.
  */
-export async function recordReplyEvent(
+export async function recordInboundEvent(
   supabase: Awaited<ReturnType<typeof createServiceClient>>,
   match: ReplyMatch
 ): Promise<boolean> {
   const { error } = await supabase.from('marketing_events').insert({
     send_id: match.sendId,
-    type: 'replied',
+    type: match.kind === 'bounce' ? 'bounced' : 'replied',
     email_id: match.emailId,
     occurred_at: match.internalDate,
-    metadata: { via: match.via, from: match.fromAddress },
+    metadata: {
+      via: match.via,
+      from: match.fromAddress,
+      ...(match.kind === 'bounce' ? { bounce: match.bounce ?? 'unknown' } : {}),
+    },
   })
 
   if (!error) return true
   if (error.code === '23505') return false // already recorded
-  throw new Error(`Failed to record reply event: ${error.message}`)
+  throw new Error(`Failed to record ${match.kind} event: ${error.message}`)
 }
 
 /** Sends worth checking: actually sent, and recent enough that a reply is plausible. */

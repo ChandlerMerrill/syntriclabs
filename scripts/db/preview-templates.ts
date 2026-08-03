@@ -30,8 +30,14 @@ async function main() {
   const profile = await loadBrandProfile(supabase, { id: campaign.brand_profile_id })
   if (!profile) throw new Error('Brand profile not found')
 
-  // A stand-in prospect so tokens resolve. Never written anywhere.
-  const prospect = { company: 'Redrock Trail Company', contact_name: 'Dana Whitmore' }
+  // A stand-in prospect so tokens resolve. Never written anywhere. The id is a
+  // fixed uuid rather than a real one so the unsubscribe link in the preview is
+  // a genuinely signed token — verifiable, and pointing at nobody.
+  const prospect = {
+    id: '00000000-0000-4000-8000-000000000001',
+    company: 'Redrock Trail Company',
+    contact_name: 'Dana Whitmore',
+  }
 
   for (const template of SEND_TEMPLATES) {
     const rendered = renderSend(variant, prospect, profile, template)

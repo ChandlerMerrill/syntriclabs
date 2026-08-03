@@ -165,6 +165,7 @@ export async function sendMessage(params: {
   threadId?: string
   inReplyTo?: string
   references?: string
+  extraHeaders?: Record<string, string>
 }) {
   const raw = buildRFC2822Message(params)
   const encoded = Buffer.from(raw).toString('base64url')
@@ -287,6 +288,12 @@ export function buildRFC2822Message(params: {
   from?: string
   inReplyTo?: string
   references?: string
+  /**
+   * Headers the caller needs that this builder does not model — `List-Unsubscribe`
+   * and its `-Post` companion, today. Additive by design: existing callers pass
+   * nothing and get exactly the message they got before.
+   */
+  extraHeaders?: Record<string, string>
 }): string {
   const lines: string[] = []
   if (params.from) lines.push(`From: ${params.from}`)
@@ -297,6 +304,13 @@ export function buildRFC2822Message(params: {
   lines.push('Content-Type: text/html; charset=UTF-8')
   if (params.inReplyTo) lines.push(`In-Reply-To: ${params.inReplyTo}`)
   if (params.references) lines.push(`References: ${params.references}`)
+  for (const [name, value] of Object.entries(params.extraHeaders ?? {})) {
+    // A CR or LF in a value would end the header and start a new one — the
+    // caller's data deciding the shape of the message. Stripped rather than
+    // rejected: none of these values should contain one, and dropping the send
+    // over a stray newline is worse than sending it without the break.
+    lines.push(`${name}: ${value.replace(/[\r\n]+/g, ' ').trim()}`)
+  }
   lines.push('')
   lines.push(params.body)
   return lines.join('\r\n')

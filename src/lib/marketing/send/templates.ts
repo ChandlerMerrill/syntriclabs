@@ -121,14 +121,39 @@ export function plainTextToHtml(text: string): string {
     .join('\n')
 }
 
-/** The plain arm: body, delimiter, signature. Nothing else. */
-function renderPlain(body: string, sig: Signature | null): RenderedMessage {
-  const trimmed = body.trim()
-  const text = sig ? `${trimmed}\n\n${signatureText(sig)}` : trimmed
+/**
+ * The way out, in the body itself.
+ *
+ * It lives in the rendered body rather than only in a `List-Unsubscribe` header
+ * because the header is a client feature — Gmail and Apple Mail honour it, a
+ * corporate Outlook install often does not, and someone reading on a client that
+ * ignores it would have no visible way to stop the mail.
+ *
+ * Worded as a sentence rather than a bare "Unsubscribe" because on the plain arm
+ * a bare one reads as a bulk-mail footer, which is the one thing that arm is
+ * trying not to be. It is a tell either way; this is the smaller one.
+ */
+function unsubscribeText(url: string): string {
+  return `If you'd rather not hear from me, unsubscribe: ${url}`
+}
 
-  const html = sig
-    ? `${plainTextToHtml(trimmed)}\n<p>--<br>${signatureHtml(sig)}</p>`
-    : plainTextToHtml(trimmed)
+function unsubscribeHtml(url: string): string {
+  return (
+    `<p style="margin-top:18px;font-size:12px;color:#6B7280">If you'd rather not hear from me, ` +
+    `<a href="${escapeHtml(url)}" style="color:#6B7280">unsubscribe</a>.</p>`
+  )
+}
+
+/** The plain arm: body, delimiter, signature, the way out. Nothing else. */
+function renderPlain(body: string, sig: Signature | null, unsubUrl: string): RenderedMessage {
+  const trimmed = body.trim()
+  const signed = sig ? `${trimmed}\n\n${signatureText(sig)}` : trimmed
+  const text = `${signed}\n\n${unsubscribeText(unsubUrl)}`
+
+  const html =
+    (sig
+      ? `${plainTextToHtml(trimmed)}\n<p>--<br>${signatureHtml(sig)}</p>`
+      : plainTextToHtml(trimmed)) + `\n${unsubscribeHtml(unsubUrl)}`
 
   return { text, html }
 }
@@ -141,13 +166,15 @@ function renderPlain(body: string, sig: Signature | null): RenderedMessage {
  * would be a second ask on top of the one the body already carries — which is
  * what `checkOneAsk` exists to prevent.
  */
-function renderBranded(body: string, sig: Signature | null): RenderedMessage {
+function renderBranded(body: string, sig: Signature | null, unsubUrl: string): RenderedMessage {
   const trimmed = body.trim()
-  const text = sig ? `${trimmed}\n\n${signatureText(sig)}` : trimmed
+  const signed = sig ? `${trimmed}\n\n${signatureText(sig)}` : trimmed
+  const text = `${signed}\n\n${unsubscribeText(unsubUrl)}`
 
   const html = renderBrandedEmail(trimmed, {
     assistantBanner: false,
     ctaUrl: null,
+    unsubscribeUrl: unsubUrl,
     signature: sig
       ? {
           name: sig.name,
@@ -166,23 +193,33 @@ function renderBranded(body: string, sig: Signature | null): RenderedMessage {
  *
  * Falls back to the profile's legacy `signOff` string when no structured
  * signature is on file, so a profile that predates this still signs its mail.
+ *
+ * `unsubscribeUrl` is required rather than optional on purpose. An optional
+ * parameter is a way to ship a marketing send with no way out of it — the one
+ * caller that forgets is the one that mails a stranger.
  */
 export function renderMessage(
   template: SendTemplate,
   body: string,
-  profile: BrandProfile
+  profile: BrandProfile,
+  unsubscribeUrl: string
 ): RenderedMessage {
   const sig = profile.voiceRules.signature ?? null
 
   if (!sig) {
     const signOff = profile.voiceRules.signOff?.trim()
     const trimmed = body.trim()
-    const text = signOff ? `${trimmed}\n\n${signOff}` : trimmed
+    const signed = signOff ? `${trimmed}\n\n${signOff}` : trimmed
     return {
-      text,
-      html: template === 'branded' ? renderBrandedEmail(text, { assistantBanner: false, ctaUrl: null }) : plainTextToHtml(text),
+      text: `${signed}\n\n${unsubscribeText(unsubscribeUrl)}`,
+      html:
+        template === 'branded'
+          ? renderBrandedEmail(signed, { assistantBanner: false, ctaUrl: null, unsubscribeUrl })
+          : `${plainTextToHtml(signed)}\n${unsubscribeHtml(unsubscribeUrl)}`,
     }
   }
 
-  return template === 'branded' ? renderBranded(body, sig) : renderPlain(body, sig)
+  return template === 'branded'
+    ? renderBranded(body, sig, unsubscribeUrl)
+    : renderPlain(body, sig, unsubscribeUrl)
 }

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { unsubscribeConfigError } from './unsubscribe-token'
 
 /**
  * Send throttling.
@@ -99,8 +100,11 @@ export interface ProspectGate {
 /**
  * Whether this prospect may be contacted at all right now.
  *
- * Suppression is absolute and comes first — someone who asked not to be
- * contacted is not subject to a cooldown, they are done. The cooldown then
+ * Ordered by how absolute each answer is. Whether an unsubscribe link can be
+ * built is a property of the deployment, not of anyone in it, so it is asked
+ * before the database is touched. Suppression is next and is absolute — someone
+ * who asked not to be contacted is not subject to a cooldown, they are done.
+ * The cooldown then
  * covers the ordinary case: a prospect who was emailed recently on some other
  * campaign should not hear from us again this month.
  */
@@ -108,6 +112,16 @@ export async function prospectSendGate(
   supabase: SupabaseClient,
   prospectId: string
 ): Promise<ProspectGate> {
+  // Before anything about this particular prospect: can a recipient get out at
+  // all? A missing signing key or site URL means the unsubscribe link cannot be
+  // built, and marketing mail with no way out of it is the thing this whole
+  // phase exists to prevent. Fail closed, so it cannot happen by misconfiguration
+  // rather than by decision.
+  const unsubscribeProblem = unsubscribeConfigError()
+  if (unsubscribeProblem) {
+    return { ok: false, reason: `Unsubscribe link unavailable — ${unsubscribeProblem}` }
+  }
+
   const { data: prospect, error } = await supabase
     .from('marketing_prospects')
     .select('id, email, suppressed_at, suppression_reason')

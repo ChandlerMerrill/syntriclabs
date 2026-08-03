@@ -56,6 +56,7 @@ export const emailAdapter: ChannelAdapter = {
         threadId: req.threadId,
         inReplyTo: req.inReplyTo,
         references: req.references,
+        extraHeaders: req.headers,
       })
       return {
         ok: true,

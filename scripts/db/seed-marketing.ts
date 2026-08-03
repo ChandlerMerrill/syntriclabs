@@ -335,6 +335,10 @@ async function main() {
       )
     }
 
+    // No suppression keys. This payload is an `update` on a re-run, so writing
+    // `suppressed_at: null` here would un-suppress anyone who had unsubscribed
+    // since the last seed — a re-seed of test data quietly undoing a person's
+    // decision. Absent, the column keeps whatever it holds.
     const payload = {
       segment_id: guiding.id,
       company: p.company,
@@ -344,8 +348,6 @@ async function main() {
       notes: p.notes,
       qualified: true,
       qualification_reason: 'Seeded test record.',
-      suppressed_at: null,
-      suppression_reason: null,
     }
 
     const { error } = existing
