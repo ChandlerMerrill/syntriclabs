@@ -12,6 +12,8 @@ import {
   GENERATION_PROMPT_VERSION,
   type GenerationTarget,
 } from './prompt'
+import { assignStyles, getStyle, measureStyle } from './style'
+import { countWords } from '../review/checks'
 import type { MarketingVariant } from '../types'
 
 /**
@@ -44,6 +46,10 @@ const variantSchema = z.object({
   angle: z
     .string()
     .describe('One sentence on what makes this different from the other variants and why it might land.'),
+  styleKey: z
+    .string()
+    .nullable()
+    .describe('The key of the style assigned to this variant, echoed back exactly as given.'),
 })
 
 const generationSchema = z.object({
@@ -59,6 +65,11 @@ export interface GenerateVariantsParams {
   /** Lineage — set when breeding from a variant that performed. */
   parentVariantId?: string | null
   variantCount?: number
+  /**
+   * Force every variant into one style instead of taking the default spread.
+   * For deliberately running a batch of one kind; see `assignStyles`.
+   */
+  styleKey?: string | null
   guidance?: string | null
 }
 
@@ -95,6 +106,14 @@ export async function generateVariants(
 
   const proofAsset = selectProofAsset(profile, segment?.slug)
 
+  // Validated rather than left to `assignStyles`, which falls back to the spread
+  // on an unknown key. A caller that named a style and silently got the default
+  // spread would record `styleForced` for an experiment that never ran.
+  if (params.styleKey && !getStyle(params.styleKey)) {
+    throw new Error(`Unknown style "${params.styleKey}"`)
+  }
+  const styles = assignStyles(variantCount, { styleKey: params.styleKey ?? null })
+
   const target: GenerationTarget = {
     profile,
     campaign: { name: campaign.name, goal: campaign.goal, channel: campaign.channel },
@@ -102,6 +121,7 @@ export async function generateVariants(
     painPoint,
     proofAsset,
     variantCount,
+    styles,
     guidance: params.guidance ?? null,
   }
 
@@ -133,25 +153,48 @@ export async function generateVariants(
     segmentSlug: segment?.slug ?? null,
     painPointId: painPoint?.id ?? null,
     proofAssetKey: proofAsset?.key ?? null,
+    styleKeys: styles.map((s) => s.key),
+    styleForced: params.styleKey ?? null,
     guidance: params.guidance ?? null,
   }
 
   const { data: inserted, error } = await supabase
     .from('marketing_variants')
     .insert(
-      drafts.map((d) => ({
-        campaign_id: campaign.id,
-        pain_point_id: painPoint?.id ?? null,
-        parent_variant_id: params.parentVariantId ?? null,
-        label: d.label,
-        subject: d.subject,
-        body: d.body,
-        icp_fear: d.icpFear,
-        generation_prompt: prompt,
-        generation_config: { ...sharedConfig, angle: d.angle, system },
-        model,
-        status: 'draft',
-      }))
+      drafts.map((d, i) => {
+        // The assignment by index is what was asked for, so it is what the
+        // variant is measured against. What the model echoed is recorded beside
+        // it rather than trusted: a batch where the two disagree is a batch that
+        // did not run the experiment it looks like it ran, and that is only
+        // visible if both are on the row.
+        const assigned = styles[i] ?? styles[0]
+        const reported = d.styleKey ?? null
+
+        return {
+          campaign_id: campaign.id,
+          pain_point_id: painPoint?.id ?? null,
+          parent_variant_id: params.parentVariantId ?? null,
+          label: d.label,
+          subject: d.subject,
+          body: d.body,
+          icp_fear: d.icpFear,
+          generation_prompt: prompt,
+          generation_config: {
+            ...sharedConfig,
+            angle: d.angle,
+            system,
+            style: assigned.key,
+            styleReported: reported,
+            styleMatched: reported === assigned.key,
+            // Measured against the style asked for, not the one claimed. A model
+            // told to write 25–45 words routinely writes 60; without this the
+            // performance view credits "terse" for copy that was never terse.
+            styleMetrics: measureStyle(d.body, assigned, countWords(d.body)),
+          },
+          model,
+          status: 'draft',
+        }
+      })
     )
     .select('*')
   if (error) throw new Error(`Failed to store variants: ${error.message}`)

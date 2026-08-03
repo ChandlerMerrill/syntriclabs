@@ -49,6 +49,20 @@ export const SYNTRIC_BRAND_PROFILE: BrandProfileSeed = {
       {
         rule: 'Human-paced, not hype-paced. Not every development is urgent. Not everything is a breakthrough.',
       },
+      {
+        // The failure this guards against is not a wrong word, it is a register.
+        // Copy can pass every banned-word check and still read as having come
+        // from a department rather than a person, and that is the thing an SMB
+        // owner deletes without finishing.
+        rule: 'Typed by a person, not issued by a company. If a sentence would fit in a brochure, rewrite it.',
+        good: 'Noticed you run trips out of three parks. That reconciliation must be brutal in October.',
+        bad: 'We help guiding operations streamline their reporting workflows across multiple locations.',
+      },
+      {
+        rule: 'Short and simple over complete and precise. Get to the point early and stop when it is made.',
+        good: "Most of that is manual. It doesn't have to be.",
+        bad: 'While there are certainly a number of factors involved, it is often the case that much of this work remains manual in nature.',
+      },
     ],
 
     useCarefully: ['automation', 'workflow', 'efficiency', 'ROI', 'scale'],

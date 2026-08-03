@@ -1,5 +1,6 @@
 import type { BrandProfile, ProofAsset } from '../config/brand-profile'
 import type { MarketingChannel, MarketingPainPoint, MarketingSegment } from '../types'
+import type { StyleProfile } from './style'
 
 /**
  * The generation prompt.
@@ -30,7 +31,15 @@ import type { MarketingChannel, MarketingPainPoint, MarketingSegment } from '../
 // instruction. Every v1 and v2 row on file took that branch; without the bump,
 // the performance view would compare copy written against researched evidence
 // with copy written against nothing and call the difference an angle.
-export const GENERATION_PROMPT_VERSION = 'v3'
+//
+// v4 — style is assigned per variant and the six-line skeleton is gone. Two
+// structural changes in one bump because they are the same change: the old
+// "Shape" block prescribed line-by-line what went where, which is most of what
+// made output read as filled-in template rather than typed. It now states what
+// the email has to accomplish and leaves shape to the assigned style. Every v3
+// row was written against the skeleton, so comparing them to v4 rows on angle
+// alone would be comparing scaffolds.
+export const GENERATION_PROMPT_VERSION = 'v4'
 
 export type SegmentContext = Pick<
   MarketingSegment,
@@ -56,6 +65,13 @@ export interface GenerationTarget {
   proofAsset: ProofAsset | null
   /** How many distinct angles to produce in one call. */
   variantCount: number
+  /**
+   * One style per variant, in order, from `assignStyles`. Length must equal
+   * `variantCount` — the prompt addresses each variant by number, so a mismatch
+   * would leave a variant with no style named or name a style for a variant that
+   * was never asked for.
+   */
+  styles: StyleProfile[]
   /** Free-text steer from whoever pressed the button. Optional. */
   guidance?: string | null
 }
@@ -148,6 +164,64 @@ function painPointSection(painPoint: PainPointContext): string {
   ].join('\n')
 }
 
+/**
+ * The per-variant style assignments.
+ *
+ * Addressed by variant number so the model cannot average the styles together
+ * into one house voice — which is what happens when several styles are described
+ * in the abstract and then N variants are requested.
+ */
+function styleSection(styles: StyleProfile[]): string {
+  const lines: string[] = []
+
+  if (styles.length === 1) {
+    const s = styles[0]
+    lines.push(`**${s.label}** — ${s.summary}`)
+    lines.push(`Aim for ${s.targetWords.min}–${s.targetWords.max} words.`)
+    lines.push('')
+    lines.push(...s.directives.map((d) => `- ${d}`))
+  } else {
+    // Grouped by style rather than listed per variant. The default is assigned
+    // to two of every three, so listing per variant repeats an identical block
+    // verbatim — which pads the prompt and, worse, reads like emphasis.
+    const groups = new Map<string, { style: StyleProfile; variants: number[] }>()
+    styles.forEach((s, i) => {
+      const group = groups.get(s.key)
+      if (group) group.variants.push(i + 1)
+      else groups.set(s.key, { style: s, variants: [i + 1] })
+    })
+
+    let first = true
+    for (const { style: s, variants } of groups.values()) {
+      if (!first) lines.push('')
+      first = false
+      const which =
+        variants.length === 1
+          ? `Variant ${variants[0]}`
+          : `Variants ${variants.slice(0, -1).join(', ')} and ${variants[variants.length - 1]}`
+      lines.push(`### ${which} — ${s.label}`)
+      lines.push(`${s.summary} Aim for ${s.targetWords.min}–${s.targetWords.max} words.`)
+      lines.push(...s.directives.map((d) => `- ${d}`))
+    }
+
+    lines.push('')
+    lines.push(
+      'Write each variant in the style assigned to its number, and return them in that ' +
+        'order. These are being compared against each other, so a batch that converges on ' +
+        'one voice measures nothing. Two variants sharing a style still differ in angle — ' +
+        'same voice, different way in.'
+    )
+  }
+
+  lines.push('')
+  lines.push(
+    'Style never overrides the hard constraints. A style asking for more room still ' +
+      'obeys the word ceiling, the banned list, and the one-ask rule.'
+  )
+
+  return lines.join('\n')
+}
+
 function offeringsSection(profile: BrandProfile): string {
   const { offerings, bannedOfferingTerms } = profile.offerConstraints
   const proven = offerings.filter((o) => o.status === 'proven')
@@ -189,7 +263,8 @@ export function buildGenerationSystemPrompt(): string {
 }
 
 export function buildGenerationPrompt(target: GenerationTarget): string {
-  const { profile, campaign, segment, painPoint, proofAsset, variantCount, guidance } = target
+  const { profile, campaign, segment, painPoint, proofAsset, variantCount, styles, guidance } =
+    target
   const { voiceRules, hardRules, icp } = profile
   const segmentSlug = segment?.slug ?? null
 
@@ -331,20 +406,22 @@ export function buildGenerationPrompt(target: GenerationTarget): string {
 
   sections.push(
     [
-      '## Shape',
-      '```',
-      'Line 1 — an observation about THEIR operation, specific enough that it could not be sent',
-      'to anyone else in the segment.',
+      '## What the email has to do',
+      '- Open on something true about their operation.',
+      '- Name what that pattern costs an operation like theirs.',
+      proofAsset
+        ? '- Name the proof asset once, and say in one sentence what it actually is.'
+        : '- Earn the attention on the observation alone. There is no proof asset to name.',
+      '- Ask for one thing.',
       '',
-      'Lines 2–3 — the pattern. What this costs an operation like theirs, stated plainly.',
-      '',
-      'Lines 4–5 — the proof. One asset, named, described in one sentence: what it is and who',
-      'it was built for.',
-      '',
-      'Line 6 — the ask. Low friction.',
-      '```',
+      'That is what it has to accomplish, not the order it has to do it in and not a line',
+      'count. A fixed skeleton filled in section by section reads as a fixed skeleton filled',
+      'in section by section, which is the single clearest tell that nobody typed it. Shape',
+      'is the assigned style’s business, not this list’s.',
     ].join('\n')
   )
+
+  sections.push(['## Style', styleSection(styles)].join('\n'))
 
   if (guidance) {
     sections.push(['## Additional steer for this run', guidance].join('\n'))
@@ -369,6 +446,10 @@ export function buildGenerationPrompt(target: GenerationTarget): string {
       '',
       'Set `icpFear` to the key of the fear the variant aims at, or null if none of them fit. Do not',
       'force a match.',
+      '',
+      `Set \`styleKey\` to the style assigned to that variant's number: ${styles
+        .map((s, i) => `variant ${i + 1} = ${s.key}`)
+        .join(', ')}.`,
       '',
       'Write the body as plain text with blank lines between paragraphs. No markdown, no bullets,',
       'no bold.',

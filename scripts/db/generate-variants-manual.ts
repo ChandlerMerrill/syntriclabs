@@ -18,6 +18,10 @@
  *
  *   tsx --env-file=.env.local scripts/db/generate-variants-manual.ts insert \
  *     --campaign <id> --pain-point <id> --count 3 --drafts drafts.json
+ *
+ * `--style <key>` forces the whole batch into one style rather than taking the
+ * default spread — for running a deliberate comparison instead of the standing
+ * one. Keys are in `generate/style.ts`.
  */
 import { readFileSync } from 'node:fs'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -32,6 +36,8 @@ import {
   GENERATION_PROMPT_VERSION,
   type GenerationTarget,
 } from '@/lib/marketing/generate/prompt'
+import { assignStyles, getStyle, measureStyle } from '@/lib/marketing/generate/style'
+import { countWords } from '@/lib/marketing/review/checks'
 import type { MarketingVariant } from '@/lib/marketing/types'
 
 interface Draft {
@@ -40,6 +46,8 @@ interface Draft {
   body: string
   icpFear: string | null
   angle: string
+  /** Echoed back from the prompt's per-variant assignment. Optional. */
+  styleKey?: string | null
 }
 
 function arg(name: string): string | null {
@@ -80,6 +88,13 @@ async function buildTarget() {
     ? null
     : selectProofAsset(profile, segment?.slug)
 
+  // `--style <key>` forces the whole batch into one style instead of taking the
+  // default spread. Same validation as the API path, so a typo here fails rather
+  // than quietly producing the default spread under a `styleForced` label.
+  const styleKey = arg('style')
+  if (styleKey && !getStyle(styleKey)) throw new Error(`Unknown style "${styleKey}"`)
+  const styles = assignStyles(variantCount, { styleKey })
+
   const target: GenerationTarget = {
     profile,
     campaign: { name: campaign.name, goal: campaign.goal, channel: campaign.channel },
@@ -87,10 +102,23 @@ async function buildTarget() {
     painPoint,
     proofAsset,
     variantCount,
+    styles,
     guidance,
   }
 
-  return { supabase, campaign, profile, segment, painPoint, proofAsset, variantCount, guidance, target }
+  return {
+    supabase,
+    campaign,
+    profile,
+    segment,
+    painPoint,
+    proofAsset,
+    variantCount,
+    styles,
+    styleKey,
+    guidance,
+    target,
+  }
 }
 
 async function printPrompt() {
@@ -103,7 +131,19 @@ async function printPrompt() {
 
 async function insertDrafts() {
   const ctx = await buildTarget()
-  const { supabase, campaign, profile, segment, painPoint, proofAsset, variantCount, guidance, target } = ctx
+  const {
+    supabase,
+    campaign,
+    profile,
+    segment,
+    painPoint,
+    proofAsset,
+    variantCount,
+    styles,
+    styleKey,
+    guidance,
+    target,
+  } = ctx
 
   const draftsPath = arg('drafts')
   if (!draftsPath) throw new Error('--drafts <file.json> is required')
@@ -123,6 +163,8 @@ async function insertDrafts() {
     segmentSlug: segment?.slug ?? null,
     painPointId: painPoint.id,
     proofAssetKey: proofAsset?.key ?? null,
+    styleKeys: styles.map((s) => s.key),
+    styleForced: styleKey ?? null,
     guidance: guidance ?? null,
     transport: 'manual' as const,
     transportNote:
@@ -133,37 +175,61 @@ async function insertDrafts() {
   const { data: inserted, error } = await supabase
     .from('marketing_variants')
     .insert(
-      drafts.map((d) => ({
-        campaign_id: campaign.id,
-        pain_point_id: painPoint.id,
-        parent_variant_id: null,
-        label: d.label,
-        subject: d.subject,
-        body: d.body,
-        icp_fear: d.icpFear,
-        generation_prompt: prompt,
-        generation_config: { ...sharedConfig, angle: d.angle, system },
-        model,
-        status: 'draft',
-      }))
+      drafts.map((d, i) => {
+        const assigned = styles[i] ?? styles[0]
+        const reported = d.styleKey ?? null
+
+        return {
+          campaign_id: campaign.id,
+          pain_point_id: painPoint.id,
+          parent_variant_id: null,
+          label: d.label,
+          subject: d.subject,
+          body: d.body,
+          icp_fear: d.icpFear,
+          generation_prompt: prompt,
+          generation_config: {
+            ...sharedConfig,
+            angle: d.angle,
+            system,
+            style: assigned.key,
+            styleReported: reported,
+            styleMatched: reported === assigned.key,
+            styleMetrics: measureStyle(d.body, assigned, countWords(d.body)),
+          },
+          model,
+          status: 'draft',
+        }
+      })
     )
     .select('*')
   if (error) throw new Error(`Failed to store variants: ${error.message}`)
 
   const rows = (inserted ?? []) as MarketingVariant[]
 
-  for (const row of rows) {
+  for (const [i, row] of rows.entries()) {
     const gate = await gateVariant(
       supabase,
       row.id,
       { subject: row.subject, body: row.body },
       profile
     )
+    const assigned = styles[i] ?? styles[0]
+    const storedBody = row.body ?? ''
+    const m = measureStyle(storedBody, assigned, countWords(storedBody))
+
     console.log(`\n── ${row.label} — ${gate.status} ──`)
     console.log(`   ${row.subject}`)
     for (const r of gate.results) {
       console.log(`   ${r.passed ? '✓' : '✗'} ${r.rule}${r.detail ? ` — ${r.detail}` : ''}`)
     }
+    // Reported, never enforced. Landing outside the band is a fact about the
+    // draft worth seeing while iterating, not a reason to reject it.
+    console.log(
+      `   · style ${assigned.key} — ${m.words}w ` +
+        `(target ${assigned.targetWords.min}–${assigned.targetWords.max}${m.inBand ? ', in band' : ', OUT of band'})` +
+        `, ${m.emDashes} em dash${m.emDashes === 1 ? '' : 'es'}`
+    )
   }
 
   const passed = rows.length

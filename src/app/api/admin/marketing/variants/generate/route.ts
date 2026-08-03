@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     painPointId?: string | null
     parentVariantId?: string | null
     variantCount?: number
+    styleKey?: string | null
     guidance?: string | null
   }
   try {
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
       painPointId: body.painPointId,
       parentVariantId: body.parentVariantId ?? null,
       variantCount: body.variantCount,
+      styleKey: body.styleKey ?? null,
       guidance: body.guidance ?? null,
     })
 
