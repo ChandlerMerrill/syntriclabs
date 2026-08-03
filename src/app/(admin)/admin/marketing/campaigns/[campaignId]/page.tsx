@@ -8,6 +8,7 @@ import {
   listProspects,
   listSends,
   listVariantChecks,
+  listVariantCritiques,
   listVariants,
 } from "@/lib/marketing/services"
 import {
@@ -71,11 +72,10 @@ export default async function CampaignWorkspacePage({
     tab === "variants"
       ? await (async () => {
           const variants = await listVariants(supabase, { campaignId: campaign.id }).catch(() => [])
-          const [checks, painPoints] = await Promise.all([
-            listVariantChecks(
-              supabase,
-              variants.map((v) => v.id)
-            ).catch(() => []),
+          const variantIds = variants.map((v) => v.id)
+          const [checks, critiques, painPoints] = await Promise.all([
+            listVariantChecks(supabase, variantIds).catch(() => []),
+            listVariantCritiques(supabase, variantIds).catch(() => []),
             segmentId
               ? listPainPoints(supabase, { segmentId, limit: 25 }).catch(() => [])
               : listPainPoints(supabase, { limit: 25 }).catch(() => []),
@@ -83,6 +83,7 @@ export default async function CampaignWorkspacePage({
           return {
             variants,
             checks,
+            critiques,
             painPoints: painPoints.map((p) => ({
               id: p.id,
               statement: p.statement,

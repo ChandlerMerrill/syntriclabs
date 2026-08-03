@@ -12,13 +12,18 @@ import VariantGenerator, {
   type GeneratorPainPoint,
 } from "@/components/admin/marketing/VariantGenerator"
 import { PenLine, Megaphone, Sparkles } from "lucide-react"
-import type { MarketingVariant, MarketingVariantCheck } from "@/lib/marketing/types"
+import type {
+  MarketingVariant,
+  MarketingVariantCheck,
+  MarketingVariantCritique,
+} from "@/lib/marketing/types"
 
 interface Props {
   campaigns: { id: string; name: string; channel: string; segmentId: string | null }[]
   activeCampaign: string | null
   initialVariants: MarketingVariant[]
   initialChecks: MarketingVariantCheck[]
+  initialCritiques: MarketingVariantCritique[]
   painPoints: GeneratorPainPoint[]
   hasProfile: boolean
 }
@@ -28,6 +33,7 @@ export default function VariantsView({
   activeCampaign,
   initialVariants,
   initialChecks,
+  initialCritiques,
   painPoints,
   hasProfile,
 }: Props) {
@@ -41,10 +47,18 @@ export default function VariantsView({
   const { data, mutate } = useSWR<{
     variants: MarketingVariant[]
     checks: MarketingVariantCheck[]
-  }>(key, { fallbackData: { variants: initialVariants, checks: initialChecks } })
+    critiques: MarketingVariantCritique[]
+  }>(key, {
+    fallbackData: {
+      variants: initialVariants,
+      checks: initialChecks,
+      critiques: initialCritiques,
+    },
+  })
 
   const variants = useMemo(() => data?.variants ?? [], [data?.variants])
   const checks = useMemo(() => data?.checks ?? [], [data?.checks])
+  const critiques = useMemo(() => data?.critiques ?? [], [data?.critiques])
 
   if (!hasProfile) {
     return (
@@ -116,7 +130,15 @@ export default function VariantsView({
         />
       )}
 
-      <VariantList variants={variants} checks={checks} />
+      <VariantList
+        variants={variants}
+        checks={checks}
+        critiques={critiques}
+        onCritiqued={() => {
+          mutate()
+          router.refresh()
+        }}
+      />
     </div>
   )
 }

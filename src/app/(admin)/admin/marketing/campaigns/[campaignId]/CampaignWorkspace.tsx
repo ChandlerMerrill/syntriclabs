@@ -37,6 +37,7 @@ import type {
   MarketingSegment,
   MarketingVariant,
   MarketingVariantCheck,
+  MarketingVariantCritique,
 } from "@/lib/marketing/types"
 import type { SendWithContext } from "@/lib/marketing/services"
 import type { CampaignStep } from "@/lib/marketing/send/sequence"
@@ -59,6 +60,7 @@ interface Props {
   variantsData: {
     variants: MarketingVariant[]
     checks: MarketingVariantCheck[]
+    critiques: MarketingVariantCritique[]
     painPoints: GeneratorPainPoint[]
   } | null
   outboxData: {
@@ -212,6 +214,7 @@ function VariantsTab({
   initial: {
     variants: MarketingVariant[]
     checks: MarketingVariantCheck[]
+    critiques: MarketingVariantCritique[]
     painPoints: GeneratorPainPoint[]
   }
 }) {
@@ -221,12 +224,18 @@ function VariantsTab({
   const { data, mutate } = useSWR<{
     variants: MarketingVariant[]
     checks: MarketingVariantCheck[]
+    critiques: MarketingVariantCritique[]
   }>(`/api/admin/marketing/variants?campaignId=${campaignId}`, {
-    fallbackData: { variants: initial.variants, checks: initial.checks },
+    fallbackData: {
+      variants: initial.variants,
+      checks: initial.checks,
+      critiques: initial.critiques,
+    },
   })
 
   const variants = useMemo(() => data?.variants ?? [], [data?.variants])
   const checks = useMemo(() => data?.checks ?? [], [data?.checks])
+  const critiques = useMemo(() => data?.critiques ?? [], [data?.critiques])
 
   return (
     <div className="space-y-6">
@@ -257,6 +266,11 @@ function VariantsTab({
       <VariantList
         variants={variants}
         checks={checks}
+        critiques={critiques}
+        onCritiqued={() => {
+          mutate()
+          router.refresh()
+        }}
         emptyDescription="Generate against a pain point to give this campaign something to send."
       />
     </div>

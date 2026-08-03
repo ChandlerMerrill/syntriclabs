@@ -109,8 +109,8 @@ export async function assertVariantSendable(
     return {
       ok: false,
       reason:
-        `Not critiqued yet: ${missing.join(', ')}. Run the critics from the Variants tab, ` +
-        `or by hand with scripts/db/critique-variant-manual.ts.`,
+        `Not critiqued yet: ${missing.join(', ')}. Use "Run critics" on the variant, or ` +
+        `scripts/db/critique-variant-manual.ts to answer the prompt by hand.`,
     }
   }
 

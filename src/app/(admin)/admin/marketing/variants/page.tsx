@@ -4,6 +4,7 @@ import {
   listCampaigns,
   listPainPoints,
   listVariantChecks,
+  listVariantCritiques,
   listVariants,
 } from "@/lib/marketing/services"
 import VariantsView from "./VariantsView"
@@ -37,10 +38,11 @@ export default async function MarketingVariantsPage({
       : Promise.resolve([]),
   ])
 
-  const checks = await listVariantChecks(
-    supabase,
-    variants.map((v) => v.id)
-  ).catch(() => [])
+  const variantIds = variants.map((v) => v.id)
+  const [checks, critiques] = await Promise.all([
+    listVariantChecks(supabase, variantIds).catch(() => []),
+    listVariantCritiques(supabase, variantIds).catch(() => []),
+  ])
 
   return (
     <VariantsView
@@ -53,6 +55,7 @@ export default async function MarketingVariantsPage({
       activeCampaign={activeCampaign ?? null}
       initialVariants={variants}
       initialChecks={checks}
+      initialCritiques={critiques}
       painPoints={painPoints.map((p) => ({
         id: p.id,
         statement: p.statement,

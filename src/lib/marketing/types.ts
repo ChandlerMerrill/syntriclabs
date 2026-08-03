@@ -28,7 +28,33 @@ export type CheckRule =
   | 'one_ask'
   | 'link_verified'
   | 'claim_traced'
+  /** The two model critics, added in 028. Both must have ruled before a queue. */
+  | 'qa_review'
+  | 'devils_advocate'
   | 'human'
+
+/** Which critic produced a critique. Mirrors the check rules of the same name. */
+export type CriticRule = Extract<CheckRule, 'qa_review' | 'devils_advocate'>
+
+export interface MarketingCritiqueFinding {
+  severity: 'blocking' | 'concern' | 'note'
+  /** A verbatim span of the copy. Verified present before it may block. */
+  quote: string
+  problem: string
+}
+
+export interface MarketingVariantCritique {
+  id: string
+  variant_id: string
+  critic: CriticRule
+  verdict: 'pass' | 'fail'
+  summary: string
+  findings: MarketingCritiqueFinding[]
+  critique_prompt: string
+  model: string | null
+  transport: 'model' | 'manual' | 'human'
+  created_at: string
+}
 
 export type SendStatus =
   | 'pending_approval'

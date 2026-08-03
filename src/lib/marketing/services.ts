@@ -9,6 +9,7 @@ import type {
   MarketingSource,
   MarketingVariant,
   MarketingVariantCheck,
+  MarketingVariantCritique,
   VariantPerformance,
 } from './types'
 
@@ -289,6 +290,28 @@ export async function listVariantChecks(
     .in('variant_id', variantIds)
   if (error) throw new Error(`Failed to list variant checks: ${error.message}`)
   return (data ?? []) as MarketingVariantCheck[]
+}
+
+/**
+ * Critiques for a set of variants.
+ *
+ * Separate from `listVariantChecks` rather than joined onto it: a check row is a
+ * pass/fail the gate reads, a critique is the argument behind one. The gate does
+ * not need the argument and the reviewer does, so they are loaded by whoever
+ * needs them.
+ */
+export async function listVariantCritiques(
+  supabase: SupabaseClient,
+  variantIds: string[]
+): Promise<MarketingVariantCritique[]> {
+  if (variantIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('marketing_variant_critiques')
+    .select('*')
+    .in('variant_id', variantIds)
+    .order('critic')
+  if (error) throw new Error(`Failed to list variant critiques: ${error.message}`)
+  return (data ?? []) as MarketingVariantCritique[]
 }
 
 // ── Prospects ─────────────────────────────────────────────────────────────
