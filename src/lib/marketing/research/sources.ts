@@ -26,26 +26,38 @@ export const SOURCE_STRATEGIES: SourceStrategy[] = [
   {
     kind: 'forum',
     signalRank: 1,
-    label: 'Operator forums and subreddits',
+    label: 'Operator forums',
     // People complaining to each other, not to a vendor.
+    //
+    // No `includeDomains`. It used to pin this to reddit.com, which Firecrawl
+    // refuses outright — "we do not support this site" — so the highest-signal
+    // tier in the whole design returned nothing at all, every run, while the
+    // three lower tiers filled the table and set the agenda. Unpinned, the same
+    // queries return exactly what this tier was for: rokslide, huntingbc,
+    // archerytalk, nodakoutdoors, washingtonflyfishing. Trade forums outrank a
+    // subreddit for this audience anyway.
     queries: [
       '{segment} owners complaining about admin work forum',
-      '{segment} operators reddit "biggest headache"',
+      '{segment} operators forum thread "biggest headache"',
       '{segment} business owners "waste of time" paperwork discussion',
     ],
-    includeDomains: ['reddit.com'],
   },
   {
     kind: 'review',
     signalRank: 2,
-    label: 'Two- and three-star software reviews',
+    label: 'Software complaints and comparisons',
     // Where the specific failure gets named. Five-star reviews say nothing.
+    //
+    // Also unpinned. Restricting to the review aggregators forced the search to
+    // return *something* from those hosts, and what came back was reviews of
+    // unrelated products — a testing tool, a WordPress plugin — with 150-odd
+    // characters of body. Off-domain and too thin to extract from, which is the
+    // worst combination: it costs a model call and teaches nothing.
     queries: [
-      '{segment} software 2 star review "does not"',
-      '{segment} management software 3 star review problems',
+      '{segment} software review "wish it" OR "doesn\'t" complaint',
+      '{segment} management software problems switching away',
       'best {segment} software alternatives complaints',
     ],
-    includeDomains: ['g2.com', 'capterra.com', 'trustpilot.com', 'getapp.com'],
   },
   {
     kind: 'job_posting',
@@ -127,6 +139,40 @@ function expandQuery(template: string, segment: string): string {
 const MAX_CONTENT_CHARS = 20000
 
 /**
+ * Hosts Firecrawl declines to serve.
+ *
+ * Every one of these returns the same "we do not support this site" error, so
+ * scraping them costs a request and writes a source row whose only content is an
+ * apology. Skipped before the fetch rather than filtered after: the rows were
+ * indistinguishable from a genuinely dead link, which is how reddit being
+ * unsupported went unnoticed while it silently emptied the rank-1 tier.
+ *
+ * Matched on the registrable suffix, so `old.reddit.com` and `uk.trustpilot.com`
+ * are covered by one entry.
+ */
+const UNSUPPORTED_HOSTS = [
+  'reddit.com',
+  'facebook.com',
+  'instagram.com',
+  'threads.net',
+  'x.com',
+  'twitter.com',
+  'linkedin.com',
+  'tiktok.com',
+  'quora.com',
+]
+
+export function isUnsupportedHost(url: string): boolean {
+  let host: string
+  try {
+    host = new URL(url).hostname.toLowerCase().replace(/^www\./, '')
+  } catch {
+    return false
+  }
+  return UNSUPPORTED_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))
+}
+
+/**
  * Runs one strategy against one segment.
  *
  * Failures are captured on the source row rather than thrown. A dead URL is a
@@ -180,6 +226,11 @@ async function runStrategy(
     for (const { url, title } of urls) {
       if (seen.has(url)) continue
       seen.add(url)
+
+      // Dropped entirely rather than recorded as a failed fetch. A source row
+      // that only ever says "unsupported" is noise in a table whose whole job is
+      // to show what the run actually read.
+      if (isUnsupportedHost(url)) continue
 
       try {
         const doc = await fc.scrape(url, { formats: ['markdown'] })
