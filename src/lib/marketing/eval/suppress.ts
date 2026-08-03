@@ -30,3 +30,46 @@ export async function suppressProspect(
   if (error) throw new Error(`Failed to suppress prospect: ${error.message}`)
   return (data ?? []).length > 0
 }
+
+/**
+ * Does this reply plainly ask to be left alone?
+ *
+ * A deterministic floor beneath the model scorer, not a replacement for it. The
+ * scorer reads intent and catches the polite, indirect refusals this cannot;
+ * this catches the unambiguous ones without a model call, and it runs whether or
+ * not scoring does.
+ *
+ * It exists because honouring an unsubscribe was reachable only through
+ * `scoreAndStore` — so a failed model call, a misclassification, or scoring
+ * switched off for cost all had the same consequence: the request understood by
+ * nobody and the person mailed again once the cooldown lapsed. Recognising the
+ * request is an obligation; spending a model call to recognise it is a choice.
+ *
+ * Deliberately narrow. False positives cost one prospect who could have been
+ * kept and can be un-suppressed by hand; false negatives mail someone who asked
+ * twice. Phrases are matched against the reply's own text only — quoted original
+ * message included, which is the one real source of noise here, and the reason
+ * every phrase below is an imperative a sender would not have written to
+ * themselves.
+ */
+const UNSUBSCRIBE_PHRASES = [
+  'unsubscribe',
+  'take me off',
+  'remove me from',
+  'take my name off',
+  'stop emailing me',
+  'stop contacting me',
+  'do not contact me',
+  "don't contact me",
+  'do not email me',
+  "don't email me",
+  'no longer wish to receive',
+  'opt me out',
+  'leave me alone',
+]
+
+export function looksLikeUnsubscribeRequest(replyText: string): boolean {
+  if (!replyText) return false
+  const text = replyText.toLowerCase()
+  return UNSUBSCRIBE_PHRASES.some((phrase) => text.includes(phrase))
+}

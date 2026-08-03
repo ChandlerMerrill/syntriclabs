@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { dispatchApprovedSends, stuckSends } from '@/lib/marketing/send/dispatch'
 import { queueFollowUps } from '@/lib/marketing/send/sequence'
+import { autopilotBlock } from '@/lib/marketing/autopilot'
 
 export const maxDuration = 300
 
@@ -18,12 +19,20 @@ export const maxDuration = 300
  * everything else — a sequence with no scheduled scan is a sequence that never
  * fires, and a scan that could approve its own output would be the thing this
  * whole design refuses.
+ *
+ * Gated on `dispatch`, which is on by default. It costs no model tokens, but it
+ * is the only job that puts a message in a stranger's inbox, so it gets a pause
+ * that does not require editing vercel.json and redeploying. Approved sends wait
+ * where they are; nothing is cancelled.
  */
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const blocked = autopilotBlock('dispatch')
+  if (blocked) return NextResponse.json({ ok: true, skipped: blocked })
 
   try {
     const supabase = await createServiceClient()

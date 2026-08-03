@@ -42,10 +42,31 @@ function secret(): Buffer {
   return Buffer.from(hex, 'hex')
 }
 
+/**
+ * The public origin the unsubscribe link points at.
+ *
+ * `MARKETING_PUBLIC_URL` first, `NEXT_PUBLIC_SITE_URL` as the fallback.
+ *
+ * The extra variable exists because this is the one consumer whose value gets
+ * *frozen*. `renderSend` bakes the URL into `rendered_html` at queue time, so a
+ * send queued from a laptop carries `http://localhost:3000/u/...` in its visible
+ * footer for the rest of its life — production dispatch ships those exact bytes,
+ * and the List-Unsubscribe header being computed later and correctly is no help
+ * to a human who clicks the link.
+ *
+ * Repointing `NEXT_PUBLIC_SITE_URL` at production instead would fix this and
+ * break four unrelated things, two of them dangerously: `lib/ai/tools.ts` and
+ * `managed-agent/handlers/documents.ts` *fetch* that origin, so a local agent run
+ * would POST to production's `/api/documents/send` and really send a document.
+ * A separate variable keeps the blast radius at one link.
+ */
 function siteUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+  const raw =
+    process.env.MARKETING_PUBLIC_URL?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim()
   if (!raw) {
-    throw new Error('NEXT_PUBLIC_SITE_URL must be set to build unsubscribe links')
+    throw new Error(
+      'MARKETING_PUBLIC_URL or NEXT_PUBLIC_SITE_URL must be set to build unsubscribe links'
+    )
   }
   return raw.replace(/\/+$/, '')
 }
