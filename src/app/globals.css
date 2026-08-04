@@ -155,6 +155,18 @@ body {
   animation-delay: 0.3s;
 }
 
+/* Widget tool-status shimmer — the "Looking that up…" row while a lookup runs.
+   Reads as in-progress without adding a second spinner next to the one already
+   there. */
+@keyframes widget-status-shimmer {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.widget-status-shimmer {
+  animation: widget-status-shimmer 1.6s ease-in-out infinite;
+}
+
 /* Widget bubble idle pulse */
 @keyframes widget-bubble-pulse {
   0%, 100% {
@@ -317,6 +329,10 @@ body {
   }
 
   .widget-streaming {
+    animation: none;
+  }
+
+  .widget-status-shimmer {
     animation: none;
   }
 

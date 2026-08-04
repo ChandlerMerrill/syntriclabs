@@ -1,15 +1,55 @@
 "use client"
 
 import type { UIMessage } from "ai"
-import { CheckCircle, Calendar } from "lucide-react"
+import { motion } from "framer-motion"
+import { Calendar, Check, CheckCircle, Loader2 } from "lucide-react"
 import SyntricMascot from "./SyntricMascot"
+import RequestForm from "./RequestForm"
 
 interface WidgetMessageProps {
   message: UIMessage
   isStreaming: boolean
+  sessionId: string
+  conversationId: string | null
+  pathname: string
 }
 
-export default function WidgetMessage({ message, isStreaming }: WidgetMessageProps) {
+/** Avatar column width — 28px mascot + 8px gap. Cards that sit beside a bubble
+ *  rather than under one use `ml-9` to line up with the bubble's left edge. */
+function Avatar() {
+  return (
+    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-800 shadow-sm shadow-black/20 ring-1 ring-white/10">
+      <SyntricMascot size={28} />
+    </div>
+  )
+}
+
+/**
+ * Every assistant element enters the same way — a short rise and fade.
+ *
+ * Streaming text already animates by arriving character by character; the
+ * things that don't stream (tool cards, confirmations, the request form) would
+ * otherwise pop in fully formed and read as a page reload inside the panel.
+ */
+function Enter({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+export default function WidgetMessage({
+  message,
+  isStreaming,
+  sessionId,
+  conversationId,
+  pathname,
+}: WidgetMessageProps) {
   const isUser = message.role === "user"
 
   if (isUser) {
@@ -19,11 +59,16 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
       .join("") ?? ""
     if (!text) return null
     return (
-      <div className="mb-3 flex justify-end">
-        <div className="max-w-[85%] rounded-2xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] px-3.5 py-2 text-sm leading-relaxed text-white shadow-sm shadow-indigo-500/15">
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        className="mb-3 flex justify-end"
+      >
+        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-gradient-to-br from-[#6366F1] to-[#4F46E5] px-3.5 py-2 text-sm leading-relaxed text-white shadow-sm shadow-indigo-500/20">
           {text}
         </div>
-      </div>
+      </motion.div>
     )
   }
 
@@ -31,6 +76,41 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
   const elements: React.ReactNode[] = []
   let hasContent = false
   let isFirstText = true
+
+  // The knowledge-base lookup runs on almost every factual answer and used to
+  // be invisible: three dots for as long as it took, then text. Showing the
+  // step is the difference between a widget that seems slow and one that seems
+  // to be doing something — and it's honest about where the answer came from.
+  const searchParts = (message.parts ?? []).filter(
+    (p) => p.type === "tool-searchKnowledgebase"
+  )
+  if (searchParts.length > 0) {
+    const settled = searchParts.every(
+      (p) => "state" in p && (p as { state: string }).state === "output-available"
+    )
+    hasContent = true
+    elements.push(
+      <Enter key="kb-status">
+        <div className="mb-2 flex items-center gap-2 pl-9">
+          {settled ? (
+            <>
+              <Check className="h-3 w-3 shrink-0 text-[#6366F1]" />
+              <span className="text-[11px] font-medium text-slate-400">
+                Checked our notes
+              </span>
+            </>
+          ) : (
+            <>
+              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-[#6366F1]" />
+              <span className="widget-status-shimmer text-[11px] font-medium text-slate-500">
+                Looking that up…
+              </span>
+            </>
+          )}
+        </div>
+      </Enter>
+    )
+  }
 
   for (let i = 0; i < (message.parts?.length ?? 0); i++) {
     const part = message.parts![i]
@@ -42,17 +122,9 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
       const showAvatar = isFirstText
       isFirstText = false
       elements.push(
-        <div key={`text-${i}`} className="mb-3 flex items-end gap-2">
-          {showAvatar ? (
-            <div className="shrink-0 self-end mb-0.5">
-              <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-800 ring-1 ring-white/10 shadow-sm shadow-black/20">
-                <SyntricMascot size={44} />
-              </div>
-            </div>
-          ) : (
-            <div className="w-11 shrink-0" />
-          )}
-          <div className="max-w-[80%] rounded-2xl bg-white px-3.5 py-2 text-sm leading-relaxed text-slate-700 shadow-sm shadow-black/[0.03]">
+        <div key={`text-${i}`} className="mb-3 flex items-start gap-2">
+          {showAvatar ? <Avatar /> : <div className="w-7 shrink-0" />}
+          <div className="max-w-[80%] rounded-2xl rounded-bl-md bg-white px-3.5 py-2 text-sm leading-relaxed text-slate-700 shadow-sm shadow-black/[0.04] ring-1 ring-slate-900/[0.03]">
             <div className="whitespace-pre-wrap break-words [&>p]:mb-2 [&>p:last-child]:mb-0">
               {formatWidgetContent(text)}
             </div>
@@ -62,8 +134,29 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
       continue
     }
 
-    // Tool: searchKnowledgebase — hidden
+    // Status for the knowledge-base lookup is rendered above, once per message.
     if (part.type === "tool-searchKnowledgebase") continue
+
+    // Tool: submitRequest — the visitor fills this in themselves
+    if (
+      part.type === "tool-submitRequest" &&
+      "state" in part &&
+      (part as { state: string }).state === "output-available" &&
+      "output" in part
+    ) {
+      const output = (part as { output: unknown }).output as { topic: string | null }
+      hasContent = true
+      elements.push(
+        <RequestForm
+          key={`tool-${i}`}
+          sessionId={sessionId}
+          conversationId={conversationId}
+          topic={output?.topic ?? null}
+          pathname={pathname}
+        />
+      )
+      continue
+    }
 
     // Tool: bookConsultation
     if (
@@ -86,7 +179,7 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
     ) {
       hasContent = true
       elements.push(
-        <ConfirmationCard key={`tool-${i}`} message="Your info has been shared with our team. We'll be in touch!" />
+        <ConfirmationCard key={`tool-${i}`} message="Your details are with our team — we'll be in touch." />
       )
       continue
     }
@@ -99,12 +192,12 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
     ) {
       hasContent = true
       elements.push(
-        <ConfirmationCard key={`tool-${i}`} message="A team member will reach out to you shortly." />
+        <ConfirmationCard key={`tool-${i}`} message="Chandler will reach out to you shortly." />
       )
       continue
     }
 
-    // Any tool still loading
+    // Any other tool still loading
     if (
       part.type.startsWith("tool-") &&
       "state" in part &&
@@ -112,8 +205,8 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
     ) {
       hasContent = true
       elements.push(
-        <div key={`loading-${i}`} className="mb-3 flex items-end gap-2">
-          <div className="w-5 shrink-0" />
+        <div key={`loading-${i}`} className="mb-3 flex items-start gap-2">
+          <div className="w-7 shrink-0" />
           <ThinkingDots />
         </div>
       )
@@ -124,12 +217,8 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
   // Show thinking dots if assistant message has no content yet
   if (!hasContent && isStreaming) {
     return (
-      <div className="mb-3 flex items-end gap-2">
-        <div className="shrink-0 self-end mb-0.5">
-          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-800 ring-1 ring-white/10 shadow-sm shadow-black/20">
-            <SyntricMascot size={44} />
-          </div>
-        </div>
+      <div className="mb-3 flex items-start gap-2">
+        <Avatar />
         <ThinkingDots />
       </div>
     )
@@ -141,7 +230,7 @@ export default function WidgetMessage({ message, isStreaming }: WidgetMessagePro
 
 function ThinkingDots() {
   return (
-    <div className="rounded-2xl bg-white px-4 py-3">
+    <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-sm shadow-black/[0.04] ring-1 ring-slate-900/[0.03]">
       <div className="flex items-center gap-1">
         <span className="widget-thinking-dot h-1.5 w-1.5 rounded-full bg-indigo-400" />
         <span className="widget-thinking-dot h-1.5 w-1.5 rounded-full bg-indigo-400" />
@@ -153,38 +242,40 @@ function ThinkingDots() {
 
 function BookingCard({ url, message }: { url: string; message: string }) {
   return (
-    <div className="mb-3 flex justify-start">
-      <div className="ml-7 max-w-[80%] rounded-xl border border-indigo-500/20 bg-white p-3 shadow-sm shadow-black/[0.03]">
-        <div className="flex items-start gap-2.5">
-          <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-[#6366F1]" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-800">Book a Consultation</p>
-            <p className="mt-0.5 text-xs text-slate-500">{message}</p>
+    <Enter>
+      <div className="mb-3 ml-9 max-w-[85%] overflow-hidden rounded-2xl border border-indigo-500/20 bg-white shadow-sm shadow-black/[0.04]">
+        <div className="flex items-start gap-2.5 p-3.5">
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6366F1]/10">
+            <Calendar className="h-3 w-3 text-[#6366F1]" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-slate-800">Grab a time</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{message}</p>
           </div>
         </div>
         <a
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2.5 flex items-center justify-center rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#4F46E5]"
+          className="mx-3.5 mb-3.5 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] px-3 py-2 text-[13px] font-medium text-white shadow-sm shadow-indigo-500/25 transition-all duration-200 hover:shadow-md hover:shadow-indigo-500/35 hover:brightness-110 active:scale-[0.985]"
         >
-          Open Scheduling Page
+          Open the calendar
         </a>
       </div>
-    </div>
+    </Enter>
   )
 }
 
 function ConfirmationCard({ message }: { message: string }) {
   return (
-    <div className="mb-3 flex justify-start">
-      <div className="ml-7 max-w-[80%] rounded-xl border border-emerald-500/20 bg-white p-3 shadow-sm shadow-black/[0.03]">
+    <Enter>
+      <div className="mb-3 ml-9 max-w-[85%] rounded-2xl border border-emerald-500/20 bg-white p-3.5 shadow-sm shadow-black/[0.04]">
         <div className="flex items-start gap-2.5">
           <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-          <p className="text-sm text-slate-700">{message}</p>
+          <p className="text-sm leading-relaxed text-slate-700">{message}</p>
         </div>
       </div>
-    </div>
+    </Enter>
   )
 }
 

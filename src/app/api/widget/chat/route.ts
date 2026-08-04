@@ -128,7 +128,10 @@ export async function POST(req: Request) {
     system: systemPrompt,
     messages: modelMessages,
     tools: createWidgetTools(sessionId, conversationId),
-    stopWhen: stepCountIs(3),
+    // Room for a knowledge-base lookup, a tool that puts a card on screen, and
+    // the sentence that introduces it. At 3 the third step was being spent on
+    // the tool call, so the reply arrived as a bare form with no lead-in.
+    stopWhen: stepCountIs(4),
     maxOutputTokens: 1000,
     onFinish: async ({ text }) => {
       // Store assistant response

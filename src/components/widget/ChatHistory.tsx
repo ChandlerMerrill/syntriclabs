@@ -45,6 +45,7 @@ export default function ChatHistory({
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
+    if (!sessionId) return
     setError(false)
     setConversations(null)
     fetch(`/api/widget/conversations?sessionId=${sessionId}`)
