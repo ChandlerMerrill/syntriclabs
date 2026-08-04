@@ -48,38 +48,45 @@ export interface RankedPainPoint {
  */
 const SIGNAL_WEIGHT: Record<number, number> = { 1: 1.0, 2: 0.8, 3: 0.6, 4: 0.3 }
 
-export async function clusterAndRank(
-  candidates: PainPointCandidate[],
-  opts?: { minFrequency?: number }
-): Promise<RankedPainPoint[]> {
-  if (candidates.length === 0) return []
+export type CandidateCluster = z.infer<typeof clusterSchema>['clusters'][number]
 
+export const CLUSTER_SYSTEM_PROMPT =
+  'You merge duplicate findings from a research pass. Two findings belong in the same ' +
+  'cluster when an operator would recognise them as the same complaint, even when the ' +
+  'wording is entirely different. Do not merge distinct complaints just because they share ' +
+  'a topic — "reconciling receipts weeks later" and "no way to see trip margin" are ' +
+  'different problems about the same thing.'
+
+export function buildClusterPrompt(candidates: PainPointCandidate[]): string {
   const listing = candidates
     .map((c, i) => `${i}. [${c.sourceUrl ?? 'unknown source'}] ${c.statement}`)
     .join('\n')
 
-  const { object } = await generateObject({
-    model: marketingModel('extract'),
-    schema: clusterSchema,
-    maxOutputTokens: MARKETING_MAX_OUTPUT_TOKENS,
-    system:
-      'You merge duplicate findings from a research pass. Two findings belong in the same ' +
-      'cluster when an operator would recognise them as the same complaint, even when the ' +
-      'wording is entirely different. Do not merge distinct complaints just because they share ' +
-      'a topic — "reconciling receipts weeks later" and "no way to see trip margin" are ' +
-      'different problems about the same thing.',
-    prompt: [
-      'Cluster these extracted pain points. Every index must appear in exactly one cluster.',
-      'Write each cluster statement in the operator\'s framing, as a problem they feel.',
-      'For icpFear, use the value most of the cluster members carry, or null.',
-      '',
-      listing,
-    ].join('\n'),
-  })
+  return [
+    'Cluster these extracted pain points. Every index must appear in exactly one cluster.',
+    "Write each cluster statement in the operator's framing, as a problem they feel.",
+    'For icpFear, use the value most of the cluster members carry, or null.',
+    '',
+    listing,
+  ].join('\n')
+}
 
+/**
+ * The deterministic half — frequency, weighting, evidence and ordering.
+ *
+ * Separated from the model call so `scripts/db/research-manual.ts` can supply
+ * hand-authored clusters and still get scored by exactly this code. The ranking
+ * is the part that must not vary between a real run and a hand-run one, since it
+ * is what decides which pain point copy gets written from.
+ */
+export function rankClusters(
+  candidates: PainPointCandidate[],
+  clusters: CandidateCluster[],
+  opts?: { minFrequency?: number }
+): RankedPainPoint[] {
   const ranked: RankedPainPoint[] = []
 
-  for (const cluster of object.clusters) {
+  for (const cluster of clusters) {
     const members = cluster.memberIndices
       .map((i) => candidates[i])
       .filter((c): c is PainPointCandidate => Boolean(c))
@@ -124,4 +131,21 @@ export async function clusterAndRank(
     .filter((p) => p.evidence.some((e) => Boolean(e.url)))
     .sort((a, b) => b.score - a.score || b.frequency - a.frequency)
     .map((p, i) => ({ ...p, rank: i + 1 }))
+}
+
+export async function clusterAndRank(
+  candidates: PainPointCandidate[],
+  opts?: { minFrequency?: number }
+): Promise<RankedPainPoint[]> {
+  if (candidates.length === 0) return []
+
+  const { object } = await generateObject({
+    model: marketingModel('extract'),
+    schema: clusterSchema,
+    maxOutputTokens: MARKETING_MAX_OUTPUT_TOKENS,
+    system: CLUSTER_SYSTEM_PROMPT,
+    prompt: buildClusterPrompt(candidates),
+  })
+
+  return rankClusters(candidates, object.clusters, opts)
 }

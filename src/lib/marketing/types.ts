@@ -91,8 +91,11 @@ export interface MarketingResearchRun {
   status: ResearchRunStatus
   processing_error: string | null
   trigger: 'manual' | 'cron'
+  /** Whether the extraction and clustering calls were made by the model or authored by hand. */
+  extraction_transport: 'model' | 'manual'
   source_count: number
   outside_source_count: number
+  skipped_source_count: number
   pain_point_count: number
   started_at: string | null
   completed_at: string | null
@@ -111,6 +114,8 @@ export interface MarketingSource {
   is_outside_injection: boolean
   fetched_at: string
   fetch_error: string | null
+  /** Set when the source was fetched but judged off-segment and not read. */
+  relevance_skip_reason: string | null
   created_at: string
 }
 

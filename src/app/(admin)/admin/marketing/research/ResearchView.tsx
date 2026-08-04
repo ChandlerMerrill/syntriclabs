@@ -178,6 +178,15 @@ export default function ResearchView({
                   {run.outside_source_count > 0 && (
                     <span className="text-[#94A3B8]/60"> (+{run.outside_source_count} outside)</span>
                   )}
+                  {run.skipped_source_count > 0 && (
+                    <span
+                      className="text-amber-400/70"
+                      title="Fetched, then judged off-segment and not read. A number close to the source count means the relevance filter is rejecting the run."
+                    >
+                      {" "}
+                      &minus;{run.skipped_source_count} off-segment
+                    </span>
+                  )}
                 </span>
                 <span className="text-xs text-[#94A3B8]">{run.pain_point_count} pain points</span>
                 <span className="ml-auto text-xs uppercase tracking-wide text-[#94A3B8]/50">

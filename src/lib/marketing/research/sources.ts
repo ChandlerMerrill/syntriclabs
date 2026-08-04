@@ -183,10 +183,10 @@ async function runStrategy(
   fc: Firecrawl,
   strategy: SourceStrategy,
   segmentName: string,
-  opts: { resultsPerQuery: number; isOutsideInjection: boolean }
+  opts: { resultsPerQuery: number; isOutsideInjection: boolean; seen: Set<string> }
 ): Promise<FetchedSource[]> {
   const out: FetchedSource[] = []
-  const seen = new Set<string>()
+  const seen = opts.seen
 
   for (const template of strategy.queries) {
     const query = expandQuery(template, segmentName)
@@ -269,12 +269,24 @@ export async function fetchSegmentSources(
   const strategies = opts?.strategies ?? SOURCE_STRATEGIES
   const resultsPerQuery = opts?.resultsPerQuery ?? 3
 
+  // One `seen` set for the whole run, not one per strategy.
+  //
+  // Scoped per strategy, a URL that answered queries in two tiers was scraped
+  // twice and stored as two rows — and `rank.ts` counts frequency by distinct
+  // source, so the same document voted twice for every pain point it evidenced.
+  // The first real run hit this: one archerytalk thread came back under both
+  // `forum` and `review`. Tiers run best-signal-first, so the surviving row also
+  // keeps the better rank, which is the right one — a forum thread that happens
+  // to answer a review query is still a forum thread.
+  const seen = new Set<string>()
+
   const results: FetchedSource[] = []
   for (const strategy of strategies) {
     results.push(
       ...(await runStrategy(fc, strategy, segmentName, {
         resultsPerQuery,
         isOutsideInjection: false,
+        seen,
       }))
     )
   }
@@ -286,12 +298,14 @@ export async function fetchEntropySources(
   opts?: { resultsPerQuery?: number }
 ): Promise<FetchedSource[]> {
   const fc = client()
+  const seen = new Set<string>()
   const results: FetchedSource[] = []
   for (const strategy of ENTROPY_STRATEGIES) {
     results.push(
       ...(await runStrategy(fc, strategy, segmentName, {
         resultsPerQuery: opts?.resultsPerQuery ?? 2,
         isOutsideInjection: true,
+        seen,
       }))
     )
   }
