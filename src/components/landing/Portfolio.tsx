@@ -7,7 +7,8 @@ import SectionLabel from "@/components/ui/SectionLabel";
 import TiltCard from "@/components/ui/TiltCard";
 import { staggerContainer, fadeUp, popIn } from "@/lib/animations";
 
-const projects = [
+/* Platforms — the builds that carry the money story. Shown large. */
+const platforms = [
   {
     name: "Esoteric Design Lab",
     description:
@@ -24,13 +25,32 @@ const projects = [
     image: "/images/work/tally.jpg",
     tags: ["Expense Tracking", "AI Agent", "Reporting"],
   },
+];
+
+/* Sites & lead systems — smaller engagements for trades. Shown compact. */
+const sites = [
   {
     name: "Shamrock Plumbing",
-    description:
-      "Modern, professional website for a local plumbing company. Clean design, fast load times, built to convert visitors into service calls.",
+    description: "Service site for a local plumber, built to turn visits into service calls.",
     href: "https://shamrock-site.vercel.app",
     image: "/images/work/shamrock.jpg",
-    tags: ["Business Website", "Lead Generation"],
+    tags: ["Business Site", "Lead Gen"],
+  },
+  {
+    name: "Bountiful Window",
+    description:
+      "Family window company on the Wasatch Front. Quote requests land straight in the owner's inbox.",
+    href: "https://bountifulwindow.com/",
+    image: "/images/work/bountiful.jpg",
+    tags: ["Business Site", "Lead Capture"],
+  },
+  {
+    name: "Old-Goat Creative",
+    description:
+      "A carpenter's gallery and writing site with an admin panel — he posts new work himself.",
+    href: "https://rgmcreative.vercel.app/",
+    image: "/images/work/rgm.jpg",
+    tags: ["Gallery", "Admin Panel"],
   },
 ];
 
@@ -52,14 +72,15 @@ export default function Portfolio() {
           </motion.div>
         </motion.div>
 
+        {/* Tier 1 — platforms, full size */}
         <motion.div
-          className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-12 grid gap-6 sm:grid-cols-2"
           variants={staggerContainer}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-60px" }}
         >
-          {projects.map((project) => (
+          {platforms.map((project) => (
             <motion.div key={project.name} variants={popIn} className="h-full">
               <TiltCard className="h-full">
                 <a
@@ -75,7 +96,7 @@ export default function Portfolio() {
                       alt={`${project.name} homepage`}
                       width={1400}
                       height={875}
-                      sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
+                      sizes="(min-width: 640px) 45vw, 90vw"
                       className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                     />
                     {/* Fade the shot into the card body */}
@@ -114,6 +135,75 @@ export default function Portfolio() {
               </TiltCard>
             </motion.div>
           ))}
+        </motion.div>
+
+        {/* Tier 2 — sites & lead systems, compact */}
+        <motion.div
+          className="mt-16"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-60px" }}
+        >
+          <motion.h3
+            variants={fadeUp}
+            className="font-[family-name:var(--font-rajdhani)] text-xl font-bold tracking-tight text-text-secondary"
+          >
+            Sites &amp; lead systems
+          </motion.h3>
+
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {sites.map((project) => (
+              <motion.div key={project.name} variants={popIn} className="h-full">
+                <TiltCard className="h-full">
+                  <a
+                    href={project.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-bg-secondary transition-all duration-300 hover:border-border-hover hover:shadow-xl hover:shadow-primary/10"
+                  >
+                    {/* Live site screenshot */}
+                    <div className="relative aspect-[16/9] overflow-hidden bg-bg-tertiary">
+                      <Image
+                        src={project.image}
+                        alt={`${project.name} homepage`}
+                        width={1400}
+                        height={875}
+                        sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
+                        className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                      />
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-bg-secondary" />
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent-purple to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-70" />
+                    </div>
+
+                    <div className="flex flex-1 flex-col p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <h4 className="font-[family-name:var(--font-rajdhani)] text-lg font-bold">
+                          {project.name}
+                        </h4>
+                        <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-text-secondary transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary-lighter" />
+                      </div>
+
+                      <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+                        {project.description}
+                      </p>
+
+                      <div className="mt-auto flex flex-wrap gap-2 pt-5">
+                        {project.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full border border-border bg-bg-tertiary px-2.5 py-0.5 text-[11px] text-text-secondary"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </a>
+                </TiltCard>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       </div>
     </section>
