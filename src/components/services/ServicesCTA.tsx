@@ -9,7 +9,7 @@ import { staggerContainer, fadeUp } from "@/lib/animations";
 
 export default function ServicesCTA() {
   return (
-    <section className="relative bg-grid py-24 sm:py-32">
+    <section className="relative overflow-hidden bg-grid py-24 sm:py-32">
       <GradientDivider className="mb-24 sm:mb-32" />
 
       {/* Ambient glow */}
@@ -22,7 +22,7 @@ export default function ServicesCTA() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6">
-        <FloatingIsland>
+        <FloatingIsland fadeOut={false}>
           <motion.div
             className="mx-auto max-w-2xl text-center"
             variants={staggerContainer}

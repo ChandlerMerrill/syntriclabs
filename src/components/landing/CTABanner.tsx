@@ -22,7 +22,7 @@ export default function CTABanner() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6">
-        <FloatingIsland>
+        <FloatingIsland fadeOut={false}>
           <motion.div
             className="mx-auto max-w-2xl text-center"
             variants={staggerContainer}
