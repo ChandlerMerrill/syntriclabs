@@ -116,7 +116,7 @@ export default function VoiceDemo() {
                           required
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="w-full rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
+                          className="w-full min-h-11 rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
                           placeholder="Jane Smith"
                         />
                       </div>
@@ -133,7 +133,7 @@ export default function VoiceDemo() {
                           required
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          className="w-full rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
+                          className="w-full min-h-11 rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
                           placeholder="(555) 123-4567"
                         />
                       </div>
@@ -150,7 +150,7 @@ export default function VoiceDemo() {
                           type="text"
                           value={topic}
                           onChange={(e) => setTopic(e.target.value)}
-                          className="w-full rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
+                          className="w-full min-h-11 rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
                           placeholder="e.g., scheduling, customer support"
                         />
                       </div>

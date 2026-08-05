@@ -105,7 +105,7 @@ export default function Footer() {
           </div>
           <Link
             href="/admin"
-            className="text-xs text-text-secondary/60 transition-colors hover:text-text-secondary sm:self-end"
+            className="inline-flex min-h-11 items-center self-start text-xs text-text-secondary/60 transition-colors hover:text-text-secondary sm:min-h-0 sm:self-end"
           >
             Admin
           </Link>

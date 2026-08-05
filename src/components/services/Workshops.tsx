@@ -118,7 +118,7 @@ export default function Workshops() {
           whileInView="show"
           viewport={{ once: true, margin: "-60px" }}
         >
-          <Button render={<Link href="/contact" />} variant="outline">
+          <Button render={<Link href="/contact" />} variant="outline" size="lg">
             Inquire About Workshops
             <ArrowRight className="h-3.5 w-3.5" />
           </Button>

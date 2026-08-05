@@ -131,7 +131,7 @@ export default function ContactForm() {
                       required
                       value={form.name}
                       onChange={handleChange}
-                      className="w-full rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
+                      className="w-full min-h-11 rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
                       placeholder="Jane Smith"
                     />
                   </div>
@@ -146,7 +146,7 @@ export default function ContactForm() {
                       required
                       value={form.email}
                       onChange={handleChange}
-                      className="w-full rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
+                      className="w-full min-h-11 rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
                       placeholder="jane@company.com"
                     />
                   </div>
@@ -164,7 +164,7 @@ export default function ContactForm() {
                       type="tel"
                       value={form.phone}
                       onChange={handleChange}
-                      className="w-full rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
+                      className="w-full min-h-11 rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
                       placeholder="(555) 123-4567"
                     />
                   </div>
@@ -178,7 +178,7 @@ export default function ContactForm() {
                       type="text"
                       value={form.company}
                       onChange={handleChange}
-                      className="w-full rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
+                      className="w-full min-h-11 rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
                       placeholder="Acme Inc."
                     />
                   </div>
@@ -196,7 +196,7 @@ export default function ContactForm() {
                           key={m.value}
                           type="button"
                           onClick={() => setForm((prev) => ({ ...prev, preferredContact: m.value }))}
-                          className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+                          className={`min-h-11 rounded-lg border px-3 py-2 text-sm transition-colors ${
                             form.preferredContact === m.value
                               ? "border-primary bg-primary/10 text-primary-lighter"
                               : "border-border bg-bg-primary text-text-secondary hover:border-border-hover"
@@ -216,7 +216,7 @@ export default function ContactForm() {
                       name="service"
                       value={form.service}
                       onChange={handleChange}
-                      className="w-full rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary focus:border-primary focus:outline-none"
+                      className="w-full min-h-11 rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary focus:border-primary focus:outline-none"
                     >
                       <option value="">Select...</option>
                       {serviceOptions.map((opt) => (
@@ -239,7 +239,7 @@ export default function ContactForm() {
                         key={area}
                         type="button"
                         onClick={() => toggleImprovement(area)}
-                        className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                        className={`min-h-11 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                           improvements.includes(area)
                             ? "border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan"
                             : "border-border bg-bg-primary text-text-secondary hover:border-border-hover"
@@ -264,7 +264,7 @@ export default function ContactForm() {
                     rows={4}
                     value={form.message}
                     onChange={handleChange}
-                    className="w-full rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
+                    className="w-full min-h-11 rounded-lg border border-border bg-bg-primary px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none"
                     placeholder="Tell us a bit about your business and what you're looking to solve..."
                   />
                 </div>

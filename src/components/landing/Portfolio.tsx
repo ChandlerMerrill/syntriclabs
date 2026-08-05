@@ -192,7 +192,7 @@ export default function Portfolio() {
                         {project.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="rounded-full border border-border bg-bg-tertiary px-2.5 py-0.5 text-[11px] text-text-secondary"
+                            className="rounded-full border border-border bg-bg-tertiary px-2.5 py-0.5 text-xs text-text-secondary"
                           >
                             {tag}
                           </span>

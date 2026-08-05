@@ -98,7 +98,7 @@ export default function ServicesOverview() {
                 </ul>
 
                 <div className="mt-auto pt-8">
-                  <Button render={<Link href={service.cta.href} />} variant="outline" size="sm">
+                  <Button render={<Link href={service.cta.href} />} variant="outline" size="sm" className="min-h-11 sm:min-h-0">
                     {service.cta.label}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>

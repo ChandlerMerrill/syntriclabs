@@ -95,6 +95,7 @@ export default function CaseStudy() {
                 <Button
                   render={<a href="https://www.esotericdesignlab.com/" target="_blank" rel="noopener noreferrer" />}
                   variant="secondary"
+                  size="lg"
                 >
                   See the Platform Live
                   <ArrowRight className="h-3.5 w-3.5" />

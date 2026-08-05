@@ -116,7 +116,7 @@ export default function Navbar() {
         {/* Mobile hamburger */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-bg-secondary/80 backdrop-blur-md md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-secondary/80 backdrop-blur-md md:hidden"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
           {mobileOpen ? (
