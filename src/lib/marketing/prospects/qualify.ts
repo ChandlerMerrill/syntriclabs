@@ -28,6 +28,11 @@ import type { MarketingProspect, MarketingSegment } from '../types'
  *     sendable.
  */
 
+export const QUALIFICATION_SYSTEM_PROMPT =
+  'You qualify inbound prospect rows for a one-person software company. You are strict ' +
+  'about the difference between what a row states and what it suggests, and you say ' +
+  'when you cannot tell.'
+
 const VERDICTS = ['qualified', 'not_qualified', 'unclear'] as const
 
 const assessmentSchema = z.object({
@@ -132,53 +137,61 @@ export interface QualifyResult {
   unmatched: string[]
 }
 
-export async function qualifyProspects(
+export type Assessment = z.infer<typeof assessmentSchema>
+
+/**
+ * The rows this run would judge, in the order the prompt lists them.
+ *
+ * Split out so `scripts/db/qualify-manual.ts` builds its prompt over exactly the
+ * same set, in exactly the same order — the assessments are matched back by
+ * index, so a script that selected rows differently would write verdicts onto
+ * the wrong companies while every individual step looked correct.
+ */
+export async function selectPendingProspects(
   supabase: SupabaseClient,
   opts: { segmentId: string; prospectIds?: string[]; limit?: number }
-): Promise<QualifyResult> {
-  const segment = await getSegment(supabase, opts.segmentId)
-  if (!segment) throw new Error(`Segment ${opts.segmentId} not found`)
-
+): Promise<MarketingProspect[]> {
   const all = await listProspects(supabase, { segmentId: opts.segmentId, limit: 500 })
 
   const wanted = opts.prospectIds?.length ? new Set(opts.prospectIds) : null
-  const pending = all
+  return all
     .filter((p) => (wanted ? wanted.has(p.id) : p.qualified === null))
     .filter((p) => !p.suppressed_at)
     .slice(0, Math.min(opts.limit ?? MAX_BATCH, MAX_BATCH))
+}
 
-  const empty: QualifyResult = {
-    assessed: 0,
-    qualified: 0,
-    notQualified: 0,
-    unclear: 0,
-    model: marketingModelId('extract'),
-    rows: [],
-    unmatched: [],
-  }
-  if (pending.length === 0) return empty
-
-  const { object } = await generateObject({
-    model: marketingModel('extract'),
-    schema: qualificationSchema,
-    maxOutputTokens: MARKETING_MAX_OUTPUT_TOKENS,
-    system:
-      'You qualify inbound prospect rows for a one-person software company. You are strict ' +
-      'about the difference between what a row states and what it suggests, and you say ' +
-      'when you cannot tell.',
-    prompt: buildQualificationPrompt(segment, pending),
-  })
-
-  // Matched by index, and every index is bounds-checked. A model that returns a
-  // stray or duplicate index must not be able to write a verdict onto the wrong
-  // company — the row it would land on is a real business about to be emailed.
-  const byIndex = new Map<number, (typeof object.assessments)[number]>()
-  for (const a of object.assessments) {
+/**
+ * The deterministic half — index matching, verdict mapping, storage.
+ *
+ * Separated from the model call for the same reason `rank.ts` separates
+ * `rankClusters` from `clusterAndRank`: the part that decides what lands on a
+ * real company's row must not vary between a model run and a hand-run one.
+ */
+export async function applyAssessments(
+  supabase: SupabaseClient,
+  pending: MarketingProspect[],
+  assessments: Assessment[],
+  model: string
+): Promise<QualifyResult> {
+  // Matched by index, and every index is bounds-checked. A judgement that
+  // returns a stray or duplicate index must not be able to write a verdict onto
+  // the wrong company — the row it would land on is a real business about to be
+  // emailed.
+  const byIndex = new Map<number, Assessment>()
+  for (const a of assessments) {
     if (!Number.isInteger(a.index) || a.index < 0 || a.index >= pending.length) continue
     if (!byIndex.has(a.index)) byIndex.set(a.index, a)
   }
 
-  const result: QualifyResult = { ...empty, rows: [], unmatched: [] }
+  const result: QualifyResult = {
+    assessed: 0,
+    qualified: 0,
+    notQualified: 0,
+    unclear: 0,
+    model,
+    rows: [],
+    unmatched: [],
+  }
 
   for (const [i, prospect] of pending.entries()) {
     const assessment = byIndex.get(i)
@@ -212,4 +225,36 @@ export async function qualifyProspects(
   }
 
   return result
+}
+
+export async function qualifyProspects(
+  supabase: SupabaseClient,
+  opts: { segmentId: string; prospectIds?: string[]; limit?: number }
+): Promise<QualifyResult> {
+  const segment = await getSegment(supabase, opts.segmentId)
+  if (!segment) throw new Error(`Segment ${opts.segmentId} not found`)
+
+  const pending = await selectPendingProspects(supabase, opts)
+
+  if (pending.length === 0) {
+    return {
+      assessed: 0,
+      qualified: 0,
+      notQualified: 0,
+      unclear: 0,
+      model: marketingModelId('extract'),
+      rows: [],
+      unmatched: [],
+    }
+  }
+
+  const { object } = await generateObject({
+    model: marketingModel('extract'),
+    schema: qualificationSchema,
+    maxOutputTokens: MARKETING_MAX_OUTPUT_TOKENS,
+    system: QUALIFICATION_SYSTEM_PROMPT,
+    prompt: buildQualificationPrompt(segment, pending),
+  })
+
+  return applyAssessments(supabase, pending, object.assessments, marketingModelId('extract'))
 }

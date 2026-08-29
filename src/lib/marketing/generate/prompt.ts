@@ -141,6 +141,16 @@ function proofSection(asset: ProofAsset | null, segmentSlug: string | null): str
         'naming the difference is.'
       : 'This is the one asset you may name. Describe it as what it actually is — do not ' +
         'upgrade it into a product, a platform, or a track record it does not have.',
+    '',
+    // A name on its own proves nothing. "Post-Trip Tally does that job" leaves the
+    // reader unable to tell whether it is software, a spreadsheet, a client of
+    // Chandler's or a figure of speech — and an asset the reader cannot place is
+    // not evidence, it is a noun.
+    'Say what kind of thing it is and who made it. The reader has never heard the name, so ' +
+      'it has to arrive as something Chandler built for a client rather than as a name dropped ' +
+      'into a sentence. "Built X for a client who had this exact problem" is proof. "X does ' +
+      'that job" is a noun the reader cannot place, and a proof asset the reader cannot place ' +
+      'is doing none of the work it is there to do.',
   ].join('\n')
 }
 
@@ -301,12 +311,17 @@ export function buildGenerationPrompt(target: GenerationTarget): string {
 
   sections.push(
     [
-      '## The first line',
+      '## The opening',
       bullets(voiceRules.hookRules),
       '',
-      'This is the whole email. Everything after it is supporting material. If line 1 could be',
-      'sent to a different company in the same segment without editing, it has failed and the',
-      'rest does not matter.',
+      'Those rules govern the *observation* — the line after the greeting and the',
+      '`{{found_via}}` line, which are fixed in shape (see Personalization). The greeting is not',
+      'the hook and is not competing with it.',
+      '',
+      'The observation is the whole email. Everything after it is supporting material. If it',
+      'could be sent to a different company in the same segment without editing, it has failed',
+      'and the rest does not matter — `{{found_via}}` above it does not rescue a generic one, it',
+      'just makes the generic part more conspicuous.',
     ].join('\n')
   )
 
@@ -380,7 +395,8 @@ export function buildGenerationPrompt(target: GenerationTarget): string {
       '- Never write a number that does not appear in the material above. Not theirs, not ours.',
       '- No sign-off, no signature, no contact details. The body is the message only; the sign-off',
       '  is appended when the email is rendered for a specific prospect.',
-      '- No greeting line ("Hi there,"). Open on the observation.',
+      '- Open "Hey {{first_name}}," on its own line, then say how you found them.',
+      '  A bare observation with no greeting reads as broadcast however specific it is.',
     ]
       .filter(Boolean)
       .join('\n')
@@ -389,18 +405,35 @@ export function buildGenerationPrompt(target: GenerationTarget): string {
   sections.push(
     [
       '## Personalization',
-      'A variant is written once and sent to many prospects in this segment. Two tokens are',
+      'A variant is written once and sent to many prospects in this segment. Three tokens are',
       'substituted at send time:',
       '',
       '- `{{company}}` — the prospect company name',
-      '- `{{first_name}}` — the contact’s first name, when one is known',
+      '- `{{first_name}}` — the contact’s first name',
+      '- `{{found_via}}` — a noun phrase completing "found you through ___", true of that',
+      '  company’s own site. Written per prospect from pages that were actually read.',
       '',
-      'Use them only where a real detail belongs. `{{company}}` dropped into a generic sentence is',
-      'mail-merge, and reads as mail-merge. A line that is specific about the *segment’s* operation',
-      'is stronger than a generic line with a name glued into it. Prefer no token to a decorative one.',
+      '**The email opens on the greeting and how you found them.** That is what separates a',
+      'letter from a broadcast, and it is the only part the recipient can verify is about',
+      'them specifically. Shape:',
       '',
-      '`{{first_name}}` is not always available — a variant that depends on it can only be sent to',
-      'prospects with a named contact.',
+      '    Hey {{first_name}},',
+      '',
+      '    Found you through {{found_via}}.',
+      '',
+      'Then the observation, and everything else the email has to do.',
+      '',
+      '`{{company}}` is the weakest of the three — dropped into a generic sentence it is',
+      'mail-merge and reads as mail-merge. `{{found_via}}` already names them; a company name',
+      'on top of it is belt and braces. Prefer no token to a decorative one.',
+      '',
+      'A variant using a token can only be sent to prospects that have it. `{{found_via}}` and',
+      '`{{first_name}}` are both routinely missing, and the outbox skips those rows rather than',
+      'sending a sentence with a hole in it — so a variant using both is a deliberate trade of',
+      'reach for warmth.',
+      '',
+      'Keep the substituted phrase in mind when counting words: `{{found_via}}` is one token',
+      'here and up to twenty words in the sent email.',
     ].join('\n')
   )
 

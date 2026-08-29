@@ -161,6 +161,8 @@ export async function sendMessage(params: {
   to: string
   subject: string
   body: string
+  /** Plain-text alternative. See `buildRFC2822Message`. */
+  text?: string
   cc?: string
   threadId?: string
   inReplyTo?: string
@@ -283,15 +285,26 @@ export function parseMessage(msg: GmailMessage): ParsedEmail {
 export function buildRFC2822Message(params: {
   to: string
   subject: string
+  /** The HTML part. */
   body: string
+  /**
+   * The plain-text alternative.
+   *
+   * When present the message goes out `multipart/alternative` with both parts,
+   * which is the shape a human mail client produces. HTML-only is a shape almost
+   * nothing but bulk software emits, and it is one of the signals that put the
+   * first marketing preflight in Gmail's Promotions tab.
+   *
+   * Optional so every existing caller keeps the exact message it had before.
+   */
+  text?: string
   cc?: string
   from?: string
   inReplyTo?: string
   references?: string
   /**
-   * Headers the caller needs that this builder does not model — `List-Unsubscribe`
-   * and its `-Post` companion, today. Additive by design: existing callers pass
-   * nothing and get exactly the message they got before.
+   * Headers the caller needs that this builder does not model. Additive by
+   * design: existing callers pass nothing and get what they got before.
    */
   extraHeaders?: Record<string, string>
 }): string {
@@ -301,7 +314,15 @@ export function buildRFC2822Message(params: {
   if (params.cc) lines.push(`Cc: ${params.cc}`)
   lines.push(`Subject: ${params.subject}`)
   lines.push('MIME-Version: 1.0')
-  lines.push('Content-Type: text/html; charset=UTF-8')
+  // Fixed rather than random: these messages are built one at a time and the
+  // boundary only has to not occur in the body, which a token of this shape
+  // will not.
+  const boundary = '==_syntric_alt_boundary_=='
+  lines.push(
+    params.text
+      ? `Content-Type: multipart/alternative; boundary="${boundary}"`
+      : 'Content-Type: text/html; charset=UTF-8'
+  )
   if (params.inReplyTo) lines.push(`In-Reply-To: ${params.inReplyTo}`)
   if (params.references) lines.push(`References: ${params.references}`)
   for (const [name, value] of Object.entries(params.extraHeaders ?? {})) {
@@ -312,7 +333,26 @@ export function buildRFC2822Message(params: {
     lines.push(`${name}: ${value.replace(/[\r\n]+/g, ' ').trim()}`)
   }
   lines.push('')
+
+  if (!params.text) {
+    lines.push(params.body)
+    return lines.join('\r\n')
+  }
+
+  // Least-preferred part first, as RFC 2046 requires: a client that understands
+  // both shows the last one it can render.
+  lines.push(`--${boundary}`)
+  lines.push('Content-Type: text/plain; charset=UTF-8')
+  lines.push('')
+  lines.push(params.text)
+  lines.push('')
+  lines.push(`--${boundary}`)
+  lines.push('Content-Type: text/html; charset=UTF-8')
+  lines.push('')
   lines.push(params.body)
+  lines.push('')
+  lines.push(`--${boundary}--`)
+
   return lines.join('\r\n')
 }
 

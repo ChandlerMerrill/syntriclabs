@@ -122,38 +122,37 @@ export function plainTextToHtml(text: string): string {
 }
 
 /**
- * The way out, in the body itself.
+ * No opt-out line in the body, by explicit instruction.
  *
- * It lives in the rendered body rather than only in a `List-Unsubscribe` header
- * because the header is a client feature — Gmail and Apple Mail honour it, a
- * corporate Outlook install often does not, and someone reading on a client that
- * ignores it would have no visible way to stop the mail.
+ * This footer has now been a tracked link, then a reply sentence, then nothing.
+ * Recording why, because "there used to be one" is the sort of thing that gets
+ * quietly restored by someone who assumes it was an oversight:
  *
- * Worded as a sentence rather than a bare "Unsubscribe" because on the plain arm
- * a bare one reads as a bulk-mail footer, which is the one thing that arm is
- * trying not to be. It is a tell either way; this is the smaller one.
+ *   - These are one-shot sends. Nothing follows unless the recipient replies, so
+ *     an opt-out stops a sequence that was never going to run.
+ *   - The first preflight landed in Gmail's Promotions tab. An opt-out notice in
+ *     the body is one of the signals that puts it there, and the whole premise of
+ *     the plain arm is that it reads as correspondence rather than as a mailing.
+ *   - Chandler handles "do not contact me" by hand — a reply gets the prospect
+ *     suppressed. See `eval/suppress.ts`.
+ *
+ * KNOWN AND ACCEPTED: CAN-SPAM requires a commercial email to carry a clear
+ * opt-out mechanism and a physical postal address. Neither is present now. This
+ * was raised and is the sender's call, not an oversight. Nothing here should be
+ * read as advice that it is compliant. Reinstating it is two lines — put the
+ * sentence back in `renderPlain` and the `footerNote` back in `renderBranded`.
  */
-function unsubscribeText(url: string): string {
-  return `If you'd rather not hear from me, unsubscribe: ${url}`
-}
 
-function unsubscribeHtml(url: string): string {
-  return (
-    `<p style="margin-top:18px;font-size:12px;color:#6B7280">If you'd rather not hear from me, ` +
-    `<a href="${escapeHtml(url)}" style="color:#6B7280">unsubscribe</a>.</p>`
-  )
-}
-
-/** The plain arm: body, delimiter, signature, the way out. Nothing else. */
-function renderPlain(body: string, sig: Signature | null, unsubUrl: string): RenderedMessage {
+/** The plain arm: body, delimiter, signature. Nothing else. */
+function renderPlain(body: string, sig: Signature | null): RenderedMessage {
   const trimmed = body.trim()
   const signed = sig ? `${trimmed}\n\n${signatureText(sig)}` : trimmed
-  const text = `${signed}\n\n${unsubscribeText(unsubUrl)}`
+  const text = signed
 
   const html =
     (sig
       ? `${plainTextToHtml(trimmed)}\n<p>--<br>${signatureHtml(sig)}</p>`
-      : plainTextToHtml(trimmed)) + `\n${unsubscribeHtml(unsubUrl)}`
+      : plainTextToHtml(trimmed))
 
   return { text, html }
 }
@@ -166,15 +165,14 @@ function renderPlain(body: string, sig: Signature | null, unsubUrl: string): Ren
  * would be a second ask on top of the one the body already carries — which is
  * what `checkOneAsk` exists to prevent.
  */
-function renderBranded(body: string, sig: Signature | null, unsubUrl: string): RenderedMessage {
+function renderBranded(body: string, sig: Signature | null): RenderedMessage {
   const trimmed = body.trim()
   const signed = sig ? `${trimmed}\n\n${signatureText(sig)}` : trimmed
-  const text = `${signed}\n\n${unsubscribeText(unsubUrl)}`
+  const text = signed
 
   const html = renderBrandedEmail(trimmed, {
     assistantBanner: false,
     ctaUrl: null,
-    unsubscribeUrl: unsubUrl,
     signature: sig
       ? {
           name: sig.name,
@@ -194,15 +192,15 @@ function renderBranded(body: string, sig: Signature | null, unsubUrl: string): R
  * Falls back to the profile's legacy `signOff` string when no structured
  * signature is on file, so a profile that predates this still signs its mail.
  *
- * `unsubscribeUrl` is required rather than optional on purpose. An optional
- * parameter is a way to ship a marketing send with no way out of it — the one
- * caller that forgets is the one that mails a stranger.
+ * This used to take an `unsubscribeUrl` and print it. It no longer does, so it no
+ * longer asks for one — a required parameter that nothing reads is a guard that
+ * has stopped guarding. See the note above `renderPlain` for where the opt-out
+ * went and why.
  */
 export function renderMessage(
   template: SendTemplate,
   body: string,
-  profile: BrandProfile,
-  unsubscribeUrl: string
+  profile: BrandProfile
 ): RenderedMessage {
   const sig = profile.voiceRules.signature ?? null
 
@@ -211,15 +209,18 @@ export function renderMessage(
     const trimmed = body.trim()
     const signed = signOff ? `${trimmed}\n\n${signOff}` : trimmed
     return {
-      text: `${signed}\n\n${unsubscribeText(unsubscribeUrl)}`,
+      text: signed,
       html:
         template === 'branded'
-          ? renderBrandedEmail(signed, { assistantBanner: false, ctaUrl: null, unsubscribeUrl })
-          : `${plainTextToHtml(signed)}\n${unsubscribeHtml(unsubscribeUrl)}`,
+          ? renderBrandedEmail(signed, {
+              assistantBanner: false,
+              ctaUrl: null,
+            })
+          : plainTextToHtml(signed),
     }
   }
 
   return template === 'branded'
-    ? renderBranded(body, sig, unsubscribeUrl)
-    : renderPlain(body, sig, unsubscribeUrl)
+    ? renderBranded(body, sig)
+    : renderPlain(body, sig)
 }

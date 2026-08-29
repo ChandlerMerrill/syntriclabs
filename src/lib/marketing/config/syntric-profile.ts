@@ -188,11 +188,28 @@ export const SYNTRIC_BRAND_PROFILE: BrandProfileSeed = {
 
   proofAssets: [
     {
+      // The key is an identifier, not a label. Existing variants record it as
+      // `generation_config.proofAssetKey`, so renaming it would orphan every row
+      // that has already cited this asset. The display name is what changed.
       key: 'post_trip_tally',
-      name: 'Post-Trip Tally',
+      // The app's own wordmark is "Tally" — that is what a reader sees if they
+      // follow the link, so it is what the copy should say. "Post-Trip Tally"
+      // was never the product's name. The descriptor lives in the description
+      // rather than in the name on purpose: "Tally, a trip expense tracker I
+      // built for a guide" is a person talking, and "Tally — Expense Tracker"
+      // written into an email is a directory entry.
+      name: 'Tally',
       url: 'https://post-trip.vercel.app',
       description:
-        'A receipt-capture and trip-report tool built for a guide who runs multi-day park trips: photograph each receipt as it happens, it categorizes itself, and the trip report — PDF, Excel, and the images — comes out in one tap at the end.',
+        'A trip expense tracker. A web app Chandler built for a guide who runs multi-day park ' +
+        'trips, in production and in daily use: photograph each receipt as it happens, it ' +
+        'categorizes itself, and the trip report — PDF, Excel, and the images — comes out in ' +
+        'one tap at the end. Name it as something built for a client with this exact problem, ' +
+        'not as a product with a market. On the URL: it is public, but thin — a stranger ' +
+        'following it gets the Tally wordmark, one line about what the app does, and a Sign in ' +
+        'button, and everything past that needs an account. So the link currently sends a reader ' +
+        'somewhere that explains almost nothing. Prefer describing what it does over linking it ' +
+        'until that page says more.',
       // The domain is guided national-park tourism, not fishing and hunting.
       // It pivoted 2026-06-05. Describing it wrong contradicts the product a
       // prospect will actually open.
@@ -268,15 +285,21 @@ export const SYNTRIC_SEGMENTS = [
     slug: 'guiding-outfitting',
     name: 'Guiding & outfitting',
     description:
-      'Operators running guided trips — the current outreach focus. Proof asset: Post-Trip Tally, whose domain is guided national-park tourism.',
+      'Operators running guided trips, and the agencies and lodges that sell them. Tally is the ' +
+      'proof asset because a guiding company recognises it, not because its domain defines who ' +
+      'is worth writing to. Trip length is not a qualifier.',
+    // Trip length and permit-holding were both qualifiers here until 2026-08-06,
+    // and both were written to match the proof asset's domain rather than to
+    // describe who Syntric can help. They were doing real gatekeeping: a booking
+    // agency was rejected for selling day trips, and rows were cautioned for
+    // running short ones. Chandler's correction — the proof asset is a relatable
+    // example, not the ICP — is what these two lines now say instead.
     qualifiers: [
-      'Runs multi-day or high-ticket guided trips rather than single-day bookings.',
-      'Handles its own permits, reporting, or per-park client counts.',
+      'Carries recurring back-office work the owner still does by hand — reconciling, reporting, chasing paperwork.',
       'Owner-operated, or small enough that the owner still touches the paperwork.',
     ],
     disqualifiers: [
       'Already runs a full booking platform and is only looking for a cheaper one — booking software is a solved category and Syntric declines to compete in it.',
-      'Single-day tours with no reconciliation or reporting burden.',
       'Enterprise tour operator with a procurement process.',
     ],
   },

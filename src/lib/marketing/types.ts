@@ -125,6 +125,23 @@ export interface PainPointEvidence {
   url: string | null
 }
 
+/**
+ * A quantified figure for what the pain point costs, with the quote that says
+ * so. Stored only when the quote is verbatim in the cited source — see
+ * `scripts/db/score-pain-points.ts`.
+ */
+export interface PainPointCostEvidence {
+  /** The number itself. `null` when the source quantifies without a figure. */
+  amount: number | null
+  /** What `amount` counts — 'usd', 'hours', 'days', 'clients'. */
+  unit: string
+  /** Over what — 'per season', 'per trip', 'per year'. Null when it is a one-off. */
+  period: string | null
+  quote: string
+  source_id: string | null
+  url: string | null
+}
+
 export interface MarketingPainPoint {
   id: string
   research_run_id: string
@@ -135,6 +152,16 @@ export interface MarketingPainPoint {
   score: number
   evidence: PainPointEvidence[]
   icp_fear: string | null
+  /** 1–5 each, null until scored. See migration 032 for what each one asks. */
+  reach: number | null
+  severity: number | null
+  urgency: number | null
+  addressability: number | null
+  /** Generated sum of the four, max 20. Null while any dimension is null. */
+  priority_score: number | null
+  cost_evidence: PainPointCostEvidence | null
+  scored_at: string | null
+  scored_by: 'model' | 'human' | null
   created_at: string
 }
 
@@ -179,6 +206,25 @@ export interface MarketingVariantCheck {
   checked_at: string
 }
 
+/**
+ * `undeliverable` never imports and never sends. `risky` imports and sends —
+ * last, and in small batches. `deliverable` goes first.
+ */
+export type VerificationVerdict = 'deliverable' | 'risky' | 'undeliverable'
+
+/** What `prospects/verify.ts` writes to `marketing_prospects.email_verification`. */
+export interface EmailVerification {
+  verdict: VerificationVerdict
+  checkedAt: string
+  domain: string | null
+  /** Mail exchangers found, best-priority first. Empty means none resolved. */
+  mx: string[]
+  /** Why the verdict is what it is. Always at least one entry. */
+  reasons: string[]
+  /** Facts that did not decide the verdict but a person should see. */
+  flags: string[]
+}
+
 export interface MarketingProspect {
   id: string
   segment_id: string | null
@@ -192,8 +238,17 @@ export interface MarketingProspect {
   notes: string | null
   qualified: boolean | null
   qualification_reason: string | null
+  /**
+   * Noun phrase completing "found you through ___", true of this company's own
+   * site. Substituted as `{{found_via}}`; a variant using it cannot be sent to a
+   * prospect where this is null. Max 120 chars — see migration 033.
+   */
+  found_via: string | null
   suppressed_at: string | null
   suppression_reason: string | null
+  /** What `prospects/verify.ts` found. Null on rows that predate verification. */
+  email_verification: EmailVerification | null
+  verification_status: VerificationVerdict | 'unchecked'
   created_at: string
   updated_at: string
 }

@@ -1,9 +1,7 @@
-import { FOUNDER } from '@/lib/founder-profile'
 import { createServiceClient } from '@/lib/supabase/server'
 import { channelAdapter, automatedChannels } from '../channels'
 import { assertVariantSendable } from '../review/gate'
 import { sendAllowance, prospectSendGate } from './throttle'
-import { unsubscribeUrl } from './unsubscribe-token'
 import type { MarketingChannel, MarketingSend } from '../types'
 
 /**
@@ -70,12 +68,23 @@ function sleep(ms: number) {
  * act on. `List-Unsubscribe-Post` is what tells Gmail the URL is safe to POST
  * without confirming, which is what turns the header into a visible button.
  */
-function unsubscribeHeaders(prospectId: string): Record<string, string> {
-  return {
-    'List-Unsubscribe': `<${unsubscribeUrl(prospectId)}>, <mailto:${FOUNDER.email}?subject=unsubscribe>`,
-    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-  }
-}
+/**
+ * No `List-Unsubscribe` headers on marketing mail.
+ *
+ * They were here, and removing them is deliberate. `List-Unsubscribe-Post:
+ * List-Unsubscribe=One-Click` (RFC 8058) exists for senders doing thousands a
+ * day, and Gmail reads it as a declaration that the message is part of a
+ * mailing. This sends twenty a day, which is far below the volume where the
+ * header protects a sender's reputation and squarely in the range where it
+ * costs inbox placement — the first preflight went to Promotions carrying them.
+ *
+ * The header was also the last automated opt-out path, so with the body notice
+ * gone there is now none. That is the sender's decision, recorded here rather
+ * than inferred: see the note above `renderPlain` in templates.ts.
+ *
+ * `unsubscribe-token.ts` and the `/u/[token]` route are untouched and still
+ * work, so putting this back is one line if volume ever justifies it.
+ */
 
 /**
  * Sends with bounded retry on transient failures only.
@@ -214,7 +223,6 @@ export async function dispatchApprovedSends(opts?: { limit?: number }): Promise<
       // What the outbox rendered and a human approved. A row queued before
       // templates existed has none, and falls back to the plain conversion.
       html: claimedRow.rendered_html,
-      headers: unsubscribeHeaders(row.prospect_id),
     })
 
     if (outcome.ok) {

@@ -109,6 +109,39 @@ export const STYLE_PROFILES: StyleProfile[] = [
       'Not a quiz question and not rhetorical. A real question someone would answer.',
     ],
   },
+  /**
+   * The grouping axis. Same length, same sentences, different packing.
+   *
+   * `plain_direct` is specific about sentences and silent about paragraphs, so
+   * what it produces is one beat per paragraph — observation, consequence,
+   * proof, ask, each on its own line. That is a real shape and a defensible one:
+   * it is scannable on a phone and it does not ask a stranger for more than a
+   * few seconds. This style is the other bet, not the correction to it. Both go
+   * out, both get measured, and the replies decide.
+   *
+   * What it changes is only how the sentences are grouped. It is not the long
+   * variant and must not be written as one.
+   */
+  {
+    key: 'cohesive',
+    label: 'Cohesive',
+    summary: 'Same short sentences, joined into connected prose instead of one beat per line.',
+    targetWords: { min: 45, max: 75 },
+    directives: [
+      'Two paragraphs at most, and one is often right. The beats run together inside a ' +
+        'paragraph instead of each being given its own.',
+      'No one-sentence paragraphs in this variant. That is the axis being tested, so hold it ' +
+        'even where a lone line would read well.',
+      'Sentences stay short. This style is about how they are grouped, not a licence to write ' +
+        'longer ones or more of them.',
+      'Join what belongs together. "and", "but", "so" and "which" are how a person types a ' +
+        'thought that has two halves. A full stop and a blank line between every clause is how ' +
+        'a form gets filled in.',
+      'No fragment standing alone as its own beat. If a fragment is worth keeping, attach it ' +
+        'to the sentence it belongs to.',
+      'Almost no em dashes, no semicolons, no parentheses. Contractions throughout.',
+    ],
+  },
 ]
 
 export const DEFAULT_STYLE_KEY = PLAIN_DIRECT.key
@@ -164,6 +197,33 @@ export function countEmDashes(text: string): number {
   return (text.match(/—/g) ?? []).length
 }
 
+/** Blank-line-separated blocks. */
+export function countParagraphs(text: string): number {
+  return text.split(/\n\s*\n/).filter((p) => p.trim().length > 0).length
+}
+
+/**
+ * Paragraphs holding exactly one sentence.
+ *
+ * The grouping axis made measurable. Word count cannot see it — the same words
+ * written as four one-line paragraphs and as one connected block score
+ * identically — so without this number a win by either shape gets attributed to
+ * length or to angle instead. Neither shape is the target value. High means one
+ * beat per line, low means connected prose, and which one earns replies is the
+ * open question.
+ *
+ * Counted over the whole body, which means the personal arm's fixed opening
+ * ("Hey <name>," then the provenance line) contributes two on its own. So this
+ * is comparable between variants within an arm and not across the two.
+ */
+export function countLoneSentenceParagraphs(text: string): number {
+  return text
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0)
+    .filter((p) => (p.match(/[.!?](\s|$)/g) ?? []).length <= 1).length
+}
+
 /**
  * How far a body sits from the style it was assigned.
  *
@@ -178,6 +238,10 @@ export interface StyleMetrics {
   emDashes: number
   /** Whether the body landed inside the style's target band. */
   inBand: boolean
+  /** Blank-line-separated blocks. */
+  paragraphs: number
+  /** Of those, how many hold a single sentence. See `countLoneSentenceParagraphs`. */
+  loneSentenceParagraphs: number
 }
 
 export function measureStyle(body: string, style: StyleProfile, words: number): StyleMetrics {
@@ -186,5 +250,7 @@ export function measureStyle(body: string, style: StyleProfile, words: number): 
     words,
     emDashes: countEmDashes(body),
     inBand: words >= style.targetWords.min && words <= style.targetWords.max,
+    paragraphs: countParagraphs(body),
+    loneSentenceParagraphs: countLoneSentenceParagraphs(body),
   }
 }

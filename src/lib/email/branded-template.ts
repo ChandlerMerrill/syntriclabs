@@ -88,6 +88,13 @@ export interface BrandedEmailOptions {
    * passes it on every send, and its own renderer requires it.
    */
   unsubscribeUrl?: string
+  /**
+   * A plain-sentence opt-out in place of a link, for mail that carries its way
+   * out in the `List-Unsubscribe` header instead of in the body. Ignored when
+   * `unsubscribeUrl` is also given — two ways out in one footer reads worse than
+   * either alone.
+   */
+  footerNote?: string
   /** Footer identity. Defaults to the founder profile. */
   signature?: {
     name?: string
@@ -137,7 +144,11 @@ export function renderBrandedEmail(body: string, options: BrandedEmailOptions = 
     ? `<tr><td align="center" style="padding:0 32px 24px 32px;background:${BG_LIGHT}">
           <a href="${escapeHtml(options.unsubscribeUrl)}" style="color:${TEXT_MUTED};font-size:11px;text-decoration:underline">Unsubscribe</a>
         </td></tr>`
-    : ''
+    : options.footerNote
+      ? `<tr><td align="center" style="padding:0 32px 24px 32px;background:${BG_LIGHT}">
+          <span style="color:${TEXT_MUTED};font-size:11px">${escapeHtml(options.footerNote)}</span>
+        </td></tr>`
+      : ''
 
   return `<!DOCTYPE html>
 <html>

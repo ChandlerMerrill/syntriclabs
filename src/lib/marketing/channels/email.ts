@@ -53,6 +53,11 @@ export const emailAdapter: ChannelAdapter = {
         // Whatever the outbox stored, byte for byte. Only an unrendered send
         // falls back to converting the plain text here.
         body: req.html || plainTextToHtml(req.body),
+        // Sent alongside the HTML as `multipart/alternative`. Both halves were
+        // already rendered and frozen at queue time; only the HTML was ever put
+        // on the wire, which left every message HTML-only — a shape human mail
+        // clients do not produce and Gmail reads as bulk.
+        text: req.body || undefined,
         threadId: req.threadId,
         inReplyTo: req.inReplyTo,
         references: req.references,

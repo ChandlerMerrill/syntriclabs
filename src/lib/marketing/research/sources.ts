@@ -123,11 +123,18 @@ export class FirecrawlNotConfiguredError extends Error {
   }
 }
 
-function client(): Firecrawl {
+/**
+ * Exported because prospect discovery fetches from the same account with the
+ * same key, and two copies of "is Firecrawl configured" is two places for the
+ * answer to be different.
+ */
+export function firecrawlClient(): Firecrawl {
   const apiKey = process.env.FIRECRAWL_API_KEY
   if (!apiKey) throw new FirecrawlNotConfiguredError()
   return new Firecrawl({ apiKey })
 }
+
+const client = firecrawlClient
 
 function expandQuery(template: string, segment: string): string {
   return template

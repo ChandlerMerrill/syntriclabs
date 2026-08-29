@@ -37,6 +37,7 @@ async function main() {
     id: '00000000-0000-4000-8000-000000000001',
     company: 'Redrock Trail Company',
     contact_name: 'Dana Whitmore',
+    found_via: 'the permit list on your site',
   }
 
   for (const template of SEND_TEMPLATES) {
