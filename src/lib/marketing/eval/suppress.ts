@@ -68,8 +68,50 @@ const UNSUBSCRIBE_PHRASES = [
   'leave me alone',
 ]
 
+/**
+ * A reply that is nothing but a refusal.
+ *
+ * The phrase list above is imperatives, matched anywhere in the text. It cannot
+ * catch the shortest and most common answer of all — "no" — because a bare
+ * word is not safe to match as a substring: "no" appears inside "not sure, can
+ * you send more info", and suppressing that costs a prospect who was asking a
+ * question.
+ *
+ * That gap mattered because the outbound copy asked for exactly this word. The
+ * footer read `Reply "no" and I will not write again`, so the one instruction
+ * the email gave was the one signal the deterministic floor could not read, and
+ * honouring it fell back to the model scorer — the precise dependency this
+ * function exists to remove. Someone who did as they were asked was suppressed
+ * only if a model call ran and classified it correctly.
+ *
+ * Safe here because it is anchored to the whole reply rather than searched
+ * within it: the text must be a refusal and nothing else. Quoted original is cut
+ * first, since almost every client appends it.
+ */
+const BARE_REFUSAL_RE =
+  /^(?:no|nope|no thanks?|no thank you|not interested|stop|please stop|remove|remove me|unsubscribe)(?:[\s,]+(?:thanks|thank you|please))?$/
+
+/** Everything above the quoted original, which is where a person's own words are. */
+function ownWords(replyText: string): string {
+  const lines: string[] = []
+  for (const line of replyText.split(/\r?\n/)) {
+    if (/^\s*>/.test(line)) break
+    if (/^\s*on\b.*\bwrote:\s*$/i.test(line)) break
+    if (/^\s*-{2,}\s*original message/i.test(line)) break
+    if (/^\s*from:\s/i.test(line)) break
+    lines.push(line)
+  }
+  return lines.join('\n')
+}
+
 export function looksLikeUnsubscribeRequest(replyText: string): boolean {
   if (!replyText) return false
   const text = replyText.toLowerCase()
-  return UNSUBSCRIBE_PHRASES.some((phrase) => text.includes(phrase))
+  if (UNSUBSCRIBE_PHRASES.some((phrase) => text.includes(phrase))) return true
+
+  const bare = ownWords(text)
+    .replace(/[^a-z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return bare.length > 0 && BARE_REFUSAL_RE.test(bare)
 }
