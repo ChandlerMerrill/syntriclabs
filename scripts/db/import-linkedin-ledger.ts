@@ -177,7 +177,13 @@ const SEGMENT_SLUGS: Record<string, string> = {
   'suppliers-oob': 'suppliers',
   trades: 'service-trades',
   clinics: 'vet-clinics',
+  // The six census arms from 2026-09-02. healthcare, professional-services and
+  // outdoor have no marketing_segments row yet and stay null on purpose —
+  // inventing a segment row from an importer is how a segment ends up with no
+  // qualifiers. The tag survives in metadata.segment either way.
+  vetmed: 'vet-clinics',
   'guiding-outfitting': 'guiding-outfitting',
+  outdoor: 'guiding-outfitting',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
