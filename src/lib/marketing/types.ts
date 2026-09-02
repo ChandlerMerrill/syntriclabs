@@ -274,6 +274,13 @@ export interface MarketingSend {
   gmail_thread_id: string | null
   error: string | null
   attempt_count: number
+  /**
+   * Per-send facts that are not columns yet (migration 037). LinkedIn rows
+   * imported from the brain ledger carry `sourcing_kind`, `sourcing`,
+   * `note_features`, `disclosure`, and the rest of the ledger row; email rows
+   * are `{}` until something needs it.
+   */
+  metadata: Record<string, unknown>
   created_at: string
   updated_at: string
 }
@@ -292,6 +299,11 @@ export interface MarketingOutcome {
   id: string
   send_id: string
   reply_sentiment: 'positive' | 'neutral' | 'negative' | 'unsubscribe' | 'out_of_office' | null
+  /**
+   * Email: the first seven. LinkedIn invitation (037): accepted | ignored |
+   * withdrawn | declined, plus replied and meeting_booked. Never mapped onto
+   * each other — accepted is not replied.
+   */
   outcome:
     | 'no_reply'
     | 'replied'
@@ -300,6 +312,10 @@ export interface MarketingOutcome {
     | 'wrong_person'
     | 'won'
     | 'lost'
+    | 'accepted'
+    | 'ignored'
+    | 'withdrawn'
+    | 'declined'
     | null
   score: number | null
   scored_by: 'human' | 'llm'
@@ -333,6 +349,50 @@ export interface VariantPerformance {
   reply_rate: number | null
   bounce_rate: number | null
   avg_score: number | null
+  first_sent_at: string | null
+  last_sent_at: string | null
+}
+
+/**
+ * A row of `marketing_sourcing_performance` (037). Per (channel, sourcing
+ * kind), first-touch sends only. `resolved` is the count of scored outcomes;
+ * `accepted` counts accepted | replied | meeting_booked, the same list the
+ * brain's linkedin-quota.mjs uses, so the two can be checked against each
+ * other. `acceptance_rate` is null until something has resolved.
+ */
+export interface SourcingPerformance {
+  channel: MarketingChannel
+  sourcing_kind: string
+  sends: number
+  resolved: number
+  accepted: number
+  ignored: number
+  replied: number
+  acceptance_rate: number | null
+  first_sent_at: string | null
+  last_sent_at: string | null
+}
+
+/**
+ * A row of `marketing_prospect_channels` (037). One person, one channel, one
+ * sourcing kind — a prospect touched on both channels has two rows. A join,
+ * not a rating.
+ */
+export interface ProspectChannels {
+  prospect_id: string
+  company: string
+  contact_name: string | null
+  linkedin_url: string | null
+  email: string | null
+  source: string | null
+  channel: MarketingChannel
+  sourcing_kind: string
+  sends: number
+  accepted: number
+  ignored: number
+  replied: number
+  meeting_booked: number
+  last_outcome_at: string | null
   first_sent_at: string | null
   last_sent_at: string | null
 }
