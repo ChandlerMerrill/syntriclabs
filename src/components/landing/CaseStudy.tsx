@@ -7,11 +7,9 @@ import {
   LayoutDashboard,
   Palette,
   CreditCard,
-  ArrowRight,
   Quote,
 } from "lucide-react";
 import SectionLabel from "@/components/ui/SectionLabel";
-import { Button } from "@/components/ui/button";
 import GradientDivider from "@/components/ui/GradientDivider";
 import FloatingIsland from "@/components/ui/FloatingIsland";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -90,17 +88,6 @@ export default function CaseStudy() {
                   </li>
                 ))}
               </motion.ul>
-
-              <motion.div variants={fadeUp} className="mt-8">
-                <Button
-                  render={<a href="https://www.esotericdesignlab.com/" target="_blank" rel="noopener noreferrer" />}
-                  variant="secondary"
-                  size="lg"
-                >
-                  See the Platform Live
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </motion.div>
             </motion.div>
           </div>
 
@@ -151,7 +138,7 @@ export default function CaseStudy() {
                   </p>
                   <div className="mt-4 h-px w-10 bg-gradient-to-r from-accent-purple/30 to-transparent" />
                   <p className="mt-3 text-sm text-text-secondary">
-                    Paraphrased from the founder, Esoteric Design Lab
+                    Paraphrased from client founder
                   </p>
                 </div>
               </motion.div>
