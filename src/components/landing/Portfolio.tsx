@@ -32,7 +32,7 @@ const sites = [
   {
     name: "Play it Safe",
     description:
-      "Builds and cleans indoor playlands for restaurants across five states. The owners run their gallery from an admin panel built to grow with the business.",
+      "Builds and cleans indoor playlands for restaurants across five states. The admin panel handles lead tracking and job management, with more of the back office on the way.",
     href: "https://www.playitsafeplaylands.com/",
     image: "/images/work/playitsafe.jpg",
     tags: ["Business Site", "Admin Panel"],
