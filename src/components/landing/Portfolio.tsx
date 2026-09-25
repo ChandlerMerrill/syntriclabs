@@ -30,6 +30,14 @@ const platforms = [
 /* Sites & lead systems — smaller engagements for trades. Shown compact. */
 const sites = [
   {
+    name: "Play it Safe",
+    description:
+      "Builds and cleans indoor playlands for restaurants across five states. The owners run their gallery from an admin panel built to grow with the business.",
+    href: "https://www.playitsafeplaylands.com/",
+    image: "/images/work/playitsafe.jpg",
+    tags: ["Business Site", "Admin Panel"],
+  },
+  {
     name: "Shamrock Plumbing",
     description: "Service site for a local plumber, built to turn visits into service calls.",
     href: "https://shamrock-site.vercel.app",
@@ -152,7 +160,7 @@ export default function Portfolio() {
             Sites &amp; lead systems
           </motion.h3>
 
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {sites.map((project) => (
               <motion.div key={project.name} variants={popIn} className="h-full">
                 <TiltCard className="h-full">
@@ -169,7 +177,7 @@ export default function Portfolio() {
                         alt={`${project.name} homepage`}
                         width={1400}
                         height={875}
-                        sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
+                        sizes="(min-width: 1280px) 22vw, (min-width: 640px) 45vw, 90vw"
                         className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                       />
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-bg-secondary" />
